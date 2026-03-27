@@ -1,0 +1,218 @@
+@import '@fontsource/inter/400.css';
+@import '@fontsource/inter/500.css';
+@import '@fontsource/inter/600.css';
+@import '@fontsource/inter/700.css';
+@import '@fontsource/inter/900.css';
+@import '@fontsource/jetbrains-mono/400.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* ── Brand ───────────────────────────────────── */
+    --clinical-50:  #EFF6FF;
+    --clinical-100: #DBEAFE;
+    --clinical-200: #BFDBFE;
+    --clinical-400: #60A5FA;
+    --clinical-600: #2563EB;
+    --clinical-700: #1D4ED8;
+    --clinical-900: #1E3A8A;
+
+    /* ── Surfaces ────────────────────────────────── */
+    --surface-0: #FFFFFF;
+    --surface-1: #F8FAFC;
+    --surface-2: #F1F5F9;
+    --surface-3: #E2E8F0;
+
+    /* ── Text ────────────────────────────────────── */
+    --text-primary:   #0F172A;
+    --text-secondary: #475569;
+    --text-muted:     #94A3B8;
+    --text-inverse:   #FFFFFF;
+
+    /* ── Semantic status ─────────────────────────── */
+    --status-critical-bg:     #FEF2F2;
+    --status-critical-border: #FECACA;
+    --status-critical-text:   #991B1B;
+    --status-critical-icon:   #EF4444;
+
+    --status-warning-bg:      #FFFBEB;
+    --status-warning-border:  #FDE68A;
+    --status-warning-text:    #92400E;
+    --status-warning-icon:    #F59E0B;
+
+    --status-success-bg:      #F0FDF4;
+    --status-success-border:  #BBF7D0;
+    --status-success-text:    #166534;
+    --status-success-icon:    #22C55E;
+
+    --status-info-bg:         #EFF6FF;
+    --status-info-border:     #BFDBFE;
+    --status-info-text:       #1E40AF;
+    --status-info-icon:       #3B82F6;
+
+    --status-neutral-bg:      #F8FAFC;
+    --status-neutral-border:  #E2E8F0;
+    --status-neutral-text:    #475569;
+    --status-neutral-icon:    #94A3B8;
+
+    --status-flagged-bg:      #FAF5FF;
+    --status-flagged-border:  #E9D5FF;
+    --status-flagged-text:    #6B21A8;
+    --status-flagged-icon:    #A855F7;
+
+    /* ── SLA state tokens (spec-mandated) ────────── */
+    --sla-safe:           #059669;
+    --sla-warning:        #D97706;
+    --sla-breached:       #DC2626;
+
+    /* ── Priority tokens (spec-mandated) ─────────── */
+    --priority-stat:      #7C3AED;
+    --priority-urgent:    #EA580C;
+    --priority-routine:   #2563EB;
+    --priority-discharge: #7C3AED;
+    --priority-nicu:      #DB2777;
+
+    /* ── Background tokens ───────────────────────── */
+    --bg-base:            #F1F5F9;
+    --bg-card:            #FFFFFF;
+    --bg-card-stat:       #FDF4FF;
+    --bg-alert:           #FEF2F2;
+    --bg-row-hover:       #F1F5F9;
+
+    /* ── Text tokens ─────────────────────────────── */
+    --text-time:          #0F172A;
+    --text-disabled:      #94A3B8;
+
+    /* ── Border tokens ───────────────────────────── */
+    --border-default:     #E2E8F0;
+    --border-focus:       #2563EB;
+    --border-breach:      #DC2626;
+    --border-stat:        #7C3AED;
+
+    /* ── Typography scale (spec-mandated) ────────── */
+    --type-time-hero: 2.5rem;
+    --type-time-card: 1.5rem;
+    --type-label:     0.75rem;
+    --type-body:      0.875rem;
+    --type-meta:      0.6875rem;
+
+    /* ── Radius tokens ───────────────────────────── */
+    --radius-card:   12px;
+    --radius-badge:  6px;
+    --radius-button: 8px;
+
+    /* ── Shadow tokens ───────────────────────────── */
+    --shadow-card:     0 1px 3px rgba(15,23,42,0.06), 0 4px 16px rgba(15,23,42,0.04);
+    --shadow-elevated: 0 8px 24px rgba(15,23,42,0.10), 0 2px 8px rgba(15,23,42,0.06);
+    --shadow-modal:    0 20px 48px rgba(15,23,42,0.16), 0 4px 16px rgba(15,23,42,0.08);
+  }
+
+  body {
+    @apply bg-surface-1 text-text-primary;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+@layer utilities {
+  /* ── Typography ────────────────────────────────── */
+  .text-display   { font-size: 36px; font-weight: 900; letter-spacing: -0.025em; line-height: 1.1; }
+  .text-h1        { font-size: 24px; font-weight: 700; letter-spacing: -0.02em;  line-height: 1.2; }
+  .text-h2        { font-size: 20px; font-weight: 600; letter-spacing: -0.015em; line-height: 1.3; }
+  .text-h3        { font-size: 16px; font-weight: 600; letter-spacing: -0.01em;  line-height: 1.4; }
+  .text-body-lg   { font-size: 15px; font-weight: 400; line-height: 1.5; }
+  .text-body      { font-size: 14px; font-weight: 400; line-height: 1.5; }
+  .text-body-sm   { font-size: 13px; font-weight: 400; line-height: 1.5; }
+  .text-caption   { font-size: 12px; font-weight: 400; letter-spacing: 0.01em; line-height: 1.4; }
+  .text-mono      { font-family: 'JetBrains Mono', 'Courier New', monospace; font-size: 13px; }
+  .text-label     { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
+  .text-meta      { font-size: 0.6875rem; }
+  .text-time-hero { font-size: 2.5rem; font-weight: 900; letter-spacing: -0.04em; font-variant-numeric: tabular-nums; line-height: 1; }
+  .text-time-card { font-size: 1.5rem;  font-weight: 900; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; line-height: 1; }
+
+  /* ── Shadows ───────────────────────────────────── */
+  .shadow-card        { box-shadow: var(--shadow-card); }
+  .shadow-elevated    { box-shadow: var(--shadow-elevated); }
+  .shadow-modal       { box-shadow: var(--shadow-modal); }
+  .hover\:shadow-elevated:hover { box-shadow: var(--shadow-elevated); }
+
+  /* ── WS value pulse: flash on live update ──────── */
+  .animate-value-pulse {
+    animation: value-pulse 0.6s ease-out;
+  }
+}
+
+/* ── Keyframes ────────────────────────────────────── */
+
+@keyframes value-pulse {
+  0%   { background-color: rgba(37, 99, 235, 0.15); }
+  100% { background-color: transparent; }
+}
+
+@keyframes breach-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.7; }
+}
+.animate-breach-pulse { animation: breach-pulse 1.8s cubic-bezier(0.4,0,0.6,1) infinite; }
+
+@keyframes shimmer {
+  0%   { background-position: -1000px 0; }
+  100% { background-position:  1000px 0; }
+}
+.animate-shimmer {
+  animation: shimmer 2s infinite linear;
+  background: linear-gradient(to right, var(--surface-2) 4%, var(--surface-3) 25%, var(--surface-2) 36%);
+  background-size: 1000px 100%;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in { animation: fadeIn 0.15s ease-out; }
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-slide-up { animation: slideUp 0.2s ease-out; }
+
+/* ── Scrollbar ────────────────────────────────────── */
+::-webkit-scrollbar          { width: 5px; height: 5px; }
+::-webkit-scrollbar-track    { background: var(--surface-2); border-radius: 9999px; }
+::-webkit-scrollbar-thumb    { background: var(--surface-3); border-radius: 9999px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+aside nav::-webkit-scrollbar-track { background: #111827; }
+aside nav::-webkit-scrollbar-thumb { background: #1E3048; }
+aside nav::-webkit-scrollbar-thumb:hover { background: #2A4262; }
+* { scrollbar-width: thin; scrollbar-color: var(--surface-3) var(--surface-2); }
+
+/* ── Smooth transitions (layout-safe) ────────────── */
+*, *::before, *::after {
+  transition-property: background-color, border-color, color, box-shadow, opacity, transform;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 100ms;
+}
+input, textarea, select { transition-duration: 0ms; }
+
+/* ── Focus ring ───────────────────────────────────── */
+:focus-visible { outline: 2px solid var(--clinical-600); outline-offset: 2px; }
+
+/* ── Date input ───────────────────────────────────── */
+input[type='date']::-webkit-calendar-picker-indicator { opacity: 0.5; cursor: pointer; }
+input[type='date']::-webkit-calendar-picker-indicator:hover { opacity: 0.8; }
+
+/* ── Print ────────────────────────────────────────── */
+@media print {
+  header, footer, nav, button, aside { display: none !important; }
+  main { padding: 0 !important; max-width: 100% !important; }
+  body { background: white !important; }
+}
