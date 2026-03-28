@@ -97,9 +97,7 @@ function CardHeader({ icon, title, sub, action }: { icon: React.ReactNode; title
   );
 }
 
-/* --------------------------------------------------------------
-   MODALS
--------------------------------------------------------------- */
+// MODALS
 
 function AdmitModal({
   departmentId, doctors, onConfirm, onClose,
@@ -664,9 +662,7 @@ function ConsultationNoteModal({
   );
 }
 
-/* --------------------------------------------------------------
-   MAIN PAGE
--------------------------------------------------------------- */
+// MAIN PAGE
 type Tab = 'overview' | 'triage' | 'care' | 'consultation' | 'prescriptions' | 'billing';
 
 export default function VisitDetailPage() {
