@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { X, Zap, AlertTriangle, CheckCircle, Package, Bell } from 'lucide-react';
 import { formatRelativeTime } from '../../lib/utils';
 import { cn } from '../../lib/utils';
@@ -37,7 +37,7 @@ export function useNotifications() {
       subscribe('sla.breached', (ev: WSEvent) => {
         const d = ev.data as { prescription_id?: string; rx_number?: string; patient_name?: string; elapsed_min?: number };
         addNotif({
-          id: `sla-${Date.now()}`,
+          id: ev.entity_id ? `sla-${ev.entity_id}` : `sla-${Date.now()}-${Math.random().toString(36).slice(2)}`,
           type: 'sla_breach',
           title: 'SLA Breach',
           subtitle: [
@@ -53,7 +53,7 @@ export function useNotifications() {
       subscribe('audit.flag_created', (ev: WSEvent) => {
         const d = ev.data as { rx_number?: string; reason?: string; patient_name?: string };
         addNotif({
-          id: `flag-${Date.now()}`,
+          id: ev.entity_id ? `flag-${ev.entity_id}` : `flag-${Date.now()}-${Math.random().toString(36).slice(2)}`,
           type: 'flag_created',
           title: 'Prescription Flagged',
           subtitle: [
@@ -70,7 +70,7 @@ export function useNotifications() {
         const d = ev.data as { status?: string; rx_number?: string; patient_name?: string };
         if (d.status === 'verified') {
           addNotif({
-            id: `ver-${Date.now()}`,
+            id: ev.entity_id ? `ver-${ev.entity_id}` : `ver-${Date.now()}-${Math.random().toString(36).slice(2)}`,
             type: 'rx_verified',
             title: 'Prescription Verified',
             subtitle: [d.rx_number && `Rx ${d.rx_number}`, d.patient_name, 'Ready for dispensing'].filter(Boolean).join('  '),
@@ -79,7 +79,7 @@ export function useNotifications() {
           });
         } else if (d.status === 'dispensed') {
           addNotif({
-            id: `dis-${Date.now()}`,
+            id: ev.entity_id ? `dis-${ev.entity_id}` : `dis-${Date.now()}-${Math.random().toString(36).slice(2)}`,
             type: 'rx_dispensed',
             title: 'Prescription Dispensed',
             subtitle: [d.rx_number && `Rx ${d.rx_number}`, d.patient_name].filter(Boolean).join('  '),
@@ -136,22 +136,23 @@ export function NotificationPanel({
     return () => window.removeEventListener('keydown', handler);
   }, [isOpen, onClose]);
 
+  const groups = useMemo(() => {
+    const filtered = notifications.filter(n => {
+      if (activeTab === 'unread') return !n.read;
+      if (activeTab === 'sla')    return n.type === 'sla_breach';
+      if (activeTab === 'flags')  return n.type === 'flag_created';
+      return true;
+    });
+
+    const now = Date.now();
+    return [
+      { label: 'Today',     items: filtered.filter(n => now - n.timestamp.getTime() < 24 * 3600_000) },
+      { label: 'Yesterday', items: filtered.filter(n => now - n.timestamp.getTime() >= 24 * 3600_000 && now - n.timestamp.getTime() < 48 * 3600_000) },
+      { label: 'Older',     items: filtered.filter(n => now - n.timestamp.getTime() >= 48 * 3600_000) },
+    ].filter(g => g.items.length > 0);
+  }, [notifications, activeTab]);
+
   if (!isOpen) return null;
-
-  const filtered = notifications.filter(n => {
-    if (activeTab === 'unread') return !n.read;
-    if (activeTab === 'sla')    return n.type === 'sla_breach';
-    if (activeTab === 'flags')  return n.type === 'flag_created';
-    return true;
-  });
-
-  // Group by recency
-  const now = Date.now();
-  const groups: { label: string; items: Notification[] }[] = [
-    { label: 'Today',     items: filtered.filter(n => now - n.timestamp.getTime() < 24 * 3600_000) },
-    { label: 'Yesterday', items: filtered.filter(n => now - n.timestamp.getTime() >= 24 * 3600_000 && now - n.timestamp.getTime() < 48 * 3600_000) },
-    { label: 'Older',     items: filtered.filter(n => now - n.timestamp.getTime() >= 48 * 3600_000) },
-  ].filter(g => g.items.length > 0);
 
   return (
     <>
