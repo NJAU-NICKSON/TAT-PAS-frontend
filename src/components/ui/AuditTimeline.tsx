@@ -65,7 +65,7 @@ export function AuditTimeline({ events, className }: AuditTimelineProps) {
               <StatusBadge status={event.flagCode} severity={event.severity} />
               <StatusBadge status="flagged" size="sm" />
               <p className="text-caption text-text-muted font-mono uppercase tracking-wider">
-                {event.createdBy} â€¢ {new Date(event.createdAt).toLocaleString()}
+                {event.createdBy}  {new Date(event.createdAt).toLocaleString()}
               </p>
             </div>
 
@@ -87,7 +87,7 @@ export function AuditTimeline({ events, className }: AuditTimelineProps) {
                   <div>
                     <h5 className="text-body font-semibold text-status-success-text">Resolved</h5>
                     <p className="text-caption text-text-muted">
-                      {event.resolvedBy} â€¢ {new Date(event.createdAt).toLocaleString()}
+                      {event.resolvedBy}  {new Date(event.createdAt).toLocaleString()}
                     </p>
                   </div>
                 </div>

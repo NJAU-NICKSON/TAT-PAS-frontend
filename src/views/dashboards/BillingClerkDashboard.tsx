@@ -117,7 +117,7 @@ function PaymentModal({ bill, onClose, onSuccess }: PaymentModalProps) {
         >
           <div>
             <h2 className="text-h3" style={{ color: 'var(--text-primary)' }}>
-              Bill â€” {patientLabel}
+              Bill  -  {patientLabel}
             </h2>
             <p className="text-meta mt-0.5" style={{ color: 'var(--text-muted)' }}>
               #{bill._id.slice(-8).toUpperCase()}
@@ -246,7 +246,7 @@ function PaymentModal({ bill, onClose, onSuccess }: PaymentModalProps) {
                 borderRadius: 'var(--radius-button)',
               }}
             >
-              {saving ? 'Savingâ€¦' : 'Record Payment'}
+              {saving ? 'Saving' : 'Record Payment'}
             </button>
           )}
         </div>
@@ -325,13 +325,13 @@ export function BillingClerkDashboard() {
         className="flex-shrink-0 grid grid-cols-3 gap-3 px-6 py-4 border-b"
         style={{ borderColor: 'var(--border-default)', background: 'var(--bg-base)' }}
       >
-        <StatTile label="TOTAL BILLS" value={loading ? 'â€”' : bills.length} />
+        <StatTile label="TOTAL BILLS" value={loading ? ' - ' : bills.length} />
         <StatTile
           label="PENDING"
-          value={loading ? 'â€”' : pendingCount}
+          value={loading ? ' - ' : pendingCount}
           danger={pendingCount > 0}
         />
-        <StatTile label="TOTAL BALANCE" value={loading ? 'â€”' : fmtKES(totalBalance)} />
+        <StatTile label="TOTAL BALANCE" value={loading ? ' - ' : fmtKES(totalBalance)} />
       </div>
 
       {error && (

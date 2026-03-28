@@ -85,9 +85,9 @@ export default function SettingsPage() {
       <Section title="Account" icon={<User className="w-4 h-4" />}>
         <Field label="Full Name" value={user.full_name} />
         <Field label="Username" value={user.username} />
-        <Field label="Email" value={user.email || 'â€”'} />
+        <Field label="Email" value={user.email || ' - '} />
         <Field label="Role" value={user.role.replace(/_/g, ' ')} />
-        <Field label="Account ID" value={user.id.slice(0, 16) + 'â€¦'} />
+        <Field label="Account ID" value={user.id.slice(0, 16) + ''} />
       </Section>
 
       <Section title="Change Password" icon={<Lock className="w-4 h-4" />}>

@@ -25,27 +25,27 @@ const VITAL_FIELDS: {
 }[] = [
   {
     label: 'Systolic BP', key: 'blood_pressure_systolic', placeholder: '120',
-    unit: 'mmHg', icon: Heart, iconColor: '#DC2626', iconBg: '#FEE2E2', normal: '90â€“120',
+    unit: 'mmHg', icon: Heart, iconColor: '#DC2626', iconBg: '#FEE2E2', normal: '90 - 120',
   },
   {
     label: 'Diastolic BP', key: 'blood_pressure_diastolic', placeholder: '80',
-    unit: 'mmHg', icon: Heart, iconColor: '#DC2626', iconBg: '#FEE2E2', normal: '60â€“80',
+    unit: 'mmHg', icon: Heart, iconColor: '#DC2626', iconBg: '#FEE2E2', normal: '60 - 80',
   },
   {
     label: 'Temperature', key: 'temperature_celsius', placeholder: '37.0',
-    unit: 'Â°C', step: '0.1', icon: Thermometer, iconColor: '#D97706', iconBg: '#FEF3C7', normal: '36.5â€“37.5',
+    unit: '°C', step: '0.1', icon: Thermometer, iconColor: '#D97706', iconBg: '#FEF3C7', normal: '36.5 - 37.5',
   },
   {
     label: 'Pulse Rate', key: 'pulse_rate', placeholder: '72',
-    unit: 'bpm', icon: Activity, iconColor: '#7C3AED', iconBg: '#F3E8FF', normal: '60â€“100',
+    unit: 'bpm', icon: Activity, iconColor: '#7C3AED', iconBg: '#F3E8FF', normal: '60 - 100',
   },
   {
-    label: 'SpOâ‚‚', key: 'oxygen_saturation', placeholder: '98',
-    unit: '%', icon: Wind, iconColor: '#0284C7', iconBg: '#E0F2FE', normal: '95â€“100',
+    label: 'SpO,,', key: 'oxygen_saturation', placeholder: '98',
+    unit: '%', icon: Wind, iconColor: '#0284C7', iconBg: '#E0F2FE', normal: '95 - 100',
   },
   {
     label: 'Respiratory Rate', key: 'respiratory_rate', placeholder: '16',
-    unit: '/min', icon: Activity, iconColor: '#059669', iconBg: '#DCFCE7', normal: '12â€“20',
+    unit: '/min', icon: Activity, iconColor: '#059669', iconBg: '#DCFCE7', normal: '12 - 20',
   },
   {
     label: 'Weight', key: 'weight_kg', placeholder: '70',
@@ -208,7 +208,7 @@ export default function TriagePage() {
       <div className="min-h-screen flex items-center justify-center" style={{ background: '#F1F5F9' }}>
         <div className="flex flex-col items-center gap-3">
           <Loader2 className="w-7 h-7 animate-spin" style={{ color: '#2563EB' }} />
-          <p className="text-sm text-gray-500">Loading visitâ€¦</p>
+          <p className="text-sm text-gray-500">Loading visit</p>
         </div>
       </div>
     );
@@ -233,7 +233,7 @@ export default function TriagePage() {
 
   return (
     <div className="min-h-screen" style={{ background: '#F1F5F9' }}>
-      <div style={{ background: 'linear-gradient(135deg, #0F172A 0%, #1E3A5F 60%, #D97706 100%)' }}>
+      <div style={{ background: 'linear-gradient(135deg, #0F172A 0%, #1E3A8A 60%, #2563EB 100%)' }}>
         <div className="max-w-3xl mx-auto px-6 py-5">
           <Link
             to={`/visits/${visit.id}`}
@@ -260,8 +260,8 @@ export default function TriagePage() {
               </div>
               <p className="text-sm" style={{ color: 'rgba(255,255,255,0.65)' }}>
                 <span className="font-semibold text-white">{visit.patient_name ?? visit.patient_id}</span>
-                {' Â· '}Visit #{visit.visit_number}
-                {' Â· '}{visit.visit_type.replace(/_/g, ' ').toUpperCase()}
+                {' · '}Visit #{visit.visit_number}
+                {' · '}{visit.visit_type.replace(/_/g, ' ').toUpperCase()}
               </p>
               {visit.chief_complaint && (
                 <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.5)' }}>
@@ -317,7 +317,7 @@ export default function TriagePage() {
             </label>
             <textarea
               rows={3}
-              placeholder="Clinical observations, presenting symptoms, relevant historyâ€¦"
+              placeholder="Clinical observations, presenting symptoms, relevant history"
               value={vitals.triage_notes ?? ''}
               onChange={e => setVitals(v => ({ ...v, triage_notes: e.target.value || undefined }))}
               className="w-full text-sm text-gray-800 resize-none outline-none bg-transparent leading-relaxed"
@@ -333,7 +333,7 @@ export default function TriagePage() {
             </div>
             <div>
               <h2 className="text-base font-bold text-gray-900">Assign Doctor</h2>
-              <p className="text-xs text-gray-400">Optional â€” can be assigned later from the visit overview</p>
+              <p className="text-xs text-gray-400">Optional  -  can be assigned later from the visit overview</p>
             </div>
           </div>
 
@@ -343,7 +343,7 @@ export default function TriagePage() {
             className="w-full px-4 py-3 rounded-xl text-sm font-medium text-gray-800 outline-none bg-gray-50 transition-colors hover:bg-gray-100"
             style={{ border: '1.5px solid #E2E8F0' }}
           >
-            <option value="">â€” No doctor assigned yet â€”</option>
+            <option value=""> -  No doctor assigned yet  - </option>
             {doctors.map(d => (
               <option key={d.id} value={d.id}>{d.full_name || d.username}</option>
             ))}
@@ -391,7 +391,7 @@ export default function TriagePage() {
                   >
                     <span className="block font-bold">{r.room_name}</span>
                     <span className="text-[10px] font-normal opacity-80">
-                      {r.room_number} Â· {isOccupied ? 'Occupied' : r.status}
+                      {r.room_number} · {isOccupied ? 'Occupied' : r.status}
                     </span>
                   </button>
                 );
@@ -409,7 +409,7 @@ export default function TriagePage() {
             </div>
             <div>
               <h2 className="text-base font-bold text-gray-900">Priority</h2>
-              <p className="text-xs text-gray-400">Auto-set from vitals â€” override if needed</p>
+              <p className="text-xs text-gray-400">Auto-set from vitals  -  override if needed</p>
             </div>
           </div>
 

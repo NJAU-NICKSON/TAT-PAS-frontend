@@ -44,7 +44,7 @@ export function useNotifications() {
             d.rx_number && `Rx ${d.rx_number}`,
             d.patient_name,
             d.elapsed_min != null && `${Math.round(d.elapsed_min)}m over threshold`,
-          ].filter(Boolean).join(' â€¢ ') || 'Prescription exceeded SLA threshold',
+          ].filter(Boolean).join('  ') || 'Prescription exceeded SLA threshold',
           timestamp: new Date(),
           read: false,
         });
@@ -60,7 +60,7 @@ export function useNotifications() {
             d.rx_number && `Rx ${d.rx_number}`,
             d.patient_name,
             d.reason,
-          ].filter(Boolean).join(' â€¢ ') || 'A prescription was flagged for audit',
+          ].filter(Boolean).join('  ') || 'A prescription was flagged for audit',
           timestamp: new Date(),
           read: false,
         });
@@ -73,7 +73,7 @@ export function useNotifications() {
             id: `ver-${Date.now()}`,
             type: 'rx_verified',
             title: 'Prescription Verified',
-            subtitle: [d.rx_number && `Rx ${d.rx_number}`, d.patient_name, 'Ready for dispensing'].filter(Boolean).join(' â€¢ '),
+            subtitle: [d.rx_number && `Rx ${d.rx_number}`, d.patient_name, 'Ready for dispensing'].filter(Boolean).join('  '),
             timestamp: new Date(),
             read: false,
           });
@@ -82,7 +82,7 @@ export function useNotifications() {
             id: `dis-${Date.now()}`,
             type: 'rx_dispensed',
             title: 'Prescription Dispensed',
-            subtitle: [d.rx_number && `Rx ${d.rx_number}`, d.patient_name].filter(Boolean).join(' â€¢ '),
+            subtitle: [d.rx_number && `Rx ${d.rx_number}`, d.patient_name].filter(Boolean).join('  '),
             timestamp: new Date(),
             read: false,
           });

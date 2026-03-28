@@ -26,18 +26,18 @@ const PRIORITY_ORDER: Record<string, number> = { stat: 0, critical: 1, urgent: 2
 const DISPENSE_SLA_MIN = 30;
 
 function age(dob?: string): string {
-  if (!dob) return 'â€”';
+  if (!dob) return ' - ';
   const years = Math.floor((Date.now() - new Date(dob).getTime()) / (1000 * 60 * 60 * 24 * 365.25));
   return `${years}y`;
 }
 
 function fmtTime(iso?: string): string {
-  if (!iso) return 'â€”';
+  if (!iso) return ' - ';
   return new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
 }
 
 function fmt(iso?: string): string {
-  if (!iso) return 'â€”';
+  if (!iso) return ' - ';
   return new Date(iso).toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
 }
 
@@ -155,7 +155,7 @@ function DispensePanel({ rx, onSuccess, onCancel }: {
           {rx.medications.map((m, i) => (
             <div key={i} className="text-xs">
               <span className="font-semibold">{m.name}</span>
-              <span className="text-gray-400 ml-1">{m.dose} Â· {m.route} Â· {m.frequency} Â· {m.duration_days}d</span>
+              <span className="text-gray-400 ml-1">{m.dose} · {m.route} · {m.frequency} · {m.duration_days}d</span>
             </div>
           ))}
           <div className="border-t border-dashed border-gray-200 my-1" />
@@ -176,7 +176,7 @@ function DispensePanel({ rx, onSuccess, onCancel }: {
         <div>
           <label className="block text-xs font-medium text-gray-600 mb-1">Pharmacist Notes (optional)</label>
           <input value={comment} onChange={e => setComment(e.target.value)}
-            placeholder="Counselling given, substitutionsâ€¦"
+            placeholder="Counselling given, substitutions"
             className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500" />
         </div>
       </div>
@@ -294,19 +294,19 @@ function DetailPanel({ rx, onClose, onDispensed }: {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-400 text-xs">Age / Gender</span>
-                  <span className="font-semibold text-gray-800">{age(patient.dob)} Â· {patient.gender ?? 'â€”'}</span>
+                  <span className="font-semibold text-gray-800">{age(patient.dob)} · {patient.gender ?? ' - '}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-400 text-xs">Weight</span>
-                  <span className="font-semibold text-gray-800">{patient.weight ? `${patient.weight} kg` : 'â€”'}</span>
+                  <span className="font-semibold text-gray-800">{patient.weight ? `${patient.weight} kg` : ' - '}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-400 text-xs">Blood Group</span>
-                  <span className="font-semibold text-gray-800">{patient.blood_group ?? 'â€”'}</span>
+                  <span className="font-semibold text-gray-800">{patient.blood_group ?? ' - '}</span>
                 </div>
                 {patient.allergies && patient.allergies.length > 0 && (
                   <div className="col-span-2 mt-1 p-2 rounded-lg bg-red-50 border border-red-200">
-                    <p className="text-[10px] font-bold text-red-700 uppercase tracking-wide mb-1">âš  Allergies</p>
+                    <p className="text-[10px] font-bold text-red-700 uppercase tracking-wide mb-1">s  Allergies</p>
                     <div className="flex flex-wrap gap-1">
                       {patient.allergies.map((a, i) => (
                         <span key={i} className="px-2 py-0.5 text-xs font-semibold rounded-full bg-red-100 text-red-800 border border-red-300">
@@ -368,11 +368,11 @@ function DetailPanel({ rx, onClose, onDispensed }: {
                       <VitalCell icon={<Activity className="w-3.5 h-3.5" />} label="HR"
                         value={v.pulse_rate} unit="bpm"
                         warn={vitalWarn('pulse_rate', v.pulse_rate)} />
-                      <VitalCell icon={<Droplets className="w-3.5 h-3.5" />} label="SpOâ‚‚"
+                      <VitalCell icon={<Droplets className="w-3.5 h-3.5" />} label="SpO,,"
                         value={v.oxygen_saturation} unit="%"
                         warn={vitalWarn('oxygen_saturation', v.oxygen_saturation)} />
                       <VitalCell icon={<Thermometer className="w-3.5 h-3.5" />} label="Temp"
-                        value={v.temperature_celsius} unit="Â°C"
+                        value={v.temperature_celsius} unit="°C"
                         warn={vitalWarn('temperature_celsius', v.temperature_celsius)} />
                       <VitalCell icon={<Wind className="w-3.5 h-3.5" />} label="RR"
                         value={v.respiratory_rate} unit="/min" />
@@ -441,10 +441,10 @@ function DetailPanel({ rx, onClose, onDispensed }: {
                       <SevBadge sev={f.severity} />
                     </div>
                     {f.recommendation && (
-                      <p className="text-xs text-gray-500 mt-0.5">â†’ {f.recommendation}</p>
+                      <p className="text-xs text-gray-500 mt-0.5">' {f.recommendation}</p>
                     )}
                     {f.resolved && (
-                      <p className="text-xs text-emerald-600 mt-0.5">âœ“ Resolved Â· {f.resolution_note}</p>
+                      <p className="text-xs text-emerald-600 mt-0.5">oe" Resolved · {f.resolution_note}</p>
                     )}
                   </div>
                 ))}
@@ -464,10 +464,10 @@ function DetailPanel({ rx, onClose, onDispensed }: {
                   onClick={async () => {
                     try {
                       await prescriptionsApi.approveForPharmacy(rx.id);
-                      toast.success('Prescription approved â€” ready to dispense');
+                      toast.success('Prescription approved  -  ready to dispense');
                       onDispensed();
                     } catch (e: any) {
-                      const msg = e?.response?.data?.detail?.message ?? 'Could not approve â€” check for unresolved flags';
+                      const msg = e?.response?.data?.detail?.message ?? 'Could not approve  -  check for unresolved flags';
                       toast.error(msg);
                     }
                   }}
@@ -540,10 +540,10 @@ function RxRow({ rx, accentBorder, onRefresh }: {
           </div>
           <p className="text-sm font-semibold text-gray-800 truncate">{rx.patient_name ?? rx.patient_id}</p>
           <p className="text-xs text-gray-500 mt-0.5 truncate">
-            {rx.medications.map(m => `${m.name} ${m.dose}`).join(' Â· ')}
+            {rx.medications.map(m => `${m.name} ${m.dose}`).join(' · ')}
           </p>
           {rx.auditor_name && (
-            <p className="text-xs text-emerald-600 mt-1">âœ“ Approved by {rx.auditor_name}</p>
+            <p className="text-xs text-emerald-600 mt-1">oe" Approved by {rx.auditor_name}</p>
           )}
         </div>
 
@@ -572,7 +572,7 @@ function DispensedRow({ rx }: { rx: Prescription }) {
           {rx.rx_number ?? `RX-${rx.id.slice(0, 8).toUpperCase()}`}
         </p>
         <p className="text-xs text-gray-500 truncate">
-          {rx.patient_name ?? rx.patient_id} Â· {rx.medications.map(m => m.name).join(', ')}
+          {rx.patient_name ?? rx.patient_id} · {rx.medications.map(m => m.name).join(', ')}
         </p>
       </div>
       <div className="text-right flex-shrink-0">
@@ -699,7 +699,7 @@ export default function PharmacyQueuePage() {
 
   return (
     <div className="min-h-screen" style={{ background: '#F1F5F9' }}>
-      <div style={{ background: 'linear-gradient(135deg, #064E3B 0%, #065F46 60%, #059669 100%)' }}>
+      <div style={{ background: 'linear-gradient(135deg, #0F172A 0%, #1E3A8A 60%, #2563EB 100%)' }}>
         <div className="px-6 py-5">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
@@ -737,7 +737,7 @@ export default function PharmacyQueuePage() {
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input type="text" value={search} onChange={e => setSearch(e.target.value)}
-            placeholder="Search by patient, Rx number, or drug nameâ€¦"
+            placeholder="Search by patient, Rx number, or drug name"
             className="w-full pl-9 pr-4 py-2.5 text-sm border border-gray-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500" />
         </div>
       </div>
@@ -757,7 +757,7 @@ export default function PharmacyQueuePage() {
           </Section>
 
           {fFlagged.length > 0 && (
-            <Section icon={<Flag className="w-4 h-4" />} title="Flagged â€” Awaiting Audit Resolution"
+            <Section icon={<Flag className="w-4 h-4" />} title="Flagged  -  Awaiting Audit Resolution"
               count={fFlagged.length} iconColor="#DC2626" badgeBg="#FEE2E2" badgeColor="#991B1B"
               emptyText="No flagged prescriptions.">
               {fFlagged.map(rx => (
@@ -767,7 +767,7 @@ export default function PharmacyQueuePage() {
           )}
 
           {fSubmitted.length > 0 && (
-            <Section icon={<ShieldCheck className="w-4 h-4" />} title="Submitted â€” Awaiting Audit"
+            <Section icon={<ShieldCheck className="w-4 h-4" />} title="Submitted  -  Awaiting Audit"
               count={fSubmitted.length} iconColor="#6366F1" badgeBg="#EEF2FF" badgeColor="#4338CA"
               emptyText="No prescriptions awaiting audit.">
               {fSubmitted.map(rx => (

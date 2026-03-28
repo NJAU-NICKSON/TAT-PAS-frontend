@@ -57,7 +57,7 @@ function ProtectedRoute({ children, roles }: ProtectedRouteProps) {
             className="w-8 h-8 rounded-full border-2 border-[var(--border-default)] animate-spin"
             style={{ borderTopColor: 'var(--clinical-600)' }}
           />
-          <p className="text-caption text-[var(--text-disabled)]">Loading workstationâ€¦</p>
+          <p className="text-caption text-[var(--text-disabled)]">Loading workstation</p>
         </div>
       </div>
     );
@@ -74,12 +74,10 @@ function ProtectedRoute({ children, roles }: ProtectedRouteProps) {
   return <>{children}</>;
 }
 
-/** Scrollable page wrapper for non-dashboard views */
+/** Page wrapper for non-dashboard views */
 function PageContainer({ children }: { children: ReactNode }) {
   return (
-    <div className="h-full overflow-y-auto">
-      <div className="max-w-7xl mx-auto px-6 py-6">{children}</div>
-    </div>
+    <div className="max-w-7xl mx-auto px-6 py-6">{children}</div>
   );
 }
 

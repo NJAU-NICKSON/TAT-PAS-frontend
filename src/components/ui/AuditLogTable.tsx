@@ -35,7 +35,7 @@ function ExpandedRow({ record }: { record: AuditRecord }) {
       </div>
       <div>
         <p className="text-label mb-1" style={{ color: 'var(--text-secondary)' }}>Flag Code</p>
-        <p className="text-mono" style={{ color: 'var(--text-primary)' }}>{record.flag_code ?? 'â€”'}</p>
+        <p className="text-mono" style={{ color: 'var(--text-primary)' }}>{record.flag_code ?? ' - '}</p>
       </div>
       {record.drug_name && (
         <div>
@@ -68,12 +68,12 @@ function ExpandedRow({ record }: { record: AuditRecord }) {
       {record.countersigned && (
         <div>
           <p className="text-label mb-1" style={{ color: 'var(--text-secondary)' }}>Countersigned By</p>
-          <p className="text-mono" style={{ color: 'var(--text-primary)' }}>{record.countersigned_by ?? 'â€”'}</p>
+          <p className="text-mono" style={{ color: 'var(--text-primary)' }}>{record.countersigned_by ?? ' - '}</p>
         </div>
       )}
       <div>
         <p className="text-label mb-1" style={{ color: 'var(--text-secondary)' }}>IP Address</p>
-        <p className="text-mono" style={{ color: 'var(--text-secondary)' }}>{record.ip_address ?? 'â€”'}</p>
+        <p className="text-mono" style={{ color: 'var(--text-secondary)' }}>{record.ip_address ?? ' - '}</p>
       </div>
     </div>
   );
@@ -224,7 +224,7 @@ export function AuditLogTable({ records, isLoading = false }: AuditLogTableProps
             <input
               value={filterActor}
               onChange={e => setFilterActor(e.target.value)}
-              placeholder="Role or IDâ€¦"
+              placeholder="Role or ID"
               className="text-body-sm border rounded-lg px-2 py-1.5 focus:outline-none w-32"
               style={{ borderColor: 'var(--border-default)', borderRadius: 'var(--radius-button)', background: 'var(--bg-card)' }}
             />
@@ -321,7 +321,7 @@ export function AuditLogTable({ records, isLoading = false }: AuditLogTableProps
                     {record.issue}
                   </td>
                   <td className="px-4 py-2.5 text-mono" style={{ color: 'var(--text-secondary)' }}>
-                    {record.resolution_type ?? 'â€”'}
+                    {record.resolution_type ?? ' - '}
                   </td>
                   <td className="px-4 py-2.5">
                     {record.resolved ? (

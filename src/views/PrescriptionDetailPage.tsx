@@ -13,7 +13,7 @@ import { cn } from '../lib/utils';
 import { toast } from 'sonner';
 
 function fmt(iso?: string): string {
-  if (!iso) return 'â€”';
+  if (!iso) return ' - ';
   return new Date(iso).toLocaleString('en-GB', {
     day: '2-digit', month: 'short', year: 'numeric',
     hour: '2-digit', minute: '2-digit',
@@ -21,7 +21,7 @@ function fmt(iso?: string): string {
 }
 
 function fmtTime(iso?: string): string {
-  if (!iso) return 'â€”';
+  if (!iso) return ' - ';
   return new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
 }
 
@@ -169,7 +169,7 @@ function buildTimeline(rx: Prescription, flags: AuditRecord[]): TimelineEntry[] 
       actorRole: 'nurse',
       time: rx.administered_at,
       note: rx.administered_dose
-        ? `${rx.administered_dose} via ${rx.administered_route ?? 'N/A'}${rx.administration_notes ? ` â€” ${rx.administration_notes}` : ''}`
+        ? `${rx.administered_dose} via ${rx.administered_route ?? 'N/A'}${rx.administration_notes ? `  -  ${rx.administration_notes}` : ''}`
         : undefined,
     });
   }
@@ -413,7 +413,7 @@ function DispenseModal({
             {rx.medications.map((med, i) => (
               <div key={i} className="text-xs">
                 <span className="font-semibold text-gray-800">{med.name}</span>
-                <span className="text-gray-500 ml-2">{med.dose} Â· {med.route} Â· {med.frequency} Â· {med.duration_days}d</span>
+                <span className="text-gray-500 ml-2">{med.dose} · {med.route} · {med.frequency} · {med.duration_days}d</span>
               </div>
             ))}
             <div className="border-t border-dashed border-gray-300 my-2" />
@@ -516,7 +516,7 @@ function AdministerModal({
         <div className="px-6 py-5 space-y-4">
           <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl text-sm text-blue-800">
             <span className="font-semibold">{rx.patient_name ?? 'Patient'}</span>
-            {' Â· '}
+            {' · '}
             {rx.medications.map(m => m.name).join(', ')}
           </div>
 
@@ -756,7 +756,7 @@ export default function PrescriptionDetailPage() {
 
   return (
     <div className="min-h-screen" style={{ background: '#F1F5F9' }}>
-      <div style={{ background: 'linear-gradient(135deg, #0F172A 0%, #1E3A5F 60%, #1D4ED8 100%)' }}>
+      <div style={{ background: 'linear-gradient(135deg, #0F172A 0%, #1E3A8A 60%, #2563EB 100%)' }}>
         <div className="px-6 py-5">
           <Link to="/prescriptions" className="inline-flex items-center gap-1.5 text-xs text-white/60 hover:text-white/90 mb-4 transition-colors">
             <ChevronLeft className="w-3.5 h-3.5" />
@@ -783,8 +783,8 @@ export default function PrescriptionDetailPage() {
               </div>
               <p className="text-sm text-white/70">
                 {rx.patient_name ?? rx.patient_id}
-                {rx.department ? ` Â· ${rx.department}` : ''}
-                {rx.ward_location ? ` Â· ${rx.ward_location}` : ''}
+                {rx.department ? ` · ${rx.department}` : ''}
+                {rx.ward_location ? ` · ${rx.ward_location}` : ''}
               </p>
             </div>
             {totalTat !== null && (
@@ -810,7 +810,7 @@ export default function PrescriptionDetailPage() {
               <div key={i} className="flex items-center gap-2 px-5 py-2.5 border-r border-white/10 flex-shrink-0">
                 <div>
                   <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.5)' }}>{actor!.label}</p>
-                  <p className="text-xs font-semibold text-white">{actor!.value ?? 'â€”'}</p>
+                  <p className="text-xs font-semibold text-white">{actor!.value ?? ' - '}</p>
                   {actor!.time && <p className="text-[10px]" style={{ color: actor!.color }}>{fmtTime(actor!.time)}</p>}
                 </div>
               </div>
@@ -833,7 +833,7 @@ export default function PrescriptionDetailPage() {
                   <ShieldCheck className="w-5 h-5" style={{ color: rx.status === 'flagged' ? '#EA580C' : '#9333EA' }} />
                   <div>
                     <p className="font-semibold text-sm" style={{ color: rx.status === 'flagged' ? '#7C2D12' : '#581C87' }}>
-                      {rx.status === 'flagged' ? 'Flagged â€” Review & Approve' : 'Awaiting Review'}
+                      {rx.status === 'flagged' ? 'Flagged  -  Review & Approve' : 'Awaiting Review'}
                     </p>
                     <p className="text-xs mt-0.5" style={{ color: rx.status === 'flagged' ? '#C2410C' : '#7E22CE' }}>
                       {rx.status === 'flagged'
@@ -903,7 +903,7 @@ export default function PrescriptionDetailPage() {
                   <div>
                     <p className="font-semibold text-emerald-900 text-sm">Ready to Dispense</p>
                     <p className="text-xs text-emerald-600 mt-0.5">
-                      {rx.auditor_name ? `Approved by auditor ${rx.auditor_name}` : 'Auditor-approved'} Â· Print receipt and dispense medications to patient or ward.
+                      {rx.auditor_name ? `Approved by auditor ${rx.auditor_name}` : 'Auditor-approved'} · Print receipt and dispense medications to patient or ward.
                     </p>
                   </div>
                 </div>
@@ -1005,8 +1005,8 @@ export default function PrescriptionDetailPage() {
                       {rx.administered_at && i === 0 && (
                         <div className="mt-3 pt-3 border-t border-gray-200 grid grid-cols-3 gap-4 text-sm">
                           {[
-                            { label: 'Actual Dose', value: rx.administered_dose ?? 'â€”' },
-                            { label: 'Actual Route', value: rx.administered_route ?? 'â€”' },
+                            { label: 'Actual Dose', value: rx.administered_dose ?? ' - ' },
+                            { label: 'Actual Route', value: rx.administered_route ?? ' - ' },
                             { label: 'Administered At', value: fmtTime(rx.administered_at) },
                           ].map(({ label, value }) => (
                             <div key={label}>
@@ -1057,13 +1057,13 @@ export default function PrescriptionDetailPage() {
                   )}
 
                   <div className="space-y-0">
-                    <TATRow label="Order â†’ Submit" from={rx.ordered_at ?? rx.created_at} to={rx.submitted_at} warnMin={15} />
-                    <TATRow label="Submit â†’ Audit Approval" from={rx.submitted_at} to={rx.auditor_approved_at ?? rx.verified_at} warnMin={20} />
+                    <TATRow label="Order ' Submit" from={rx.ordered_at ?? rx.created_at} to={rx.submitted_at} warnMin={15} />
+                    <TATRow label="Submit ' Audit Approval" from={rx.submitted_at} to={rx.auditor_approved_at ?? rx.verified_at} warnMin={20} />
                     {rx.returned_at && (
                       <TATRow label="Audit Hold (Amendment)" from={rx.submitted_at} to={rx.returned_at} warnMin={0} />
                     )}
-                    <TATRow label="Approval â†’ Dispense" from={rx.auditor_approved_at ?? rx.verified_at} to={rx.dispensed_at} warnMin={15} />
-                    <TATRow label="Dispense â†’ Administration" from={rx.dispensed_at} to={rx.administered_at} warnMin={30} />
+                    <TATRow label="Approval ' Dispense" from={rx.auditor_approved_at ?? rx.verified_at} to={rx.dispensed_at} warnMin={15} />
+                    <TATRow label="Dispense ' Administration" from={rx.dispensed_at} to={rx.administered_at} warnMin={30} />
                   </div>
 
                   {totalTat !== null && (
@@ -1077,7 +1077,7 @@ export default function PrescriptionDetailPage() {
 
                   {tatFromOrderToVerify !== null && (
                     <div className="flex items-center justify-between mt-2">
-                      <span className="text-sm text-gray-500">Order â†’ Audit Approval</span>
+                      <span className="text-sm text-gray-500">Order ' Audit Approval</span>
                       <span className={cn('text-sm font-bold tabular-nums', tatFromOrderToVerify > 30 ? 'text-red-600' : 'text-emerald-600')}>
                         {fmtDuration(tatFromOrderToVerify)}
                       </span>
@@ -1095,10 +1095,10 @@ export default function PrescriptionDetailPage() {
             <div className="space-y-3">
               {[
                 { label: 'Status', value: <StatusPill status={rx.status} /> },
-                { label: 'Rx Number', value: <span className="font-mono text-sm font-semibold">{rx.rx_number ?? 'â€”'}</span> },
-                { label: 'Priority', value: rx.priority ? <span className="capitalize text-sm font-semibold">{rx.priority}</span> : 'â€”' },
-                { label: 'Department', value: rx.department ?? 'â€”' },
-                { label: 'Ward', value: rx.ward_location ?? 'â€”' },
+                { label: 'Rx Number', value: <span className="font-mono text-sm font-semibold">{rx.rx_number ?? ' - '}</span> },
+                { label: 'Priority', value: rx.priority ? <span className="capitalize text-sm font-semibold">{rx.priority}</span> : ' - ' },
+                { label: 'Department', value: rx.department ?? ' - ' },
+                { label: 'Ward', value: rx.ward_location ?? ' - ' },
                 { label: 'Ordered', value: fmt(rx.ordered_at ?? rx.created_at) },
               ].map(({ label, value }) => (
                 <div key={label} className="flex items-center justify-between">

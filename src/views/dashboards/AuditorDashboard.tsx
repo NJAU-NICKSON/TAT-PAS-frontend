@@ -90,7 +90,7 @@ function ResolveModal({ flag, onSuccess, onClose }: ResolveModalProps) {
         <div className="flex items-center justify-between px-6 py-4 border-b" style={{ borderColor: 'var(--border-default)' }}>
           <h2 className="text-h3">Resolve Flag</h2>
           <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-[var(--bg-base)]" style={{ color: 'var(--text-muted)' }}>
-            âœ•
+            oe-
           </button>
         </div>
 
@@ -130,7 +130,7 @@ function ResolveModal({ flag, onSuccess, onClose }: ResolveModalProps) {
               value={note}
               onChange={e => setNote(e.target.value)}
               rows={4}
-              placeholder="Describe the clinical rationale for this resolutionâ€¦"
+              placeholder="Describe the clinical rationale for this resolution"
               className="w-full px-3 py-2.5 text-body-sm border rounded-xl resize-none focus:outline-none"
               style={{
                 borderColor: note.trim().length >= 20 ? 'var(--border-focus)' : 'var(--border-default)',
@@ -168,7 +168,7 @@ function ResolveModal({ flag, onSuccess, onClose }: ResolveModalProps) {
             style={{ background: 'var(--clinical-600)', borderRadius: 'var(--radius-button)' }}
           >
             {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
-            {isSubmitting ? 'Resolvingâ€¦' : 'Confirm Resolution'}
+            {isSubmitting ? 'Resolving' : 'Confirm Resolution'}
           </button>
         </div>
       </div>
@@ -338,7 +338,7 @@ function RxReviewRow({ rx, onApprove, onReturn, isActing }: RxReviewRowProps) {
 
         {rx.medications?.length > 0 && (
           <p className="text-meta mt-1 line-clamp-1" style={{ color: 'var(--text-muted)' }}>
-            {rx.medications.map(m => `${m.name} ${m.dose}`).join(' Â· ')}
+            {rx.medications.map(m => `${m.name} ${m.dose}`).join(' · ')}
           </p>
         )}
       </div>
@@ -407,12 +407,12 @@ function ReturnModal({ rx, onSuccess, onClose }: ReturnModalProps) {
             <ArrowLeftCircle className="w-5 h-5 text-amber-600" />
             <h2 className="text-h3">Return for Amendment</h2>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-[var(--bg-base)]" style={{ color: 'var(--text-muted)' }}>âœ•</button>
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-[var(--bg-base)]" style={{ color: 'var(--text-muted)' }}>oe-</button>
         </div>
 
         <div className="px-6 py-4 border-b" style={{ background: 'rgba(245,158,11,0.06)', borderColor: 'var(--border-default)' }}>
           <p className="text-body-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
-            {rx.rx_number ?? rx.id.slice(0, 8).toUpperCase()} â€” {rx.patient_name ?? 'Unknown Patient'}
+            {rx.rx_number ?? rx.id.slice(0, 8).toUpperCase()}  -  {rx.patient_name ?? 'Unknown Patient'}
           </p>
           <p className="text-meta mt-0.5" style={{ color: 'var(--text-muted)' }}>
             Prescribed by Dr. {rx.doctor_name ?? 'Unknown Doctor'}
@@ -599,7 +599,7 @@ export function AuditorDashboard() {
           <AlertTriangle className="w-4 h-4 text-white flex-shrink-0" />
           <span className="text-body-sm font-bold text-white">
             {stats.critical} high-severity flag{stats.critical !== 1 ? 's' : ''} require attention
-            {oldestFlag && ` â€” oldest: ${formatAge(oldestFlag.created_at)}`}
+            {oldestFlag && `  -  oldest: ${formatAge(oldestFlag.created_at)}`}
           </span>
           {stats.countersignPending > 0 && (
             <span

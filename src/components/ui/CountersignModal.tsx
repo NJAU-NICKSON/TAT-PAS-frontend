@@ -125,7 +125,7 @@ export function CountersignModal({ flag, onSuccess, onClose }: CountersignModalP
               onChange={e => setNote(e.target.value)}
               disabled={isSameUser || isSubmitting}
               rows={4}
-              placeholder="State your clinical assessment and attestation for this flagâ€¦"
+              placeholder="State your clinical assessment and attestation for this flag"
               className="w-full px-3 py-2.5 text-body-sm border rounded-xl resize-none focus:outline-none transition-colors disabled:opacity-50"
               style={{
                 borderColor: noteValid ? 'var(--border-focus)' : 'var(--border-default)',
@@ -166,7 +166,7 @@ export function CountersignModal({ flag, onSuccess, onClose }: CountersignModalP
             style={{ background: canSubmit ? 'var(--sla-breached)' : 'var(--text-muted)', borderRadius: 'var(--radius-button)' }}
           >
             {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
-            {isSubmitting ? 'Submittingâ€¦' : 'Countersign Flag'}
+            {isSubmitting ? 'Submitting' : 'Countersign Flag'}
           </button>
         </div>
       </div>

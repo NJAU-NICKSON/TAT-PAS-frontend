@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import {
   User, Calendar, Phone, Mail, Droplets, AlertCircle,
   Activity, Stethoscope, Pill, ArrowLeft, Clock, ChevronRight,
-  Loader2, MapPin,
+  Loader2, MapPin, Heart, Thermometer, Wind,
 } from 'lucide-react';
 import { patientsApi } from '../api/patients';
 import { prescriptionsApi } from '../api/prescriptions';
@@ -12,18 +12,18 @@ import { Patient, Prescription } from '../models/types';
 import { getSLAState, formatElapsed } from '../components/ui/SLAStatusBadge';
 
 function age(dob?: string): string {
-  if (!dob) return 'â€”';
+  if (!dob) return ' - ';
   const diff = Date.now() - new Date(dob).getTime();
   return `${Math.floor(diff / (365.25 * 24 * 3600 * 1000))} yrs`;
 }
 
 function fmtDate(iso?: string): string {
-  if (!iso) return 'â€”';
+  if (!iso) return ' - ';
   return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 function fmtDateTime(iso?: string): string {
-  if (!iso) return 'â€”';
+  if (!iso) return ' - ';
   return new Date(iso).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 }
 
@@ -54,6 +54,39 @@ const VISIT_STATUS_LABELS: Record<string, string> = {
   ready_for_discharge: 'Ready for Discharge', discharged: 'Discharged', cancelled: 'Cancelled',
 };
 
+function VitalsRow({ vitals }: { vitals: NonNullable<Visit['vitals']> }) {
+  const items = [
+    { icon: Heart,       label: 'BP',     value: vitals.blood_pressure_systolic && vitals.blood_pressure_diastolic ? `${vitals.blood_pressure_systolic}/${vitals.blood_pressure_diastolic}` : null, unit: 'mmHg' },
+    { icon: Thermometer, label: 'Temp',   value: vitals.temperature_celsius != null ? vitals.temperature_celsius.toFixed(1) : null, unit: '°C' },
+    { icon: Activity,    label: 'Pulse',  value: vitals.pulse_rate?.toString() ?? null, unit: 'bpm' },
+    { icon: Wind,        label: 'SpO2',   value: vitals.oxygen_saturation?.toString() ?? null, unit: '%' },
+    { icon: Activity,    label: 'RR',     value: vitals.respiratory_rate?.toString() ?? null, unit: '/min' },
+    { icon: User,        label: 'Wt',     value: vitals.weight_kg?.toString() ?? null, unit: 'kg' },
+  ].filter(i => i.value !== null);
+
+  if (items.length === 0) return null;
+
+  return (
+    <div className="flex flex-wrap gap-2 mt-2">
+      {items.map(({ icon: Icon, label, value, unit }) => (
+        <span
+          key={label}
+          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-caption font-semibold"
+          style={{ background: '#F0F9FF', color: '#0369A1', border: '1px solid #BAE6FD' }}
+        >
+          <Icon className="w-3 h-3" />
+          {label}: {value} {unit}
+        </span>
+      ))}
+      {vitals.triage_notes && (
+        <span className="text-caption italic w-full mt-0.5" style={{ color: 'var(--text-muted)' }}>
+          &quot;{vitals.triage_notes}&quot;
+        </span>
+      )}
+    </div>
+  );
+}
+
 function Section({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) {
   return (
     <div className="rounded-xl overflow-hidden" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-default)', boxShadow: 'var(--shadow-card)' }}>
@@ -70,7 +103,7 @@ function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex items-start gap-3 py-2.5 px-5" style={{ borderBottom: '1px solid var(--border-default)' }}>
       <span className="text-caption font-semibold uppercase tracking-wider w-32 flex-shrink-0 pt-0.5" style={{ color: 'var(--text-muted)' }}>{label}</span>
-      <span className="text-body-sm flex-1" style={{ color: 'var(--text-primary)' }}>{value || 'â€”'}</span>
+      <span className="text-body-sm flex-1" style={{ color: 'var(--text-primary)' }}>{value || ' - '}</span>
     </div>
   );
 }
@@ -179,8 +212,8 @@ export default function PatientDetailPage() {
 
           <div className="flex flex-wrap gap-x-5 gap-y-1 mt-3">
             {[
-              { icon: Calendar, label: patient.dob ? `${fmtDate(patient.dob)} (${age(patient.dob)})` : 'â€”' },
-              { icon: User,     label: patient.gender ?? 'â€”' },
+              { icon: Calendar, label: patient.dob ? `${fmtDate(patient.dob)} (${age(patient.dob)})` : ' - ' },
+              { icon: User,     label: patient.gender ?? ' - ' },
               patient.contact?.phone && { icon: Phone, label: patient.contact.phone },
               patient.contact?.email && { icon: Mail,  label: patient.contact.email },
             ].filter(Boolean).map((item, i) => {
@@ -207,7 +240,7 @@ export default function PatientDetailPage() {
             <div>
               <InfoRow label="Full name"  value={fullName} />
               <InfoRow label="MRN"        value={<span className="font-mono">{patient.mrn}</span>} />
-              <InfoRow label="Date of birth" value={patient.dob ? `${fmtDate(patient.dob)} (${age(patient.dob)})` : 'â€”'} />
+              <InfoRow label="Date of birth" value={patient.dob ? `${fmtDate(patient.dob)} (${age(patient.dob)})` : ' - '} />
               <InfoRow label="Gender"     value={patient.gender} />
               <InfoRow label="Blood group" value={patient.blood_group} />
               <InfoRow label="Phone"      value={patient.contact?.phone} />
@@ -281,7 +314,7 @@ export default function PatientDetailPage() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-mono text-caption font-semibold" style={{ color: 'var(--text-secondary)' }}>
-                            {rx.rx_number ?? rx.id.slice(0, 8) + 'â€¦'}
+                            {rx.rx_number ?? rx.id.slice(0, 8) + ''}
                           </span>
                           <span className="text-caption font-bold px-2 py-0.5 rounded-full" style={{ background: s.bg, color: s.color, border: `1px solid ${s.border}` }}>
                             {rx.status}
@@ -360,19 +393,20 @@ export default function PatientDetailPage() {
                           </span>
                         </div>
                         <p className="text-caption mt-0.5 capitalize" style={{ color: 'var(--text-secondary)' }}>
-                          {v.visit_type.replace(/_/g, ' ')} {v.chief_complaint ? `â€¢ ${v.chief_complaint}` : ''}
+                          {v.visit_type.replace(/_/g, ' ')} {v.chief_complaint ? ` ${v.chief_complaint}` : ''}
                         </p>
                         <div className="flex items-center gap-1.5 mt-1" style={{ color: 'var(--text-muted)' }}>
                           <Calendar className="w-3 h-3" />
                           <span className="text-caption">{fmtDateTime(v.registered_at)}</span>
                           {v.ward_name && (
                             <>
-                              <span className="text-meta">â€¢</span>
+                              <span className="text-meta">·</span>
                               <MapPin className="w-3 h-3" />
                               <span className="text-caption">{v.ward_name}</span>
                             </>
                           )}
                         </div>
+                        {v.vitals && <VitalsRow vitals={v.vitals} />}
                       </div>
                       <ChevronRight className="w-4 h-4 flex-shrink-0 mt-1" style={{ color: 'var(--text-muted)' }} />
                     </Link>

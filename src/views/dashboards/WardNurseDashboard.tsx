@@ -67,7 +67,7 @@ function AdministerModal({
             {rx.patient_name ?? rx.patient_id}
           </p>
           <p className="text-meta mt-0.5" style={{ color: '#3B82F6' }}>
-            {rx.medications.map(m => `${m.name} ${m.dose}`).join(' Â· ')}
+            {rx.medications.map(m => `${m.name} ${m.dose}`).join(' · ')}
           </p>
           {rx.dispensed_by_name && (
             <p className="text-meta mt-0.5" style={{ color: '#6B7280' }}>
@@ -314,7 +314,7 @@ export function WardNurseDashboard() {
     <div className="flex flex-col h-full overflow-hidden">
       <div
         style={{
-          background: 'linear-gradient(135deg, #0F172A 0%, #701A75 60%, #A21CAF 100%)',
+          background: 'linear-gradient(135deg, #0F172A 0%, #1E3A8A 60%, #2563EB 100%)',
           borderBottom: '1px solid rgba(255,255,255,0.06)',
         }}
       >
@@ -344,7 +344,7 @@ export function WardNurseDashboard() {
       >
         <StatCard
           label="Pending Triage"
-          value={isLoading ? 'â€”' : triageQueue.length}
+          value={isLoading ? ' - ' : triageQueue.length}
           icon={Thermometer}
           accentColor="#7C3AED"
           accentBg="rgba(124,58,237,0.10)"
@@ -352,7 +352,7 @@ export function WardNurseDashboard() {
         />
         <StatCard
           label="Pending Admin"
-          value={isLoading ? 'â€”' : dispensedRx.length}
+          value={isLoading ? ' - ' : dispensedRx.length}
           icon={Syringe}
           accentColor="#DC2626"
           accentBg="rgba(220,38,38,0.10)"
@@ -360,14 +360,14 @@ export function WardNurseDashboard() {
         />
         <StatCard
           label="Available Beds"
-          value={isLoading ? 'â€”' : availableBeds}
+          value={isLoading ? ' - ' : availableBeds}
           icon={BedDouble}
           accentColor="#059669"
           accentBg="rgba(5,150,105,0.10)"
         />
         <StatCard
           label="Occupied Beds"
-          value={isLoading ? 'â€”' : occupiedBeds}
+          value={isLoading ? ' - ' : occupiedBeds}
           icon={Clock}
           accentColor="#2563EB"
           accentBg="rgba(37,99,235,0.10)"
@@ -431,7 +431,7 @@ export function WardNurseDashboard() {
                       {v.patient_name ?? 'Unknown Patient'}
                     </p>
                     <p className="text-caption truncate mb-2" style={{ color: 'var(--text-muted)' }}>
-                      {v.visit_number} Â· {v.department_id}
+                      {v.visit_number} · {v.department_id}
                     </p>
                     <div className="flex items-center justify-between gap-2">
                       <TATTimer startTime={v.registered_at} slaThresholdMin={10} mode="elapsed" size="sm" />
@@ -506,7 +506,7 @@ export function WardNurseDashboard() {
                           className="text-mono"
                           style={{ color: 'var(--text-muted)' }}
                         >
-                          {rx.rx_number ?? rx.id.slice(0, 8) + 'â€¦'}
+                          {rx.rx_number ?? rx.id.slice(0, 8) + ''}
                         </span>
                         <StatusBadge status={rx.status} size="sm" />
                       </div>
@@ -516,7 +516,7 @@ export function WardNurseDashboard() {
                           className="text-body-sm mt-1 truncate"
                           style={{ color: 'var(--text-secondary)' }}
                         >
-                          {rx.medications.map((m) => `${m.name} ${m.dose}`).join(' Â· ')}
+                          {rx.medications.map((m) => `${m.name} ${m.dose}`).join(' · ')}
                         </p>
                       )}
 
@@ -557,7 +557,7 @@ export function WardNurseDashboard() {
           <div className="px-4 pt-5 pb-3 border-b" style={{ borderColor: 'var(--border-default)' }}>
             <p className="text-caption font-bold uppercase tracking-wider mb-1" style={{ color: 'var(--text-muted)' }}>Bed Grid</p>
             <p className="text-body-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
-              {beds.length} beds Â· {availableBeds} available
+              {beds.length} beds · {availableBeds} available
             </p>
             <div className="flex items-center gap-3 mt-2">
               {[

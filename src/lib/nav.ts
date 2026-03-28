@@ -28,7 +28,7 @@ export type NavGroup = {
 };
 
 // Ordered by patient journey flow:
-// Registration → Visit Check-in → Triage (rooms/ward) → Consultation → Prescriptions → Audit → Billing → Admin
+// Registration -> Visit Check-in -> Triage (rooms/ward) -> Consultation -> Prescriptions -> Audit -> Billing -> Admin
 const allNavItems: NavItem[] = [
   { id: 'dashboard',          label: 'Dashboard',          path: '/dashboard',          icon: NAV_ICONS.dashboard,     roles: ['receptionist', 'nurse', 'doctor', 'pharmacist', 'billing', 'auditor', 'admin'] },
   { id: 'patients',           label: 'Patients',           path: '/patients',           icon: NAV_ICONS.patients,      roles: ['receptionist', 'admin', 'doctor', 'nurse'] },

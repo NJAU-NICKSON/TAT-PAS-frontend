@@ -47,7 +47,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <Sidebar />
       <div className="flex flex-col flex-1 min-w-0" style={{ marginLeft: '248px' }}>
         <TopBar breadcrumbs={breadcrumbs} />
-        <main className="flex-1 overflow-hidden h-full">
+        <main className="flex-1 overflow-y-auto">
           {children}
         </main>
       </div>

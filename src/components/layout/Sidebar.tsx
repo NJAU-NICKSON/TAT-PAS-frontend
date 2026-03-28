@@ -1,5 +1,5 @@
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Cross, LogOut, Settings } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
+import { Cross } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useWebSocket } from '../../context/WebSocketContext';
 import { getNavigationForRole } from '../../lib/nav';
@@ -29,10 +29,9 @@ function initials(name: string): string {
 }
 
 export function Sidebar() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const { connected } = useWebSocket();
   const location = useLocation();
-  const navigate = useNavigate();
 
   if (!user) return null;
 
@@ -41,11 +40,6 @@ export function Sidebar() {
     location.pathname === path || (path !== '/dashboard' && location.pathname.startsWith(`${path}/`));
 
   const roleColor = ROLE_COLOR[user.role] ?? '#64748B';
-
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
 
   return (
     <aside
@@ -125,27 +119,6 @@ export function Sidebar() {
         ))}
       </nav>
 
-      <div className="px-3 pb-2 space-y-0.5" style={{ borderTop: '1px solid #1F2937', paddingTop: '8px' }}>
-        <Link to="/settings"
-          className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all"
-          style={{ color: '#6B7280' }}
-          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#1F2937'; (e.currentTarget as HTMLElement).style.color = '#E5E7EB'; }}
-          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; (e.currentTarget as HTMLElement).style.color = '#6B7280'; }}
-        >
-          <Settings className="w-4 h-4 flex-shrink-0 text-gray-500" />
-          Settings
-        </Link>
-        <button
-          onClick={handleLogout}
-          className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium w-full text-left transition-all"
-          style={{ color: '#6B7280' }}
-          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#2D1515'; (e.currentTarget as HTMLElement).style.color = '#FCA5A5'; }}
-          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; (e.currentTarget as HTMLElement).style.color = '#6B7280'; }}
-        >
-          <LogOut className="w-4 h-4 flex-shrink-0" />
-          Sign Out
-        </button>
-      </div>
 
       <div className="flex items-center gap-3 px-4 py-3 flex-shrink-0"
         style={{ borderTop: '1px solid #1F2937', background: '#0D1117' }}>

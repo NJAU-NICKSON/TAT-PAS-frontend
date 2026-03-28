@@ -96,11 +96,11 @@ function PatientCard({ visit, onClick }: { visit: Visit; onClick: () => void }) 
 
           <div className="flex items-center gap-3 flex-wrap">
             <span className="text-xs text-gray-400 font-mono">#{visit.visit_number}</span>
-            <span className="text-xs text-gray-400">Â·</span>
+            <span className="text-xs text-gray-400">·</span>
             <span className="text-xs text-gray-500">{VISIT_TYPE_LABEL[visit.visit_type] ?? visit.visit_type}</span>
             {visit.chief_complaint && (
               <>
-                <span className="text-xs text-gray-400">Â·</span>
+                <span className="text-xs text-gray-400">·</span>
                 <span className="text-xs text-gray-600 truncate max-w-[200px]">{visit.chief_complaint}</span>
               </>
             )}
@@ -148,9 +148,9 @@ function CompletedCard({ visit }: { visit: Visit }) {
           </div>
           <div className="flex items-center gap-2 text-xs text-gray-400">
             <span className="font-mono">#{visit.visit_number}</span>
-            {visit.triage_nurse_name && <><span>Â·</span><span>by {visit.triage_nurse_name}</span></>}
+            {visit.triage_nurse_name && <><span>·</span><span>by {visit.triage_nurse_name}</span></>}
             {visit.triaged_at && (
-              <><span>Â·</span><span>{new Date(visit.triaged_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</span></>
+              <><span>·</span><span>{new Date(visit.triaged_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</span></>
             )}
           </div>
         </div>
@@ -246,7 +246,7 @@ export default function TriageQueuePage() {
 
   return (
     <div className="min-h-screen" style={{ background: '#F1F5F9' }}>
-      <div style={{ background: 'linear-gradient(135deg, #0F172A 0%, #1E3A5F 60%, #D97706 100%)' }}>
+      <div style={{ background: 'linear-gradient(135deg, #0F172A 0%, #1E3A8A 60%, #2563EB 100%)' }}>
         <div className="max-w-4xl mx-auto px-6 py-6">
           <div className="flex items-center justify-between gap-4 flex-wrap">
             <div className="flex items-center gap-3">
@@ -259,10 +259,10 @@ export default function TriageQueuePage() {
               <div>
                 <h1 className="text-2xl font-bold text-white">Triage Queue</h1>
                 <p className="text-sm" style={{ color: 'rgba(255,255,255,0.6)' }}>
-                  {loading ? 'Loadingâ€¦' : `${pending.length} patient${pending.length !== 1 ? 's' : ''} awaiting triage`}
+                  {loading ? 'Loading' : `${pending.length} patient${pending.length !== 1 ? 's' : ''} awaiting triage`}
                   {breachedCount > 0 && (
                     <span className="ml-2 font-bold text-red-300">
-                      Â· {breachedCount} overdue
+                      · {breachedCount} overdue
                     </span>
                   )}
                 </p>
@@ -305,7 +305,7 @@ export default function TriageQueuePage() {
           <Search className="w-4 h-4 text-gray-400 flex-shrink-0" />
           <input
             type="text"
-            placeholder="Search by patient name, visit number, or complaintâ€¦"
+            placeholder="Search by patient name, visit number, or complaint"
             value={search}
             onChange={e => setSearch(e.target.value)}
             className="flex-1 text-sm text-gray-800 bg-transparent outline-none placeholder:text-gray-400"

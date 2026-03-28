@@ -28,14 +28,14 @@ const ROUTE_OPTIONS = [
 ];
 
 const FREQ_OPTIONS = [
-  { value: 'OD',     label: 'OD â€” Once Daily' },
-  { value: 'BD',     label: 'BD â€” Twice Daily' },
-  { value: 'TDS',    label: 'TDS â€” Three Times Daily' },
-  { value: 'QDS',    label: 'QDS â€” Four Times Daily' },
-  { value: 'mane',   label: 'Mane â€” Morning' },
-  { value: 'nocte',  label: 'Nocte â€” At Night' },
-  { value: 'PRN',    label: 'PRN â€” As Needed' },
-  { value: 'STAT',   label: 'STAT â€” Immediately' },
+  { value: 'OD',     label: 'OD  -  Once Daily' },
+  { value: 'BD',     label: 'BD  -  Twice Daily' },
+  { value: 'TDS',    label: 'TDS  -  Three Times Daily' },
+  { value: 'QDS',    label: 'QDS  -  Four Times Daily' },
+  { value: 'mane',   label: 'Mane  -  Morning' },
+  { value: 'nocte',  label: 'Nocte  -  At Night' },
+  { value: 'PRN',    label: 'PRN  -  As Needed' },
+  { value: 'STAT',   label: 'STAT  -  Immediately' },
   { value: 'weekly', label: 'Weekly' },
 ];
 
@@ -157,7 +157,7 @@ function RoomPickerModal({
                           {room.room_name}
                         </p>
                         <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                          Room {room.room_number}{room.floor ? ` Â· Floor ${room.floor}` : ''}
+                          Room {room.room_number}{room.floor ? ` · Floor ${room.floor}` : ''}
                         </p>
                       </div>
                       <span
@@ -182,7 +182,7 @@ function RoomPickerModal({
               className="px-4 py-2 rounded-lg text-sm font-semibold border hover:bg-[var(--bg-base)] transition-colors"
               style={{ color: 'var(--text-secondary)', borderColor: 'var(--border-default)' }}
             >
-              Skip â€” No Room
+              Skip  -  No Room
             </button>
             <button
               onClick={() => {
@@ -375,9 +375,9 @@ function VitalsBar({ vitals }: { vitals: Visit['vitals'] }) {
 
   const items = [
     { Icon: Heart,       label: 'BP',     value: vitals.blood_pressure_systolic && vitals.blood_pressure_diastolic ? `${vitals.blood_pressure_systolic}/${vitals.blood_pressure_diastolic}` : null, unit: 'mmHg' },
-    { Icon: Thermometer, label: 'Temp',   value: vitals.temperature_celsius != null ? vitals.temperature_celsius.toFixed(1) : null, unit: 'Â°C' },
+    { Icon: Thermometer, label: 'Temp',   value: vitals.temperature_celsius != null ? vitals.temperature_celsius.toFixed(1) : null, unit: '°C' },
     { Icon: Activity,    label: 'Pulse',  value: vitals.pulse_rate ?? null, unit: 'bpm' },
-    { Icon: Wind,        label: 'Oâ‚‚ Sat', value: vitals.oxygen_saturation ?? null, unit: '%' },
+    { Icon: Wind,        label: 'O,, Sat', value: vitals.oxygen_saturation ?? null, unit: '%' },
     { Icon: Wind,        label: 'RR',     value: vitals.respiratory_rate ?? null, unit: '/min' },
     { Icon: User,        label: 'Wt',     value: vitals.weight_kg ?? null, unit: 'kg' },
   ].filter(i => i.value !== null);
@@ -432,7 +432,7 @@ function MedRow({
         <div className="flex items-center gap-2">
           {isHighDose && (
             <span className="flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: '#FEF3C7', color: '#92400E' }}>
-              <AlertTriangle className="w-3 h-3" /> High Dose â€” will flag for audit
+              <AlertTriangle className="w-3 h-3" /> High Dose  -  will flag for audit
             </span>
           )}
           {showRemove && (
@@ -472,14 +472,14 @@ function MedRow({
         <div>
           <Lbl required>Route</Lbl>
           <select className={inp} style={inpStyle} value={med.route} onChange={e => onChange(index, 'route', e.target.value)}>
-            <option value="">Selectâ€¦</option>
+            <option value="">Select</option>
             {ROUTE_OPTIONS.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
           </select>
         </div>
         <div>
           <Lbl required>Frequency</Lbl>
           <select className={inp} style={inpStyle} value={med.frequency} onChange={e => onChange(index, 'frequency', e.target.value)}>
-            <option value="">Selectâ€¦</option>
+            <option value="">Select</option>
             {FREQ_OPTIONS.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
           </select>
         </div>
@@ -503,19 +503,19 @@ const NEXT_OPTIONS: { value: NextStatus; label: string; desc: string; color: str
   {
     value: 'treatment_in_progress',
     label: 'Treatment in Progress',
-    desc: 'Prescription sent to pharmacy â€” patient receives medication on-site.',
+    desc: 'Prescription sent to pharmacy  -  patient receives medication on-site.',
     color: '#059669',
   },
   {
     value: 'awaiting_results',
     label: 'Awaiting Lab / Radiology Results',
-    desc: 'Investigations ordered â€” patient stays until results are reviewed.',
+    desc: 'Investigations ordered  -  patient stays until results are reviewed.',
     color: '#D97706',
   },
   {
     value: 'ready_for_discharge',
     label: 'Ready for Discharge',
-    desc: 'Consultation complete â€” patient may be discharged with instructions.',
+    desc: 'Consultation complete  -  patient may be discharged with instructions.',
     color: '#7C3AED',
   },
 ];
@@ -592,7 +592,7 @@ function CompleteModal({
               className="flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold text-white hover:opacity-90 disabled:opacity-60"
               style={{ background: chosen.color }}
             >
-              {completing ? 'Processingâ€¦' : 'Complete Consultation'}
+              {completing ? 'Processing' : 'Complete Consultation'}
               {!completing && <ArrowRightCircle className="w-4 h-4" />}
             </button>
           </div>
@@ -724,7 +724,7 @@ export default function ConsultationRoom() {
         setActiveVisit(updated.data);
         setAllVisits(prev => prev.map(v => v.id === visit.id ? updated.data : v));
       } catch {
-        // non-critical â€” status update failure doesn't block consultation
+        // non-critical  -  status update failure doesn't block consultation
       }
     }
 
@@ -955,7 +955,7 @@ export default function ConsultationRoom() {
                           MRN: <strong style={{ color: 'var(--text-primary)' }}>{patient.mrn}</strong>
                         </span>
                         <span className="text-body-sm" style={{ color: 'var(--text-muted)' }}>
-                          {calcAge(patient.dob)} Â· {patient.gender ?? '?'} Â· {patient.blood_group ?? 'Unknown blood group'}
+                          {calcAge(patient.dob)} · {patient.gender ?? '?'} · {patient.blood_group ?? 'Unknown blood group'}
                         </span>
                         {patient.weight && (
                           <span className="text-body-sm" style={{ color: 'var(--text-muted)' }}>
@@ -964,10 +964,10 @@ export default function ConsultationRoom() {
                         )}
                       </>
                     ) : (
-                      <span className="text-body-sm animate-pulse" style={{ color: 'var(--text-muted)' }}>Loading patientâ€¦</span>
+                      <span className="text-body-sm animate-pulse" style={{ color: 'var(--text-muted)' }}>Loading patient</span>
                     )}
                     <span className="text-body-sm" style={{ color: 'var(--text-muted)' }}>
-                      {activeVisit.visit_number} Â· {activeVisit.visit_type.toUpperCase()}
+                      {activeVisit.visit_number} · {activeVisit.visit_type.toUpperCase()}
                     </span>
                   </div>
                 </div>
@@ -1043,7 +1043,7 @@ export default function ConsultationRoom() {
                   <Lbl>Clinical Findings</Lbl>
                   <textarea
                     rows={3} className={inp} style={{ ...inpStyle, resize: 'vertical' }}
-                    placeholder="Physical examination findings, observations, test results reviewedâ€¦"
+                    placeholder="Physical examination findings, observations, test results reviewed"
                     value={note.clinical_findings}
                     onChange={e => { setNote(n => ({ ...n, clinical_findings: e.target.value })); setNoteSaved(false); }}
                   />
@@ -1061,7 +1061,7 @@ export default function ConsultationRoom() {
                   <Lbl>Plan of Care</Lbl>
                   <textarea
                     rows={2} className={inp} style={{ ...inpStyle, resize: 'vertical' }}
-                    placeholder="Management plan, investigations ordered, referrals, proceduresâ€¦"
+                    placeholder="Management plan, investigations ordered, referrals, procedures"
                     value={note.plan_of_care}
                     onChange={e => { setNote(n => ({ ...n, plan_of_care: e.target.value })); setNoteSaved(false); }}
                   />
@@ -1091,7 +1091,7 @@ export default function ConsultationRoom() {
                     className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white hover:opacity-90 disabled:opacity-60"
                     style={{ background: '#2563EB' }}
                   >
-                    {noteSaving ? 'Savingâ€¦' : 'Save Notes'}
+                    {noteSaving ? 'Saving' : 'Save Notes'}
                   </button>
                 </div>
               </div>
@@ -1158,7 +1158,7 @@ export default function ConsultationRoom() {
                   <Lbl>Notes for Pharmacist</Lbl>
                   <input
                     className={inp} style={inpStyle}
-                    placeholder="Special dispensing instructions, substitution notesâ€¦ (optional)"
+                    placeholder="Special dispensing instructions, substitution notes (optional)"
                     value={rxNotes}
                     onChange={e => setRxNotes(e.target.value)}
                   />
@@ -1172,9 +1172,9 @@ export default function ConsultationRoom() {
                     style={{ background: '#059669' }}
                   >
                     {rxSubmitting
-                      ? 'Submittingâ€¦'
+                      ? 'Submitting'
                       : rxSubmitted
-                        ? 'âœ“ Prescription Sent'
+                        ? 'oe" Prescription Sent'
                         : (<><Pill className="w-4 h-4" /> Submit to Pharmacy</>)
                     }
                   </button>

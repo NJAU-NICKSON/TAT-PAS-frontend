@@ -136,7 +136,7 @@ export function PrescriptionCard({
         
         <div className="flex items-center gap-2 text-body-sm text-text-muted">
           <span>{prescription.doctor_name}</span>
-          <span>â€¢</span>
+          <span></span>
           <span>{prescription.department}</span>
         </div>
       </div>

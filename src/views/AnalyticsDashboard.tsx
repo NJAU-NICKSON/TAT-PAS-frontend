@@ -84,9 +84,9 @@ export default function AnalyticsDashboard() {
 
   /* Build stage chart data */
   const stageData = vm.metrics ? [
-    { stage: 'Order â†’ Verify',   minutes: Math.round(vm.metrics.average_order_to_verify_minutes ?? 0) },
-    { stage: 'Verify â†’ Dispense', minutes: Math.round(vm.metrics.average_verify_to_dispense_minutes ?? 0) },
-    { stage: 'Dispense â†’ Admin',  minutes: Math.round(vm.metrics.average_dispense_to_administer_minutes ?? 0) },
+    { stage: 'Order -> Verify',   minutes: Math.round(vm.metrics.average_order_to_verify_minutes ?? 0) },
+    { stage: 'Verify -> Dispense', minutes: Math.round(vm.metrics.average_verify_to_dispense_minutes ?? 0) },
+    { stage: 'Dispense -> Admin',  minutes: Math.round(vm.metrics.average_dispense_to_administer_minutes ?? 0) },
   ] : [];
 
   /* Simulated daily-trend area from slowest prescriptions (last 7) */
@@ -112,7 +112,7 @@ export default function AnalyticsDashboard() {
     <div className="flex flex-col h-full overflow-hidden">
       <div
         style={{
-          background: 'linear-gradient(135deg, #0F172A 0%, #1E3A5F 60%, #1D4ED8 100%)',
+          background: 'linear-gradient(135deg, #0F172A 0%, #1E3A8A 60%, #2563EB 100%)',
           borderBottom: '1px solid rgba(255,255,255,0.06)',
           flexShrink: 0,
         }}
@@ -237,7 +237,7 @@ export default function AnalyticsDashboard() {
             {vm.isLoading && (
               <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm" style={{ background: 'rgba(37,99,235,0.08)', border: '1px solid rgba(37,99,235,0.15)', color: '#2563EB' }}>
                 <Loader2 className="w-4 h-4 animate-spin flex-shrink-0" />
-                Refreshing analytics data…
+                Refreshing analytics data...
               </div>
             )}
 
@@ -374,9 +374,9 @@ export default function AnalyticsDashboard() {
                 </div>
                 <div className="grid grid-cols-3 gap-3">
                   {[
-                    { label: 'Order â†’ Verify',    val: vm.metrics.average_order_to_verify_minutes,          color: '#2563EB' },
-                    { label: 'Verify â†’ Dispense', val: vm.metrics.average_verify_to_dispense_minutes,        color: '#059669' },
-                    { label: 'Dispense â†’ Admin',  val: vm.metrics.average_dispense_to_administer_minutes,    color: '#D97706' },
+                    { label: 'Order -> Verify',    val: vm.metrics.average_order_to_verify_minutes,          color: '#2563EB' },
+                    { label: 'Verify -> Dispense', val: vm.metrics.average_verify_to_dispense_minutes,        color: '#059669' },
+                    { label: 'Dispense -> Admin',  val: vm.metrics.average_dispense_to_administer_minutes,    color: '#D97706' },
                   ].map(({ label, val, color }) => (
                     <div key={label} className="rounded-xl p-3 text-center" style={{ background: `${color}10`, border: `1px solid ${color}30` }}>
                       <p className="text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color }}>{label}</p>
@@ -389,9 +389,9 @@ export default function AnalyticsDashboard() {
 
             {vm.bottlenecks && (() => {
               const stages = [
-                { label: 'Audit / Verification Queue', key: 'verification_queue' as const, color: '#2563EB', desc: 'Submit → Verify' },
-                { label: 'Dispensing Queue',            key: 'dispensing_queue'    as const, color: '#059669', desc: 'Verify → Dispense' },
-                { label: 'Administration Queue',        key: 'administration_queue' as const, color: '#D97706', desc: 'Dispense → Administer' },
+                { label: 'Audit / Verification Queue', key: 'verification_queue' as const, color: '#2563EB', desc: 'Submit -> Verify' },
+                { label: 'Dispensing Queue',            key: 'dispensing_queue'    as const, color: '#059669', desc: 'Verify -> Dispense' },
+                { label: 'Administration Queue',        key: 'administration_queue' as const, color: '#D97706', desc: 'Dispense -> Administer' },
               ].map(s => ({ ...s, avg: vm.bottlenecks![s.key].avg, p95: vm.bottlenecks![s.key].p95, count: vm.bottlenecks![s.key].count }))
                .sort((a, b) => b.avg - a.avg);
 
@@ -407,7 +407,7 @@ export default function AnalyticsDashboard() {
                       <div>
                         <h2 className="text-body font-semibold" style={{ color: 'var(--text-primary)' }}>Bottleneck Analysis</h2>
                         <p className="text-caption" style={{ color: 'var(--text-muted)' }}>
-                          Primary bottleneck: <strong style={{ color: '#DC2626' }}>{topBottleneck.label}</strong> — avg {formatMinutes(topBottleneck.avg)}
+                          Primary bottleneck: <strong style={{ color: '#DC2626' }}>{topBottleneck.label}</strong> - avg {formatMinutes(topBottleneck.avg)}
                         </p>
                       </div>
                     </div>
@@ -424,7 +424,7 @@ export default function AnalyticsDashboard() {
                       >
                         <div className="flex items-center justify-between mb-1">
                           <p className="text-caption font-semibold" style={{ color: i === 0 ? '#DC2626' : 'var(--text-secondary)' }}>
-                            {i === 0 && '⚠ '}{s.label}
+                            {i === 0 && ' '}{s.label}
                           </p>
                           {i === 0 && (
                             <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: '#DC2626', color: 'white' }}>

@@ -8,8 +8,8 @@ import { Patient } from '../models/types';
 import { toast } from 'sonner';
 
 const VISIT_TYPES: { value: VisitType; label: string }[] = [
-  { value: 'opd',          label: 'OPD â€” Outpatient'       },
-  { value: 'ipd',          label: 'IPD â€” Inpatient'         },
+  { value: 'opd',          label: 'OPD  -  Outpatient'       },
+  { value: 'ipd',          label: 'IPD  -  Inpatient'         },
   { value: 'emergency',    label: 'Emergency'               },
   { value: 'day_surgery',  label: 'Day Surgery'             },
   { value: 'maternity',    label: 'Maternity'               },
@@ -89,7 +89,7 @@ function PatientSearch({
       const res = await patientsApi.search(q, 0, 8);
       const items: Patient[] = res.data.patients ?? [];
       if (items.length === 1) {
-        // Single result â€” auto-select immediately (MRN lookups always return 1)
+        // Single result  -  auto-select immediately (MRN lookups always return 1)
         setQuery(`${items[0].first_name} ${items[0].last_name}`);
         doSelect(items[0]);
       } else if (items.length > 1) {
@@ -153,7 +153,7 @@ function PatientSearch({
           onKeyDown={handleKeyDown}
           className={`${inputCls} pl-9`}
           style={inputStyle}
-          placeholder="Search by name or MRNâ€¦"
+          placeholder="Search by name or MRN"
           autoFocus
         />
         {searching && (
@@ -268,7 +268,7 @@ function NewVisitModal({ departments, onSave, onClose }: {
               </Field>
               <Field label="Department" required>
                 <select value={form.department_id ?? ''} onChange={e => set('department_id', e.target.value)} className={inputCls} style={inputStyle} required>
-                  <option value="">Select departmentâ€¦</option>
+                  <option value="">Select department</option>
                   {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
                 </select>
               </Field>
@@ -301,7 +301,7 @@ function NewVisitModal({ departments, onSave, onClose }: {
                 className={inputCls}
                 style={{ ...inputStyle, resize: 'none' }}
                 rows={2}
-                placeholder="Brief description of the patient's complaintâ€¦"
+                placeholder="Brief description of the patient's complaint"
               />
             </Field>
           </div>
@@ -311,7 +311,7 @@ function NewVisitModal({ departments, onSave, onClose }: {
               Cancel
             </button>
             <button type="submit" disabled={saving} className="px-5 py-2 rounded-lg text-body-sm font-semibold text-white hover:opacity-90 disabled:opacity-60" style={{ background: 'var(--clinical-600)' }}>
-              {saving ? 'Registeringâ€¦' : 'Register Visit'}
+              {saving ? 'Registering' : 'Register Visit'}
             </button>
           </div>
         </form>
@@ -364,7 +364,7 @@ export default function VisitManagement() {
         <div>
           <h1 className="text-h1" style={{ color: 'var(--text-primary)' }}>Visit Management</h1>
           <p className="text-body-sm mt-0.5" style={{ color: 'var(--text-muted)' }}>
-            {visits.filter(v => activeStatuses.includes(v.status)).length} active Â· {visits.length} total
+            {visits.filter(v => activeStatuses.includes(v.status)).length} active · {visits.length} total
           </p>
         </div>
         <div className="flex items-center gap-2">

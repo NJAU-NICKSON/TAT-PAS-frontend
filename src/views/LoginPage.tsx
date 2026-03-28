@@ -76,7 +76,7 @@ export default function LoginPage() {
         </div>
 
         <p className="text-meta" style={{ color: 'rgba(255,255,255,0.35)' }}>
-          St. Jude's General Hospital Â· v1.2.1
+          St. Jude's General Hospital · v1.2.1
         </p>
       </div>
 
@@ -189,7 +189,7 @@ export default function LoginPage() {
               {isLoading ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  Signing inâ€¦
+                  Signing in
                 </>
               ) : (
                 'Sign in'

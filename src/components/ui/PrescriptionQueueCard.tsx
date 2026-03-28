@@ -186,7 +186,7 @@ export function PrescriptionQueueCard({
               >
                 <p className="text-body-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{med.name}</p>
                 <p className="text-meta mt-0.5" style={{ color: 'var(--text-secondary)' }}>
-                  {med.dose} Â· {med.route} Â· {med.frequency}
+                  {med.dose} · {med.route} · {med.frequency}
                 </p>
                 <p className="text-meta" style={{ color: 'var(--text-disabled)' }}>{med.duration_days}d</p>
               </div>

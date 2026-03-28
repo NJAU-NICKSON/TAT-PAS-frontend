@@ -88,7 +88,7 @@ function DispenseModal({
               <div key={i} className="text-xs">
                 <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>{med.name}</span>
                 <span className="ml-2" style={{ color: 'var(--text-muted)' }}>
-                  {med.dose} Â· {med.route} Â· {med.frequency} Â· {med.duration_days}d
+                  {med.dose} · {med.route} · {med.frequency} · {med.duration_days}d
                 </span>
               </div>
             ))}
@@ -246,7 +246,7 @@ export function PharmacistDashboard() {
     },
     {
       key: 'flagged',
-      label: 'Flagged â€” Pending Review',
+      label: 'Flagged  -  Pending Review',
       statuses: ['flagged'],
       accentColor: '#7C3AED',
       accentBg: 'rgba(124,58,237,0.08)',
@@ -261,7 +261,7 @@ export function PharmacistDashboard() {
 
       <div
         style={{
-          background: 'linear-gradient(135deg, #0F172A 0%, #0C4A6E 60%, #0369A1 100%)',
+          background: 'linear-gradient(135deg, #0F172A 0%, #1E3A8A 60%, #2563EB 100%)',
           borderBottom: '1px solid rgba(255,255,255,0.06)',
         }}
       >
@@ -422,7 +422,7 @@ export function PharmacistDashboard() {
           )}
 
           <div className="px-4 py-3" style={{ borderTop: '1px solid var(--border-default)', background: 'var(--bg-base)' }}>
-            <p className="text-caption" style={{ color: 'var(--text-muted)' }}>â†‘â†“ arrows to navigate queue</p>
+            <p className="text-caption" style={{ color: 'var(--text-muted)' }}>'" arrows to navigate queue</p>
             <p className="text-caption mt-0.5" style={{ color: 'var(--text-muted)' }}>Enter to expand a card</p>
           </div>
         </aside>

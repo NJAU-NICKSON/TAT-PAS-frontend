@@ -16,7 +16,7 @@ interface LiveMetricsSidebarProps {
 }
 
 export function formatMin(min: number | null | undefined): string {
-  if (min == null || isNaN(min as number)) return 'â€”';
+  if (min == null || isNaN(min as number)) return ' - ';
   const m = min as number;
   if (m < 1) return '<1m';
   if (m < 60) return `${m.toFixed(0)}m`;

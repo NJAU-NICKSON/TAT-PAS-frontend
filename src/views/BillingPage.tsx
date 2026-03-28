@@ -28,7 +28,7 @@ function fmtKES(n: number | undefined | null) {
 }
 
 function fmtDate(iso: string | undefined | null) {
-  if (!iso) return '—';
+  if (!iso) return '-';
   return new Date(iso).toLocaleDateString('en-GB', {
     day: 'numeric',
     month: 'short',
@@ -37,7 +37,7 @@ function fmtDate(iso: string | undefined | null) {
 }
 
 function fmtDateTime(iso: string | undefined | null) {
-  if (!iso) return '—';
+  if (!iso) return '-';
   return new Date(iso).toLocaleString('en-GB', {
     day: 'numeric',
     month: 'short',
@@ -118,12 +118,12 @@ function printReceipt(bill: Bill) {
     <tr>
       <td style="padding:4px 8px">${fmtDateTime(p.received_at)}</td>
       <td style="padding:4px 8px;text-transform:capitalize">${p.method.replace('_', ' ')}</td>
-      <td style="padding:4px 8px">${p.reference_number ?? '—'}</td>
+      <td style="padding:4px 8px">${p.reference_number ?? '-'}</td>
       <td style="padding:4px 8px;text-align:right;color:#059669;font-weight:600">${p.amount.toLocaleString('en-KE', { minimumFractionDigits: 2 })}</td>
     </tr>`).join('');
 
   const html = `<!DOCTYPE html>
-<html><head><meta charset="utf-8"><title>Receipt — ${bill.bill_number ?? bill._id.slice(0, 8)}</title>
+<html><head><meta charset="utf-8"><title>Receipt - ${bill.bill_number ?? bill._id.slice(0, 8)}</title>
 <style>
   body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 24px; color: #1e293b; font-size: 13px; }
   .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 2px solid #0f172a; }
@@ -165,7 +165,7 @@ function printReceipt(bill: Bill) {
     <div class="section-title">Bill Information</div>
     <div class="info-grid">
       <div class="info-item"><label>Patient</label><span>${bill.patient_name ?? bill.patient_id}</span></div>
-      <div class="info-item"><label>Visit</label><span>${bill.visit_number ?? bill.visit_id?.slice(0, 16) ?? '—'}</span></div>
+      <div class="info-item"><label>Visit</label><span>${bill.visit_number ?? bill.visit_id?.slice(0, 16) ?? '-'}</span></div>
       <div class="info-item"><label>Date Issued</label><span>${fmtDate(bill.created_at)}</span></div>
       <div class="info-item"><label>Last Updated</label><span>${fmtDate(bill.updated_at ?? bill.created_at)}</span></div>
     </div>
@@ -284,7 +284,7 @@ function PaymentModal({ bill, onConfirm, onClose }: {
         <div
           className="flex items-center justify-between px-5 py-4"
           style={{
-            background:   'linear-gradient(135deg,#0F172A,#064E3B)',
+            background:   'linear-gradient(135deg, #0F172A 0%, #1E3A8A 60%, #2563EB 100%)',
             borderBottom: '1px solid rgba(255,255,255,0.06)',
           }}
         >
@@ -467,7 +467,7 @@ function BillDrawer({ bill, onClose, onPaymentAdded }: {
     setShowPayment(false);
     toast.success(`Payment of ${fmtKES(payment.amount)} recorded`);
     if (updated.balance_due <= 0) {
-      toast.success('Bill fully paid!', { description: 'Generating receipt…' });
+      toast.success('Bill fully paid!', { description: 'Generating receipt...' });
       setTimeout(() => printReceipt(updated), 600);
     }
   };
@@ -494,7 +494,7 @@ function BillDrawer({ bill, onClose, onPaymentAdded }: {
         >
           <div>
             <p className="text-caption font-semibold" style={{ color: 'var(--text-muted)' }}>
-              {bill.bill_number ?? '—'}
+              {bill.bill_number ?? '-'}
             </p>
             <h2 className="text-body font-bold mt-0.5" style={{ color: 'var(--text-primary)' }}>
               {bill.patient_name ?? 'Patient Bill'}
@@ -582,7 +582,7 @@ function BillDrawer({ bill, onClose, onPaymentAdded }: {
                 Discount Applied: {fmtKES(bill.discount_amount)}
               </span>
               {bill.discount_reason && (
-                <span className="text-green-600"> — {bill.discount_reason}</span>
+                <span className="text-green-600"> - {bill.discount_reason}</span>
               )}
             </div>
           )}
@@ -878,7 +878,7 @@ export default function BillingPage() {
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
-            placeholder="Search patient, bill ID, visit…"
+            placeholder="Search patient, bill ID, visit..."
             className="w-full pl-9 pr-4 py-2 text-sm rounded-xl focus:outline-none"
             style={{
               background: 'var(--bg-card)',
@@ -991,12 +991,12 @@ export default function BillingPage() {
                           className="text-caption font-semibold tabular-nums"
                           style={{ color: 'var(--text-secondary)' }}
                         >
-                          {bill.bill_number ?? '—'}
+                          {bill.bill_number ?? '-'}
                         </span>
                       </td>
                       <td className="px-5 py-3">
                         <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>
-                          {bill.patient_name ?? bill.patient_id.slice(0, 8) + '…'}
+                          {bill.patient_name ?? bill.patient_id.slice(0, 8) + '...'}
                         </span>
                       </td>
                       <td className="px-5 py-3">
@@ -1011,7 +1011,7 @@ export default function BillingPage() {
                             <ChevronRight className="w-3 h-3" />
                           </Link>
                         ) : (
-                          <span className="text-caption" style={{ color: 'var(--text-muted)' }}>—</span>
+                          <span className="text-caption" style={{ color: 'var(--text-muted)' }}>-</span>
                         )}
                       </td>
                       <td className="px-5 py-3 tabular-nums font-semibold" style={{ color: 'var(--text-primary)' }}>

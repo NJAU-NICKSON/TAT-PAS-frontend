@@ -14,18 +14,18 @@ import { Prescription, Bill } from '../models/types';
 import { useAuth } from '../context/AuthContext';
 
 function fmt(iso?: string): string {
-  if (!iso) return 'â€”';
+  if (!iso) return ' - ';
   return new Date(iso).toLocaleString('en-GB', {
     day: '2-digit', month: 'short', year: 'numeric',
     hour: '2-digit', minute: '2-digit',
   });
 }
 function fmtTime(iso?: string): string {
-  if (!iso) return 'â€”';
+  if (!iso) return ' - ';
   return new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
 }
 function fmtDate(iso?: string): string {
-  if (!iso) return 'â€”';
+  if (!iso) return ' - ';
   return new Date(iso).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 function elapsedMin(from?: string, to?: string): number | null {
@@ -87,11 +87,11 @@ function TATStageCard({
 
   return (
     <div
-      className="flex-1 min-w-0 rounded-xl p-3"
+      className="flex-1 min-w-0 rounded-xl p-4"
       style={{
         background: isActive ? 'rgba(37,99,235,0.08)' : breached ? '#FEF2F2' : '#F8FAFC',
         border: `1.5px solid ${isActive ? '#93C5FD' : breached ? '#FCA5A5' : '#E2E8F0'}`,
-        minWidth: '120px',
+        minWidth: '140px',
       }}
     >
       <div className="flex items-start justify-between gap-1 mb-2">
@@ -112,7 +112,7 @@ function TATStageCard({
           </span>
         ) : (
           <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0" style={{ background: '#F1F5F9', color: '#94A3B8' }}>
-            {isPending ? 'Pending' : 'â€”'}
+            {isPending ? 'Pending' : ' - '}
           </span>
         )}
       </div>
@@ -133,7 +133,7 @@ function TATStageCard({
           </span>
         )}
         {!breached && hasData && (
-          <span className="text-[10px] font-semibold" style={{ color: '#059669' }}>âœ“ On time</span>
+          <span className="text-[10px] font-semibold" style={{ color: '#059669' }}>On time</span>
         )}
       </div>
     </div>
@@ -155,14 +155,14 @@ function TATSummaryStrip({ journey, visit }: { journey: JourneySummary | null; v
 
   return (
     <div style={{ background: 'white', borderBottom: '1px solid #E2E8F0' }}>
-      <div className="max-w-4xl mx-auto px-6 py-4">
+      <div className="max-w-4xl mx-auto px-6 py-5">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background: '#EFF6FF' }}>
               <TrendingUp className="w-3.5 h-3.5" style={{ color: '#2563EB' }} />
             </div>
             <p className="text-xs font-bold uppercase tracking-wider" style={{ color: '#475569' }}>
-              Turnaround Time (TAT) â€” Stage-by-Stage Analysis
+              Turnaround Time (TAT)  -  Stage-by-Stage Analysis
             </p>
           </div>
           {totalActual !== undefined && (
@@ -184,7 +184,7 @@ function TATSummaryStrip({ journey, visit }: { journey: JourneySummary | null; v
           )}
         </div>
 
-        <div className="flex gap-2 overflow-x-auto pb-1">
+        <div className="flex gap-3 overflow-x-auto pb-2">
           {stages.length > 0 ? (
             stages.map(s => (
               <TATStageCard
@@ -234,8 +234,8 @@ function VitalsGrid({ vitals }: { vitals: NonNullable<Visit['vitals']> }) {
   const items = [
     { icon: Heart,       label: 'BP',     value: vitals.blood_pressure_systolic ? `${vitals.blood_pressure_systolic}/${vitals.blood_pressure_diastolic}` : null, unit: 'mmHg', color: '#DC2626' },
     { icon: Activity,    label: 'Pulse',  value: vitals.pulse_rate?.toString()          ?? null, unit: 'bpm',  color: '#D97706' },
-    { icon: Thermometer, label: 'Temp',   value: vitals.temperature_celsius?.toFixed(1) ?? null, unit: 'Â°C',   color: '#2563EB' },
-    { icon: Wind,        label: 'SpOâ‚‚',   value: vitals.oxygen_saturation?.toString()   ?? null, unit: '%',    color: '#7C3AED' },
+    { icon: Thermometer, label: 'Temp',   value: vitals.temperature_celsius?.toFixed(1) ?? null, unit: '°C',   color: '#2563EB' },
+    { icon: Wind,        label: 'SpO,,',   value: vitals.oxygen_saturation?.toString()   ?? null, unit: '%',    color: '#7C3AED' },
     { icon: Activity,    label: 'RR',     value: vitals.respiratory_rate?.toString()    ?? null, unit: '/min', color: '#059669' },
     { icon: User,        label: 'Weight', value: vitals.weight_kg?.toString()           ?? null, unit: 'kg',   color: '#475569' },
   ].filter(i => i.value);
@@ -320,7 +320,7 @@ function JourneyStop({
           <div className="flex items-center gap-2 flex-shrink-0 flex-wrap justify-end">
             {isActive && (
               <span className="text-xs font-bold px-2.5 py-1 rounded-full animate-pulse" style={{ background: '#DBEAFE', color: '#1D4ED8' }}>
-                â— In Progress
+                - In Progress
               </span>
             )}
             {duration != null && (
@@ -421,22 +421,22 @@ function PrescriptionAuditCard({ rx }: { rx: Prescription }) {
         <div className="flex items-center gap-2">
           {slaBreached ? (
             <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full" style={{ background: '#DC2626', color: 'white' }}>
-              âš  SLA BREACHED
+              SLA BREACHED
             </span>
           ) : tatPharmacy !== undefined && slaThreshold ? (
             <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full" style={{ background: '#059669', color: 'white' }}>
-              âœ“ SLA COMPLIANT
+              SLA COMPLIANT
             </span>
           ) : null}
-          <Link to={`/prescriptions/${rx.id}`} className="text-[10px] font-semibold text-blue-300 hover:text-white transition-colors">
-            Full detail â†’
+          <Link to={`/prescriptions/${rx.id}`} className="inline-flex items-center gap-1 text-[10px] font-semibold text-blue-300 hover:text-white transition-colors">
+            View detail <ArrowRight className="w-3 h-3" />
           </Link>
         </div>
       </div>
 
       <div className="px-4 py-2 border-b" style={{ background: '#F8FAFC', borderColor: '#E2E8F0' }}>
         <p className="text-xs text-gray-600 leading-relaxed">
-          {rx.medications.map(m => `${m.name} ${m.dose} Â· ${m.route} Â· ${m.frequency}`).join('  Â·  ')}
+          {rx.medications.map(m => `${m.name} ${m.dose} · ${m.route} · ${m.frequency}`).join('  ·  ')}
         </p>
       </div>
 
@@ -487,7 +487,7 @@ function PrescriptionAuditCard({ rx }: { rx: Prescription }) {
           <div className="flex items-center gap-2 mb-2.5">
             <Shield className="w-3.5 h-3.5 flex-shrink-0" style={{ color: '#DC2626' }} />
             <p className="text-[10px] font-extrabold uppercase tracking-wider" style={{ color: '#DC2626' }}>
-              PAS â€” Audit Flags Raised by System
+              PAS  -  Audit Flags Raised by System
             </p>
           </div>
           <div className="space-y-2">
@@ -552,12 +552,12 @@ function PrescriptionAuditCard({ rx }: { rx: Prescription }) {
 
           <div className="grid grid-cols-2 gap-x-6 gap-y-1.5 mb-3">
             {([
-              { label: 'Order â†’ Submitted',     val: rx.tat_order_to_submit_min,    target: undefined,     bold: false },
-              { label: 'Submitted â†’ Audited',   val: rx.tat_submit_to_verify_min,   target: undefined,     bold: false },
+              { label: 'Order -> Submitted',     val: rx.tat_order_to_submit_min,    target: undefined,     bold: false },
+              { label: 'Submitted -> Audited',  val: rx.tat_submit_to_verify_min,   target: undefined,     bold: false },
               { label: 'Flag Hold Time',         val: rx.tat_flag_hold_min,          target: undefined,     bold: false, warn: true },
-              { label: 'Audited â†’ Dispensed',   val: rx.tat_verify_to_dispense_min, target: undefined,     bold: false },
+              { label: 'Audited -> Dispensed',  val: rx.tat_verify_to_dispense_min, target: undefined,     bold: false },
               { label: 'Pharmacy Total (TAT)',  val: rx.tat_pharmacy_min,           target: slaThreshold,  bold: true  },
-              { label: 'Dispensed â†’ Given',     val: rx.tat_dispense_to_admin_min,  target: undefined,     bold: false },
+              { label: 'Dispensed -> Given',    val: rx.tat_dispense_to_admin_min,  target: undefined,     bold: false },
             ] as { label: string; val?: number; target?: number; bold?: boolean; warn?: boolean }[])
               .filter(r => r.val !== undefined)
               .map(({ label, val, target, bold, warn }) => {
@@ -572,7 +572,7 @@ function PrescriptionAuditCard({ rx }: { rx: Prescription }) {
                       style={{ color: over ? '#DC2626' : warn && val! > 0 ? '#D97706' : bold ? '#1E293B' : '#475569' }}
                     >
                       {fmtDuration(val!)}
-                      {over ? ' âš ' : ''}
+                      {over ? ' s ' : ''}
                     </span>
                   </div>
                 );
@@ -590,7 +590,7 @@ function PrescriptionAuditCard({ rx }: { rx: Prescription }) {
                     +{fmtDuration(rx.sla_breach_duration_min ?? 0)} over target
                   </span>
                 ) : (
-                  <span className="text-[10px] font-bold" style={{ color: '#059669' }}>âœ“ Within SLA</span>
+                  <span className="text-[10px] font-bold" style={{ color: '#059669' }}>Within SLA</span>
                 )}
               </div>
               <div className="h-2 rounded-full overflow-hidden" style={{ background: '#E2E8F0' }}>
@@ -641,7 +641,7 @@ export default function PatientJourneyPage() {
       const visitData = vRes.status === 'fulfilled' ? vRes.value.data : null;
       if (visitData) setVisit(visitData);
       if (jRes.status === 'fulfilled') setJourney(jRes.value.data);
-      if (bRes.status === 'fulfilled') setBills(bRes.value);
+      if (bRes.status === 'fulfilled') setBills(bRes.value ? [bRes.value] : []);
 
       // Load prescriptions and filter to this visit
       if (visitData) {
@@ -654,7 +654,7 @@ export default function PatientJourneyPage() {
             ? (all as Prescription[]).filter(p => rxIds.includes(p.id))
             : (all as Prescription[]);
           setPrescriptions(filtered);
-        } catch { /* silently fail â€” prescriptions are non-critical */ }
+        } catch { /* silently fail  -  prescriptions are non-critical */ }
       }
     } finally {
       setIsLoading(false);
@@ -668,7 +668,7 @@ export default function PatientJourneyPage() {
       <div className="min-h-screen flex items-center justify-center" style={{ background: '#F1F5F9' }}>
         <div className="flex flex-col items-center gap-3">
           <Loader2 className="w-8 h-8 animate-spin" style={{ color: '#2563EB' }} />
-          <p className="text-sm" style={{ color: '#64748B' }}>Loading patient journeyâ€¦</p>
+          <p className="text-sm" style={{ color: '#64748B' }}>Loading patient journey</p>
         </div>
       </div>
     );
@@ -715,13 +715,16 @@ export default function PatientJourneyPage() {
 
   // Which stop is the patient currently at?
   const activeStop =
-    !visit.triaged_at && !visit.consultation_started_at  ? 'triage'       :
-    !!visit.triaged_at && !visit.consultation_started_at ? 'waiting'       :
-    !!visit.consultation_started_at && !visit.consultation_ended_at ? 'consultation' :
-    prescriptions.some(p => ['submitted', 'flagged', 'verified', 'dispensed'].includes(p.status)) ? 'prescription' :
-    visit.admitted_at && !visit.discharged_at ? 'ward'   :
-    !visit.billing_completed_at          ? 'billing'      :
-    !visit.discharged_at                 ? 'discharge'    : 'done';
+    !visit.triaged_at && !visit.consultation_started_at                              ? 'triage'          :
+    !!visit.triaged_at && !visit.consultation_started_at                             ? 'waiting'          :
+    !!visit.consultation_started_at && !visit.consultation_ended_at                  ? 'consultation'     :
+    !prescriptions.some(p => !!p.submitted_at)                                       ? 'ordering'         :
+    !prescriptions.some(p => !!(p.verified_at || p.auditor_approved_at))             ? 'audit'            :
+    !prescriptions.some(p => !!p.dispensed_at)                                       ? 'dispensing'       :
+    !prescriptions.some(p => !!p.administered_at) && prescriptions.length > 0       ? 'administration'   :
+    visit.admitted_at && !visit.discharged_at                                        ? 'ward'             :
+    !visit.billing_completed_at                                                      ? 'billing'          :
+    !visit.discharged_at                                                             ? 'discharge'        : 'done';
 
   // PAS summary stats
   const totalFlags  = prescriptions.reduce((n, p) => n + (p.flags?.length ?? 0), 0);
@@ -736,7 +739,7 @@ export default function PatientJourneyPage() {
 
   return (
     <div className="min-h-screen" style={{ background: '#F1F5F9' }}>
-      <div style={{ background: 'linear-gradient(135deg, #0F172A 0%, #1E3A5F 60%, #1D4ED8 100%)' }}>
+      <div style={{ background: 'linear-gradient(135deg, #0F172A 0%, #1E3A8A 60%, #2563EB 100%)' }}>
         <div className="max-w-4xl mx-auto px-6 py-6">
           <Link
             to={`/visits/${visit.id}`}
@@ -773,8 +776,8 @@ export default function PatientJourneyPage() {
                 <span className="font-semibold" style={{ color: 'rgba(255,255,255,0.9)' }}>
                   {visit.patient_name ?? visit.patient_id}
                 </span>
-                {' Â· '}Visit #{visit.visit_number}
-                {' Â· '}{visit.visit_type.replace(/_/g, ' ').toUpperCase()}
+                {' · '}Visit #{visit.visit_number}
+                {' · '}{visit.visit_type.replace(/_/g, ' ').toUpperCase()}
               </p>
             </div>
 
@@ -788,7 +791,7 @@ export default function PatientJourneyPage() {
                     {isComplete ? 'Total visit duration' : 'Time in facility'}
                   </p>
                   <p className="text-[10px]" style={{ color: totalBreached ? '#FCA5A5' : 'rgba(255,255,255,0.4)' }}>
-                    Target: {fmtDuration(totalTarget)} {totalBreached ? 'âš  EXCEEDED' : 'âœ“ On track'}
+                    Target: {fmtDuration(totalTarget)} {totalBreached ? 'EXCEEDED' : 'On track'}
                   </p>
                 </div>
               )}
@@ -829,7 +832,7 @@ export default function PatientJourneyPage() {
               icon={<UserCheck className="w-5 h-5" style={{ color: '#2563EB' }} />}
               accentColor="#2563EB" accentBg="rgba(37,99,235,0.06)"
               title="Arrival & Registration"
-              subtitle={`Patient checked in Â· Visit #${visit.visit_number}`}
+              subtitle={`Patient checked in · Visit #${visit.visit_number}`}
               time={visit.registered_at}
               actor={visit.registered_by_name}
               actorRole={visit.registered_by_name ? 'receptionist' : undefined}
@@ -985,35 +988,178 @@ export default function PatientJourneyPage() {
               </div>
             </JourneyStop>
 
-            <JourneyStop
-              icon={<Shield className="w-5 h-5" style={{ color: prescriptions.length ? '#0284C7' : '#CBD5E1' }} />}
-              accentColor="#0284C7" accentBg="rgba(2,132,199,0.06)"
-              title={prescriptions.length > 0
-                ? `Medications & Safety Review (${prescriptions.length})`
-                : 'Medications & Safety Review'}
-              subtitle="Prescriptions ordered by the doctor, safety-checked before dispensing"
-              isComplete={prescriptions.some(p => ['verified', 'dispensed', 'administered'].includes(p.status))}
-              isPending={prescriptions.length === 0}
-              isActive={activeStop === 'prescription'}
-            >
-              {prescriptions.length === 0 ? (
-                <p className="text-xs italic" style={{ color: '#94A3B8' }}>No prescriptions recorded for this visit.</p>
-              ) : (
-                <div className="space-y-4">
-                  {(totalFlags > 0 || slaBreaches > 0) && (
-                    <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl" style={{ background: '#FEF2F2', border: '1px solid #FECACA' }}>
-                      <AlertTriangle className="w-4 h-4 flex-shrink-0" style={{ color: '#DC2626' }} />
-                      <p className="text-xs font-semibold" style={{ color: '#991B1B' }}>
-                        {totalFlags > 0 && `${totalFlags} audit flag${totalFlags > 1 ? 's' : ''} raised by PAS`}
-                        {totalFlags > 0 && slaBreaches > 0 && '  Â·  '}
-                        {slaBreaches > 0 && `${slaBreaches} SLA breach${slaBreaches > 1 ? 'es' : ''} recorded`}
-                      </p>
+            {/* Step 5: Prescription Ordering */}
+            {prescriptions.length > 0 ? (
+              <JourneyStop
+                icon={<FileText className="w-5 h-5" style={{ color: prescriptions.some(p => p.submitted_at) ? '#7C3AED' : '#CBD5E1' }} />}
+                accentColor="#7C3AED" accentBg="rgba(124,58,237,0.06)"
+                title={`Prescription Ordering (${prescriptions.length})`}
+                subtitle="Doctor orders medications following consultation"
+                time={[...prescriptions].map(p => p.submitted_at ?? p.ordered_at ?? p.created_at).filter(Boolean).sort()[0]}
+                actor={prescriptions[0]?.doctor_name}
+                actorRole={prescriptions[0]?.doctor_name ? 'doctor' : undefined}
+                duration={elapsedMin(
+                  visit.consultation_started_at,
+                  [...prescriptions].map(p => p.submitted_at).filter(Boolean).sort()[0]
+                )}
+                targetMin={15}
+                isComplete={prescriptions.some(p => !!p.submitted_at)}
+                isPending={!visit.consultation_started_at}
+                isActive={activeStop === 'ordering'}
+              >
+                <div className="space-y-1.5">
+                  {prescriptions.map(rx => (
+                    <div key={rx.id} className="flex items-center justify-between gap-2">
+                      <span className="text-xs font-mono font-bold" style={{ color: '#7C3AED' }}>
+                        {rx.rx_number ?? `RX-${rx.id.slice(0, 8).toUpperCase()}`}
+                      </span>
+                      <span className="text-xs flex-1 truncate" style={{ color: '#475569' }}>
+                        {rx.medications.map(m => m.name).join(', ')}
+                      </span>
+                      <span className="text-[10px] flex-shrink-0" style={{ color: '#94A3B8' }}>
+                        {rx.submitted_at ? fmtTime(rx.submitted_at) : 'Pending'}
+                      </span>
                     </div>
-                  )}
-                  {prescriptions.map(rx => <PrescriptionAuditCard key={rx.id} rx={rx} />)}
+                  ))}
                 </div>
-              )}
-            </JourneyStop>
+              </JourneyStop>
+            ) : (
+              <JourneyStop
+                icon={<FileText className="w-5 h-5" style={{ color: '#CBD5E1' }} />}
+                accentColor="#7C3AED" accentBg="rgba(124,58,237,0.06)"
+                title="Prescription Ordering"
+                subtitle="Doctor orders medications following consultation"
+                isComplete={false}
+                isPending={true}
+              />
+            )}
+
+            {/* Step 6: Prescription Audit */}
+            {prescriptions.length > 0 && (
+              <JourneyStop
+                icon={<Shield className="w-5 h-5" style={{ color: prescriptions.some(p => p.verified_at || p.auditor_approved_at) ? '#059669' : '#CBD5E1' }} />}
+                accentColor="#059669" accentBg="rgba(5,150,105,0.06)"
+                title="Prescription Audit"
+                subtitle="PAS automated safety checks and auditor verification"
+                time={[...prescriptions].map(p => p.auditor_approved_at ?? p.verified_at).filter(Boolean).sort()[0]}
+                actor={prescriptions.find(p => p.auditor_name)?.auditor_name}
+                actorRole={prescriptions.find(p => p.auditor_name) ? 'auditor' : undefined}
+                duration={elapsedMin(
+                  [...prescriptions].map(p => p.submitted_at).filter(Boolean).sort()[0],
+                  [...prescriptions].map(p => p.auditor_approved_at ?? p.verified_at).filter(Boolean).sort().slice(-1)[0]
+                )}
+                targetMin={stageTargets[4] ?? 30}
+                isComplete={prescriptions.some(p => !!(p.verified_at || p.auditor_approved_at))}
+                isPending={!prescriptions.some(p => !!p.submitted_at)}
+                isActive={activeStop === 'audit'}
+              >
+                {(totalFlags > 0 || slaBreaches > 0) ? (
+                  <div className="space-y-2">
+                    {totalFlags > 0 && (
+                      <div className="flex items-center gap-2 px-3 py-2 rounded-lg" style={{ background: '#FEF2F2', border: '1px solid #FECACA' }}>
+                        <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" style={{ color: '#DC2626' }} />
+                        <p className="text-xs font-semibold" style={{ color: '#991B1B' }}>
+                          {totalFlags} safety flag{totalFlags > 1 ? 's' : ''} raised by PAS
+                        </p>
+                      </div>
+                    )}
+                    {slaBreaches > 0 && (
+                      <div className="flex items-center gap-2 px-3 py-2 rounded-lg" style={{ background: '#FEF2F2', border: '1px solid #FECACA' }}>
+                        <Clock className="w-3.5 h-3.5 flex-shrink-0" style={{ color: '#DC2626' }} />
+                        <p className="text-xs font-semibold" style={{ color: '#991B1B' }}>
+                          {slaBreaches} SLA breach{slaBreaches > 1 ? 'es' : ''} recorded
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                ) : prescriptions.some(p => !!(p.verified_at || p.auditor_approved_at)) ? (
+                  <p className="text-xs font-semibold" style={{ color: '#059669' }}>All prescriptions cleared - no safety flags raised.</p>
+                ) : undefined}
+              </JourneyStop>
+            )}
+
+            {/* Step 7: Pharmacy Dispensing */}
+            {prescriptions.length > 0 && (
+              <JourneyStop
+                icon={<Pill className="w-5 h-5" style={{ color: prescriptions.some(p => p.dispensed_at) ? '#0284C7' : '#CBD5E1' }} />}
+                accentColor="#0284C7" accentBg="rgba(2,132,199,0.06)"
+                title="Pharmacy Dispensing"
+                subtitle="Pharmacist prepares and dispenses prescribed medications"
+                time={[...prescriptions].map(p => p.dispensed_at).filter(Boolean).sort()[0]}
+                actor={prescriptions.find(p => p.dispensed_by_name)?.dispensed_by_name}
+                actorRole={prescriptions.find(p => p.dispensed_by_name) ? 'pharmacist' : undefined}
+                duration={elapsedMin(
+                  [...prescriptions].map(p => p.auditor_approved_at ?? p.verified_at).filter(Boolean).sort()[0],
+                  [...prescriptions].map(p => p.dispensed_at).filter(Boolean).sort().slice(-1)[0]
+                )}
+                targetMin={stageTargets[5] ?? 20}
+                isComplete={prescriptions.some(p => !!p.dispensed_at)}
+                isPending={!prescriptions.some(p => !!(p.verified_at || p.auditor_approved_at))}
+                isActive={activeStop === 'dispensing'}
+              >
+                <div className="space-y-1.5">
+                  {prescriptions.map(rx => (
+                    <div key={rx.id} className="flex items-center justify-between gap-2">
+                      <span className="text-xs font-mono font-bold" style={{ color: '#0284C7' }}>
+                        {rx.rx_number ?? `RX-${rx.id.slice(0, 8).toUpperCase()}`}
+                      </span>
+                      <span
+                        className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                        style={{
+                          background: rx.dispensed_at ? '#DBEAFE' : '#F1F5F9',
+                          color:      rx.dispensed_at ? '#1D4ED8' : '#94A3B8',
+                        }}
+                      >
+                        {rx.dispensed_at ? `Dispensed ${fmtTime(rx.dispensed_at)}` : 'Awaiting dispensing'}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </JourneyStop>
+            )}
+
+            {/* Step 8: Drug Administration */}
+            {prescriptions.length > 0 && (
+              <JourneyStop
+                icon={<Activity className="w-5 h-5" style={{ color: prescriptions.some(p => p.administered_at) ? '#D97706' : '#CBD5E1' }} />}
+                accentColor="#D97706" accentBg="rgba(217,119,6,0.06)"
+                title="Drug Administration"
+                subtitle="Nurse administers medications to the patient"
+                time={[...prescriptions].map(p => p.administered_at).filter(Boolean).sort()[0]}
+                actor={prescriptions.find(p => p.administered_by_name)?.administered_by_name}
+                actorRole={prescriptions.find(p => p.administered_by_name) ? 'nurse' : undefined}
+                duration={elapsedMin(
+                  [...prescriptions].map(p => p.dispensed_at).filter(Boolean).sort()[0],
+                  [...prescriptions].map(p => p.administered_at).filter(Boolean).sort().slice(-1)[0]
+                )}
+                targetMin={stageTargets[6] ?? 15}
+                isComplete={prescriptions.some(p => !!p.administered_at)}
+                isPending={!prescriptions.some(p => !!p.dispensed_at)}
+                isActive={activeStop === 'administration'}
+              >
+                <div className="space-y-1.5">
+                  {prescriptions.map(rx => (
+                    <div key={rx.id} className="flex items-center justify-between gap-2">
+                      <span className="text-xs font-mono font-bold" style={{ color: '#D97706' }}>
+                        {rx.rx_number ?? `RX-${rx.id.slice(0, 8).toUpperCase()}`}
+                      </span>
+                      {rx.administered_dose && (
+                        <span className="text-xs" style={{ color: '#64748B' }}>{rx.administered_dose}</span>
+                      )}
+                      <span
+                        className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                        style={{
+                          background: rx.administered_at ? '#FEF3C7' : '#F1F5F9',
+                          color:      rx.administered_at ? '#92400E' : '#94A3B8',
+                        }}
+                      >
+                        {rx.administered_at ? `Given ${fmtTime(rx.administered_at)}` : 'Awaiting administration'}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </JourneyStop>
+            )}
 
             {(visit.admitted_at || ['admitted', 'in_ward', 'ready_for_discharge'].includes(visit.status)) && (
               <JourneyStop
@@ -1127,10 +1273,14 @@ export default function PatientJourneyPage() {
                 <div className="space-y-2">
                   {[
                     { label: 'Arrived',      time: visit.registered_at,           color: '#2563EB' },
-                    { label: 'Triaged',      time: visit.triaged_at,              color: '#D97706' },
-                    { label: 'Seen by Doctor', time: visit.consultation_started_at, color: '#7C3AED' },
-                    { label: 'Admitted',     time: visit.admitted_at,             color: '#059669' },
-                    { label: 'Discharged',   time: visit.discharged_at,           color: '#059669' },
+                    { label: 'Triaged',        time: visit.triaged_at,                                                                             color: '#D97706' },
+                    { label: 'Seen by Doctor', time: visit.consultation_started_at,                                                                 color: '#7C3AED' },
+                    { label: 'Rx Submitted',   time: [...prescriptions].map(p => p.submitted_at).filter(Boolean).sort()[0],                         color: '#7C3AED' },
+                    { label: 'Rx Audited',     time: [...prescriptions].map(p => p.auditor_approved_at ?? p.verified_at).filter(Boolean).sort()[0], color: '#059669' },
+                    { label: 'Dispensed',      time: [...prescriptions].map(p => p.dispensed_at).filter(Boolean).sort()[0],                         color: '#0284C7' },
+                    { label: 'Administered',   time: [...prescriptions].map(p => p.administered_at).filter(Boolean).sort()[0],                      color: '#D97706' },
+                    { label: 'Admitted',       time: visit.admitted_at,                                                                             color: '#059669' },
+                    { label: 'Discharged',     time: visit.discharged_at,                                                                           color: '#059669' },
                   ].filter(t => t.time).map(({ label, time, color }) => (
                     <div key={label} className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
@@ -1162,7 +1312,7 @@ export default function PatientJourneyPage() {
                               className="text-xs font-bold tabular-nums flex-shrink-0 flex items-center gap-1"
                               style={{ color: has ? (breached ? '#DC2626' : '#059669') : '#94A3B8' }}
                             >
-                              {has ? fmtDuration(stage.tat_min!) : 'â€”'}
+                              {has ? fmtDuration(stage.tat_min!) : ' - '}
                               {breached && <AlertTriangle className="w-3 h-3" />}
                             </span>
                           </div>

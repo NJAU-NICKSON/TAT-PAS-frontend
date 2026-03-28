@@ -61,12 +61,12 @@ const BILL_STATUS_COLORS: Record<string, { color: string; bg: string; border: st
 const STAGE_ICONS = [UserCheck, Stethoscope, Stethoscope, FlaskConical, CreditCard, ClipboardCheck];
 
 function fmtTime(iso?: string) {
-  if (!iso) return 'â€”';
+  if (!iso) return ' - ';
   return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
 function fmtDateTime(iso?: string) {
-  if (!iso) return 'â€”';
+  if (!iso) return ' - ';
   return new Date(iso).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 }
 
@@ -97,9 +97,9 @@ function CardHeader({ icon, title, sub, action }: { icon: React.ReactNode; title
   );
 }
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+/* --------------------------------------------------------------
    MODALS
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+-------------------------------------------------------------- */
 
 function AdmitModal({
   departmentId, doctors, onConfirm, onClose,
@@ -213,7 +213,7 @@ function AdmitModal({
               className="w-full px-3 py-2.5 rounded-xl text-sm focus:outline-none"
               style={{ background: 'var(--surface-1)', border: '1px solid var(--border-default)', color: 'var(--text-primary)' }}
             >
-              <option value="">â€” Not assigned yet â€”</option>
+              <option value=""> -  Not assigned yet  - </option>
               {doctors.map(d => (
                 <option key={d.id} value={d.id}>{d.full_name}</option>
               ))}
@@ -317,10 +317,10 @@ function AssignDoctorModal({
 
 const CHARGE_PRESETS = [
   { label: 'Consultation Fee',       description: 'Consultation', unit_price: 1500, category: 'consultation' as const },
-  { label: 'Bed Charge â€” General',   description: 'Bed (General)', unit_price: 2000, category: 'ward' as const },
-  { label: 'Bed Charge â€” ICU',       description: 'Bed (ICU)', unit_price: 8000, category: 'ward' as const },
-  { label: 'Bed Charge â€” HDU',       description: 'Bed (HDU)', unit_price: 5000, category: 'ward' as const },
-  { label: 'Bed Charge â€” NICU',      description: 'Bed (NICU)', unit_price: 6000, category: 'ward' as const },
+  { label: 'Bed Charge  -  General',   description: 'Bed (General)', unit_price: 2000, category: 'ward' as const },
+  { label: 'Bed Charge  -  ICU',       description: 'Bed (ICU)', unit_price: 8000, category: 'ward' as const },
+  { label: 'Bed Charge  -  HDU',       description: 'Bed (HDU)', unit_price: 5000, category: 'ward' as const },
+  { label: 'Bed Charge  -  NICU',      description: 'Bed (NICU)', unit_price: 6000, category: 'ward' as const },
   { label: 'Nursing Care',           description: 'Nursing Care', unit_price: 1000, category: 'ward' as const },
   { label: 'Lab / Diagnostics',      description: 'Lab Tests', unit_price: 800, category: 'lab' as const },
   { label: 'Radiology / Imaging',    description: 'Radiology', unit_price: 3000, category: 'radiology' as const },
@@ -540,7 +540,7 @@ function StageCard({ stage, isLast }: { stage: JourneyStageSummary; isLast: bool
             <span className={`text-caption font-semibold px-2 py-0.5 rounded-full ${
               stage.tat_min <= stage.target_min ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
             }`}>
-              {stage.tat_min} min {stage.tat_min > stage.target_min ? 'âš  over' : 'âœ“'}
+              {stage.tat_min} min {stage.tat_min > stage.target_min ? 'over' : 'on time'}
             </span>
           ) : active ? (
             <span className="text-caption font-medium px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 animate-pulse">In Progress</span>
@@ -664,9 +664,9 @@ function ConsultationNoteModal({
   );
 }
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+/* --------------------------------------------------------------
    MAIN PAGE
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+-------------------------------------------------------------- */
 type Tab = 'overview' | 'triage' | 'care' | 'consultation' | 'prescriptions' | 'billing';
 
 export default function VisitDetailPage() {
@@ -710,6 +710,7 @@ export default function VisitDetailPage() {
       const [vRes, jRes] = await Promise.all([visitsApi.getById(id), visitsApi.journey(id)]);
       const v = vRes.data;
       setVisit(v);
+      if (v.vitals) setTriageVitals(v.vitals);
       setJourney(jRes.data);
 
       // parallel secondary loads
@@ -812,7 +813,7 @@ export default function VisitDetailPage() {
     if (bed) {
       const bedRates: Record<string, number> = { icu: 8000, hdu: 5000, nicu: 6000, general: 2000, isolation: 3000, maternity: 3500, paediatric: 2500, day_case: 1500, birthing: 4000 };
       const bedRate = bedRates[bed.bed_type] ?? 2000;
-      lineItems.push({ description: `Bed Charge (${bed.bed_type.toUpperCase()}) â€” ${bed.bed_label}`, quantity: 1, unit_price: bedRate, total_price: bedRate, category: 'ward' });
+      lineItems.push({ description: `Bed Charge (${bed.bed_type.toUpperCase()})  -  ${bed.bed_label}`, quantity: 1, unit_price: bedRate, total_price: bedRate, category: 'ward' });
     }
     const newBill = await billingApi.createBill(id!, lineItems);
     setBill(newBill);
@@ -971,7 +972,7 @@ export default function VisitDetailPage() {
               <div className="flex items-center gap-3 px-4 py-3 rounded-xl" style={{ background: 'var(--status-ok-bg)', border: '1px solid var(--status-ok-border)' }}>
                 <CheckCircle2 className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--status-ok-icon)' }} />
                 <p className="text-body-sm font-semibold" style={{ color: 'var(--status-ok-icon)' }}>
-                  Patient already triaged{visit.triaged_at ? ` â€” ${fmtDateTime(visit.triaged_at)}` : ''}.
+                  Patient already triaged{visit.triaged_at ? `  -  ${fmtDateTime(visit.triaged_at)}` : ''}.
                   {visit.triage_nurse_name ? ` By ${visit.triage_nurse_name}.` : ''}
                 </p>
               </div>
@@ -986,9 +987,9 @@ export default function VisitDetailPage() {
                 {[
                   { label: 'BP Systolic (mmHg)',  key: 'blood_pressure_systolic'  as keyof VitalSigns, type: 'number', placeholder: 'e.g. 120' },
                   { label: 'BP Diastolic (mmHg)', key: 'blood_pressure_diastolic' as keyof VitalSigns, type: 'number', placeholder: 'e.g. 80' },
-                  { label: 'Temperature (Â°C)',    key: 'temperature_celsius'      as keyof VitalSigns, type: 'number', placeholder: 'e.g. 37.2', step: '0.1' },
+                  { label: 'Temperature (°C)',    key: 'temperature_celsius'      as keyof VitalSigns, type: 'number', placeholder: 'e.g. 37.2', step: '0.1' },
                   { label: 'Pulse Rate (bpm)',    key: 'pulse_rate'               as keyof VitalSigns, type: 'number', placeholder: 'e.g. 72' },
-                  { label: 'SpOâ‚‚ (%)',            key: 'oxygen_saturation'        as keyof VitalSigns, type: 'number', placeholder: 'e.g. 98' },
+                  { label: 'SpO,, (%)',            key: 'oxygen_saturation'        as keyof VitalSigns, type: 'number', placeholder: 'e.g. 98' },
                   { label: 'Respiratory Rate',    key: 'respiratory_rate'         as keyof VitalSigns, type: 'number', placeholder: 'e.g. 16' },
                   { label: 'Weight (kg)',         key: 'weight_kg'                as keyof VitalSigns, type: 'number', placeholder: 'e.g. 70', step: '0.1' },
                   { label: 'Height (cm)',         key: 'height_cm'                as keyof VitalSigns, type: 'number', placeholder: 'e.g. 170' },
@@ -1010,7 +1011,7 @@ export default function VisitDetailPage() {
                   <label className="text-caption font-semibold block mb-1" style={{ color: 'var(--text-secondary)' }}>Triage Notes</label>
                   <textarea
                     rows={3}
-                    placeholder="Clinical observations, presenting symptomsâ€¦"
+                    placeholder="Clinical observations, presenting symptoms"
                     value={triageVitals.triage_notes ?? ''}
                     onChange={e => setTriageVitals(v => ({ ...v, triage_notes: e.target.value || undefined }))}
                     className="w-full px-3 py-2 rounded-lg text-body-sm resize-none"
@@ -1024,7 +1025,7 @@ export default function VisitDetailPage() {
               <CardHeader
                 icon={<div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background: 'rgba(37,99,235,0.1)' }}><UserCheck className="w-3.5 h-3.5" style={{ color: '#2563EB' }} /></div>}
                 title="Assign Doctor"
-                sub="Optional â€” can be assigned later"
+                sub="Optional  -  can be assigned later"
               />
               <div className="px-5 py-4">
                 <select
@@ -1033,7 +1034,7 @@ export default function VisitDetailPage() {
                   className="w-full px-3 py-2 rounded-lg text-body-sm"
                   style={{ background: 'var(--surface-1)', border: '1px solid var(--border-default)', color: 'var(--text-primary)', outline: 'none' }}
                 >
-                  <option value="">â€” No doctor assigned yet â€”</option>
+                  <option value=""> -  No doctor assigned yet  - </option>
                   {doctors.map(d => (
                     <option key={d.id} value={d.id}>{d.full_name || d.username}</option>
                   ))}
@@ -1059,10 +1060,10 @@ export default function VisitDetailPage() {
                   className="w-full px-3 py-2 rounded-lg text-body-sm"
                   style={{ background: 'var(--surface-1)', border: '1px solid var(--border-default)', color: 'var(--text-primary)', outline: 'none' }}
                 >
-                  <option value="">â€” No room assigned yet â€”</option>
+                  <option value=""> -  No room assigned yet  - </option>
                   {rooms.map(r => (
                     <option key={r.id} value={r.room_name}>
-                      {r.room_name} ({r.room_number}){r.status !== 'available' ? ` â€” ${r.status}` : ''}
+                      {r.room_name} ({r.room_number}){r.status !== 'available' ? `  -  ${r.status}` : ''}
                     </option>
                   ))}
                 </select>
@@ -1096,7 +1097,7 @@ export default function VisitDetailPage() {
                 <CardHeader
                   icon={<div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background: 'rgba(37,99,235,0.1)' }}><Clock className="w-3.5 h-3.5" style={{ color: '#2563EB' }} /></div>}
                   title="Patient Journey"
-                  sub={journey ? `Total: ${journey.total_tat_min?.toFixed(0) ?? 'â€”'} / ${journey.target_total_min} min` : undefined}
+                  sub={journey ? `Total: ${journey.total_tat_min?.toFixed(0) ?? ' - '} / ${journey.target_total_min} min` : undefined}
                 />
                 <div className="px-5 py-5">
                   {journey ? (
@@ -1146,9 +1147,9 @@ export default function VisitDetailPage() {
                   <div className="px-5 py-4 grid grid-cols-2 gap-3">
                     {[
                       visit.vitals.blood_pressure_systolic && { label: 'BP', value: `${visit.vitals.blood_pressure_systolic}/${visit.vitals.blood_pressure_diastolic} mmHg` },
-                      visit.vitals.temperature_celsius     && { label: 'Temp', value: `${visit.vitals.temperature_celsius} Â°C` },
+                      visit.vitals.temperature_celsius     && { label: 'Temp', value: `${visit.vitals.temperature_celsius} °C` },
                       visit.vitals.pulse_rate               && { label: 'Pulse', value: `${visit.vitals.pulse_rate} bpm` },
-                      visit.vitals.oxygen_saturation        && { label: 'SpOâ‚‚', value: `${visit.vitals.oxygen_saturation}%` },
+                      visit.vitals.oxygen_saturation        && { label: 'SpO,,', value: `${visit.vitals.oxygen_saturation}%` },
                       visit.vitals.weight_kg                && { label: 'Weight', value: `${visit.vitals.weight_kg} kg` },
                       visit.vitals.respiratory_rate         && { label: 'RR', value: `${visit.vitals.respiratory_rate}/min` },
                     ].filter(Boolean).map((item, i) => {
@@ -1180,7 +1181,7 @@ export default function VisitDetailPage() {
               <CardHeader
                 icon={<div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background: 'rgba(37,99,235,0.1)' }}><Bed className="w-3.5 h-3.5" style={{ color: '#2563EB' }} /></div>}
                 title="Bed & Room Assignment"
-                sub={bed ? `${bed.ward_name} â€” Room ${bed.room_number}` : isAdmitted ? 'Assigned' : 'Not yet admitted'}
+                sub={bed ? `${bed.ward_name}  -  Room ${bed.room_number}` : isAdmitted ? 'Assigned' : 'Not yet admitted'}
                 action={
                   canAdmit && !isAdmitted && !isDischarged && visit.status !== 'registered' ? (
                     <button onClick={() => setShowAdmit(true)} className="flex items-center gap-1.5 px-3 py-1.5 text-caption font-bold text-white rounded-lg" style={{ background: '#2563EB' }}>
@@ -1293,7 +1294,7 @@ export default function VisitDetailPage() {
               <CardHeader
                 icon={<div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background: 'rgba(124,58,237,0.1)' }}><Pill className="w-3.5 h-3.5" style={{ color: '#7C3AED' }} /></div>}
                 title="Prescription Flow"
-                sub="Order â†’ Pharmacist â†’ Administration"
+                sub="Order -> Pharmacist -> Administration"
               />
               <div className="px-5 py-5">
                 <div className="flex items-center gap-2">
@@ -1318,7 +1319,7 @@ export default function VisitDetailPage() {
                   {prescriptions.length > 0 ? `${prescriptions.length} prescription(s) on record for this patient.` : 'No prescriptions yet.'}
                   {' '}
                   <button onClick={() => setActiveTab('prescriptions')} className="font-semibold" style={{ color: 'var(--clinical-600)' }}>
-                    View prescriptions â†’
+                    View prescriptions '
                   </button>
                 </p>
               </div>
@@ -1355,7 +1356,7 @@ export default function VisitDetailPage() {
                     </div>
                     <div>
                       <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#7C3AED' }}>Doctor</p>
-                      <p className="text-sm font-semibold text-gray-800">{visit.assigned_doctor_name ?? assignedDoctor?.full_name ?? 'â€”'}</p>
+                      <p className="text-sm font-semibold text-gray-800">{visit.assigned_doctor_name ?? assignedDoctor?.full_name ?? ' - '}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3 p-3 rounded-xl" style={{ background: '#FFF7ED', border: '1px solid #FED7AA' }}>
@@ -1364,7 +1365,7 @@ export default function VisitDetailPage() {
                     </div>
                     <div>
                       <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#9A3412' }}>Assisting Nurse</p>
-                      <p className="text-sm font-semibold text-gray-800">{visit.consultation_nurse_name ?? 'â€”'}</p>
+                      <p className="text-sm font-semibold text-gray-800">{visit.consultation_nurse_name ?? ' - '}</p>
                     </div>
                   </div>
                 </div>
@@ -1449,7 +1450,7 @@ export default function VisitDetailPage() {
                 <MapPin className="w-5 h-5 text-blue-600" />
                 <div>
                   <p className="text-sm font-semibold text-blue-800">View Full Patient Journey</p>
-                  <p className="text-xs text-blue-600 mt-0.5">Complete timeline from arrival to discharge â€” all actors, times, vitals, prescriptions</p>
+                  <p className="text-xs text-blue-600 mt-0.5">Complete timeline from arrival to discharge  -  all actors, times, vitals, prescriptions</p>
                 </div>
               </div>
               <ChevronRight className="w-4 h-4 text-blue-400 flex-shrink-0" />
@@ -1515,7 +1516,7 @@ export default function VisitDetailPage() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
                             <span className="font-mono text-caption font-semibold" style={{ color: 'var(--text-secondary)' }}>
-                              {rx.rx_number ?? rx.id.slice(0, 8) + 'â€¦'}
+                              {rx.rx_number ?? rx.id.slice(0, 8) + ''}
                             </span>
                             <span className="text-caption font-bold px-2 py-0.5 rounded-full" style={{ background: s.bg, color: s.color, border: `1px solid ${s.border}` }}>
                               {rx.status}
@@ -1527,12 +1528,12 @@ export default function VisitDetailPage() {
                             )}
                           </div>
                           <p className="text-caption mt-1" style={{ color: 'var(--text-muted)' }}>
-                            {rx.medications.map(m => `${m.name} ${m.dose}`).join(' Â· ').slice(0, 80) || 'No medications listed'}
+                            {rx.medications.map(m => `${m.name} ${m.dose}`).join(' · ').slice(0, 80) || 'No medications listed'}
                           </p>
                           <p className="text-caption mt-0.5 flex items-center gap-1" style={{ color: 'var(--text-muted)' }}>
                             <Calendar className="w-3 h-3" />
                             {fmtDateTime(rx.ordered_at ?? rx.created_at)}
-                            {rx.doctor_name && ` Â· Dr. ${rx.doctor_name}`}
+                            {rx.doctor_name && ` · Dr. ${rx.doctor_name}`}
                           </p>
                         </div>
                         <div className="flex items-center gap-1 flex-shrink-0">
@@ -1608,7 +1609,7 @@ export default function VisitDetailPage() {
                       {bill.status}
                     </span>
                     <span className="text-caption" style={{ color: 'var(--text-muted)' }}>
-                      Bill ID: <span className="font-mono">{bill._id.slice(0, 8)}â€¦</span>
+                      Bill ID: <span className="font-mono">{bill._id.slice(0, 8)}</span>
                     </span>
                   </div>
                   <div className="flex gap-2">
@@ -1676,7 +1677,7 @@ export default function VisitDetailPage() {
                             <p className="text-body-sm font-semibold capitalize" style={{ color: 'var(--text-primary)' }}>{p.method.replace('_', ' ')}</p>
                             <p className="text-caption" style={{ color: 'var(--text-muted)' }}>
                               {fmtDateTime(p.received_at)}
-                              {p.reference_number && ` Â· Ref: ${p.reference_number}`}
+                              {p.reference_number && ` · Ref: ${p.reference_number}`}
                             </p>
                           </div>
                           <span className="text-body font-extrabold tabular-nums" style={{ color: '#059669' }}>{fmtKES(p.amount)}</span>

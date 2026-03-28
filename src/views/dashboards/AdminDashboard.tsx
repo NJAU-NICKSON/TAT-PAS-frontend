@@ -240,7 +240,7 @@ function BedSummaryWidget({ summary }: { summary: BedAvailabilitySummary[] }) {
     <Card>
       <CardHeader
         title="Bed Availability"
-        subtitle={`${total} beds Â· ${summary.length} department${summary.length !== 1 ? 's' : ''}`}
+        subtitle={`${total} beds · ${summary.length} department${summary.length !== 1 ? 's' : ''}`}
         icon={BedDouble}
         iconBg="rgba(37,99,235,0.08)"
         iconColor="#2563EB"
@@ -431,7 +431,7 @@ function PerformanceTable({ role, data }: { role: 'doctor' | 'pharmacist'; data:
               ) : (
                 <>
                   <th className="px-5 py-3 text-right text-caption font-semibold" style={{ color: 'var(--text-muted)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>Dispensed</th>
-                  <th className="px-5 py-3 text-right text-caption font-semibold" style={{ color: 'var(--text-muted)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>Avg Verifyâ†’Dispense</th>
+                  <th className="px-5 py-3 text-right text-caption font-semibold" style={{ color: 'var(--text-muted)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>Avg Verify'Dispense</th>
                 </>
               )}
             </tr>
@@ -494,9 +494,9 @@ function BottleneckSection({ data }: { data: BottleneckData }) {
   const [drillStage, setDrillStage] = useState<string | null>(null);
 
   const STAGES = [
-    { key: 'verification_queue',   name: 'Submit â†’ Verify',       shortName: 'Verification'   },
-    { key: 'dispensing_queue',     name: 'Verify â†’ Dispense',     shortName: 'Dispensing'     },
-    { key: 'administration_queue', name: 'Dispense â†’ Administer', shortName: 'Administration' },
+    { key: 'verification_queue',   name: 'Submit -> Verify',       shortName: 'Verification'   },
+    { key: 'dispensing_queue',     name: 'Verify -> Dispense',     shortName: 'Dispensing'     },
+    { key: 'administration_queue', name: 'Dispense -> Administer', shortName: 'Administration' },
   ] as const;
 
   const stagesWithData = STAGES.map(s => ({
@@ -532,7 +532,7 @@ function BottleneckSection({ data }: { data: BottleneckData }) {
               className="text-caption font-semibold px-2.5 py-1 rounded-full"
               style={{ background: '#FEF2F2', color: '#B91C1C', border: '1px solid #FECACA' }}
             >
-              Worst: {worstStage.shortName} Â· {formatMin(worstStage.avg)}
+              Worst: {worstStage.shortName} · {formatMin(worstStage.avg)}
             </span>
           ) : undefined
         }
@@ -615,7 +615,7 @@ function BottleneckSection({ data }: { data: BottleneckData }) {
           style={{ background: 'var(--bg-card)', zIndex: 5 }}
         >
           <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid var(--border-default)' }}>
-            <p className="text-body font-semibold" style={{ color: 'var(--text-primary)' }}>{drillData.name} â€” Detail</p>
+            <p className="text-body font-semibold" style={{ color: 'var(--text-primary)' }}>{drillData.name}  -  Detail</p>
             <button
               onClick={() => setDrillStage(null)}
               className="p-1.5 rounded-lg transition-colors hover:bg-[var(--bg-base)]"
@@ -644,7 +644,7 @@ function BottleneckSection({ data }: { data: BottleneckData }) {
                 style={{ background: '#FEF2F2', border: '1px solid #FECACA', color: '#B91C1C' }}
               >
                 <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                Average wait exceeds 1 hour â€” this stage is a bottleneck requiring immediate attention.
+                Average wait exceeds 1 hour  -  this stage is a bottleneck requiring immediate attention.
               </div>
             )}
           </div>
@@ -730,7 +730,7 @@ export function AdminDashboard() {
           <div
             className="px-8 pt-7 pb-6"
             style={{
-              background: 'linear-gradient(135deg, #0F172A 0%, #1E3A8A 60%, #1D4ED8 100%)',
+              background: 'linear-gradient(135deg, #0F172A 0%, #1E3A8A 60%, #2563EB 100%)',
               borderBottom: '1px solid rgba(255,255,255,0.06)',
             }}
           >
@@ -808,14 +808,14 @@ export function AdminDashboard() {
                   <KpiCard
                     label="Avg Total TAT"
                     value={formatMin(liveMetrics?.average_total_tat_minutes)}
-                    sub="order â†’ administered"
+                    sub="order ' administered"
                     icon={Timer}
                     accentColor="#7C3AED"
                     accentBg="rgba(124,58,237,0.10)"
                   />
                   <KpiCard
                     label="Resolution Rate"
-                    value={liveMetrics ? `${liveMetrics.resolution_rate.toFixed(1)}%` : 'â€”'}
+                    value={liveMetrics ? `${liveMetrics.resolution_rate.toFixed(1)}%` : ' - '}
                     sub="flag resolution today"
                     icon={CheckCircle2}
                     accentColor="#059669"

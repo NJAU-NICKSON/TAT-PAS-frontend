@@ -134,7 +134,7 @@ export default function AuditQueue() {
         row.resolved_at ? (
           <span className="text-xs text-gray-500">{formatDate(row.resolved_at)}</span>
         ) : (
-          <span className="text-xs text-gray-400">â€”</span>
+          <span className="text-xs text-gray-400"> - </span>
         ),
     },
     {

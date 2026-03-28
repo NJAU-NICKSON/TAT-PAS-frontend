@@ -173,15 +173,15 @@ export function ReceptionistDashboard() {
           <div className="grid grid-cols-3 gap-3">
             <StatTile
               label="TODAY'S VISITS"
-              value={isLoading ? 'â€”' : todayVisits.length}
+              value={isLoading ? ' - ' : todayVisits.length}
             />
             <StatTile
               label="ACTIVE PATIENTS"
-              value={isLoading ? 'â€”' : activeVisits.length}
+              value={isLoading ? ' - ' : activeVisits.length}
             />
             <StatTile
               label="WAITING FOR TRIAGE"
-              value={isLoading ? 'â€”' : waitingForTriage.length}
+              value={isLoading ? ' - ' : waitingForTriage.length}
               danger={waitingForTriage.length > 3}
             />
           </div>

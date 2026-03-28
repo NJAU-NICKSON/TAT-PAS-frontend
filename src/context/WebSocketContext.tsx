@@ -56,7 +56,7 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) return;
 
-    // Connect WITHOUT token in URL â€” token is sent in the first message after open
+    // Connect WITHOUT token in URL  -  token is sent in the first message after open
     const url = `${WS_BASE}/ws`;
     const ws = new WebSocket(url);
     wsRef.current = ws;

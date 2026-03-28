@@ -45,7 +45,7 @@ function RoomCell({ room, onEdit, canEdit }: {
         <div>
           <p className="font-bold text-sm" style={{ color: cfg.color }}>{room.room_name}</p>
           <p className="text-caption mt-0.5" style={{ color: cfg.color, opacity: 0.8 }}>
-            {room.room_number}{room.floor ? ` Â· Floor ${room.floor}` : ''}
+            {room.room_number}{room.floor ? ` · Floor ${room.floor}` : ''}
           </p>
         </div>
         <span
@@ -135,13 +135,13 @@ function EditRoomStatusModal({ room, onSave, onClose }: {
               ))}
             </div>
             <Field label="Notes">
-              <textarea value={notes} onChange={e => setNotes(e.target.value)} className={inputCls} style={{ ...inputStyle, resize: 'none' }} rows={2} placeholder="Optional notesâ€¦" />
+              <textarea value={notes} onChange={e => setNotes(e.target.value)} className={inputCls} style={{ ...inputStyle, resize: 'none' }} rows={2} placeholder="Optional notes" />
             </Field>
           </div>
           <div className="flex justify-end gap-3 px-5 py-4" style={{ borderTop: '1px solid var(--border-default)', background: 'var(--bg-base)' }}>
             <button onClick={onClose} className="px-4 py-2 rounded-lg text-sm font-semibold border hover:bg-[var(--bg-row-hover)]" style={{ color: 'var(--text-primary)', borderColor: 'var(--border-default)' }}>Cancel</button>
             <button onClick={handleSave} disabled={saving} className="px-4 py-2 rounded-lg text-sm font-semibold text-white hover:opacity-90 disabled:opacity-60" style={{ background: 'var(--clinical-600)' }}>
-              {saving ? 'Savingâ€¦' : 'Save'}
+              {saving ? 'Saving' : 'Save'}
             </button>
           </div>
         </div>
@@ -201,7 +201,7 @@ function AddRoomModal({ departments, onSave, onClose }: {
           <div className="px-6 py-5 space-y-4">
             <Field label="Department" required>
               <select value={form.department_id ?? ''} onChange={e => set('department_id', e.target.value)} className={inputCls} style={inputStyle} required>
-                <option value="">Selectâ€¦</option>
+                <option value="">Select</option>
                 {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
               </select>
             </Field>
@@ -228,14 +228,14 @@ function AddRoomModal({ departments, onSave, onClose }: {
             </Field>
 
             <Field label="Notes">
-              <textarea value={form.notes ?? ''} onChange={e => set('notes', e.target.value)} className={inputCls} style={{ ...inputStyle, resize: 'none' }} rows={2} placeholder="Optional notesâ€¦" />
+              <textarea value={form.notes ?? ''} onChange={e => set('notes', e.target.value)} className={inputCls} style={{ ...inputStyle, resize: 'none' }} rows={2} placeholder="Optional notes" />
             </Field>
           </div>
 
           <div className="flex justify-end gap-3 px-6 py-4" style={{ borderTop: '1px solid var(--border-default)', background: 'var(--bg-base)' }}>
             <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg text-sm font-semibold border hover:bg-[var(--bg-row-hover)]" style={{ color: 'var(--text-primary)', borderColor: 'var(--border-default)' }}>Cancel</button>
             <button type="submit" disabled={saving} className="px-5 py-2 rounded-lg text-sm font-semibold text-white hover:opacity-90 disabled:opacity-60" style={{ background: 'var(--clinical-600)' }}>
-              {saving ? 'Savingâ€¦' : 'Add Room'}
+              {saving ? 'Saving' : 'Add Room'}
             </button>
           </div>
         </form>
@@ -300,7 +300,7 @@ export default function ConsultationRoomManagement() {
         <div>
           <h1 className="text-h1" style={{ color: 'var(--text-primary)' }}>Consultation Rooms</h1>
           <p className="text-body-sm mt-0.5" style={{ color: 'var(--text-muted)' }}>
-            {rooms.length} room{rooms.length !== 1 ? 's' : ''} Â· {available} available
+            {rooms.length} room{rooms.length !== 1 ? 's' : ''} · {available} available
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -365,7 +365,7 @@ export default function ConsultationRoomManagement() {
                 <Building2 className="w-4 h-4" style={{ color: 'var(--text-muted)' }} />
                 <span className="text-body-sm font-bold" style={{ color: 'var(--text-primary)' }}>{deptName}</span>
                 <span className="text-caption" style={{ color: 'var(--text-muted)' }}>
-                  â€” {deptRooms.length} room{deptRooms.length !== 1 ? 's' : ''}
+                   -  {deptRooms.length} room{deptRooms.length !== 1 ? 's' : ''}
                 </span>
               </div>
               <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))' }}>

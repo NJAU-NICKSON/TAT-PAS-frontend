@@ -103,9 +103,9 @@ export function SecurityReviewTable({ events, onAcknowledge, isLoading }: Securi
                   </span>
                 </td>
                 <td className="px-4 py-3 text-sm font-mono text-text-secondary">{event.created_by}</td>
-                <td className="px-4 py-3 text-sm text-text-secondary">{event.ip_address || 'â€”'}</td>
+                <td className="px-4 py-3 text-sm text-text-secondary">{event.ip_address || ' - '}</td>
                 <td className="px-4 py-3 text-sm text-text-secondary truncate max-w-xs" title={event.user_agent}>
-                  {event.user_agent || 'â€”'}
+                  {event.user_agent || ' - '}
                 </td>
                 <td className="px-4 py-3 text-sm text-text-primary">{event.issue}</td>
               </tr>

@@ -170,7 +170,7 @@ function AddBedModal({ departments, onSave, onClose }: {
             <div className="grid grid-cols-2 gap-4">
               <Field label="Department" required>
                 <select value={form.department_id ?? ''} onChange={e => set('department_id', e.target.value)} className={inputCls} style={inputStyle} required>
-                  <option value="">Selectâ€¦</option>
+                  <option value="">Select</option>
                   {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
                 </select>
               </Field>
@@ -213,7 +213,7 @@ function AddBedModal({ departments, onSave, onClose }: {
               <textarea
                 value={form.notes ?? ''} onChange={e => set('notes', e.target.value)}
                 className={inputCls} style={{ ...inputStyle, resize: 'none' }} rows={2}
-                placeholder="Optional notesâ€¦"
+                placeholder="Optional notes"
               />
             </Field>
           </div>
@@ -221,7 +221,7 @@ function AddBedModal({ departments, onSave, onClose }: {
           <div className="flex justify-end gap-3 px-6 py-4" style={{ borderTop: '1px solid var(--border-default)', background: 'var(--bg-base)' }}>
             <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg text-sm font-semibold border hover:bg-[var(--bg-row-hover)]" style={{ color: 'var(--text-primary)', borderColor: 'var(--border-default)' }}>Cancel</button>
             <button type="submit" disabled={saving} className="px-5 py-2 rounded-lg text-sm font-semibold text-white hover:opacity-90 disabled:opacity-60" style={{ background: 'var(--clinical-600)' }}>
-              {saving ? 'Savingâ€¦' : 'Add Bed'}
+              {saving ? 'Saving' : 'Add Bed'}
             </button>
           </div>
         </form>
@@ -256,7 +256,7 @@ function EditStatusModal({ bed, onSave, onClose }: {
           <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid var(--border-default)' }}>
             <div>
               <h3 className="text-body font-bold" style={{ color: 'var(--text-primary)' }}>{bed.bed_label}</h3>
-              <p className="text-caption mt-0.5" style={{ color: 'var(--text-muted)' }}>{bed.ward_name} Â· {BED_TYPE_LABELS[bed.bed_type]}</p>
+              <p className="text-caption mt-0.5" style={{ color: 'var(--text-muted)' }}>{bed.ward_name} · {BED_TYPE_LABELS[bed.bed_type]}</p>
             </div>
             <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-[var(--bg-base)]" style={{ color: 'var(--text-muted)' }}><X className="w-4 h-4" /></button>
           </div>
@@ -279,13 +279,13 @@ function EditStatusModal({ bed, onSave, onClose }: {
               ))}
             </div>
             <Field label="Notes">
-              <textarea value={notes} onChange={e => setNotes(e.target.value)} className={inputCls} style={{ ...inputStyle, resize: 'none' }} rows={2} placeholder="Optional notesâ€¦" />
+              <textarea value={notes} onChange={e => setNotes(e.target.value)} className={inputCls} style={{ ...inputStyle, resize: 'none' }} rows={2} placeholder="Optional notes" />
             </Field>
           </div>
           <div className="flex justify-end gap-3 px-5 py-4" style={{ borderTop: '1px solid var(--border-default)', background: 'var(--bg-base)' }}>
             <button onClick={onClose} className="px-4 py-2 rounded-lg text-sm font-semibold border hover:bg-[var(--bg-row-hover)]" style={{ color: 'var(--text-primary)', borderColor: 'var(--border-default)' }}>Cancel</button>
             <button onClick={handleSave} disabled={saving} className="px-4 py-2 rounded-lg text-sm font-semibold text-white hover:opacity-90 disabled:opacity-60" style={{ background: 'var(--clinical-600)' }}>
-              {saving ? 'Savingâ€¦' : 'Save'}
+              {saving ? 'Saving' : 'Save'}
             </button>
           </div>
         </div>
@@ -361,7 +361,7 @@ function DepartmentAccordion({
             )}
           </div>
           <p className="text-caption mt-0.5" style={{ color: 'var(--text-muted)' }}>
-            Floor {dept.floor}{dept.wing ? ` Â· Wing ${dept.wing}` : ''} Â· {Object.keys(byWard).length} ward{Object.keys(byWard).length !== 1 ? 's' : ''}
+            Floor {dept.floor}{dept.wing ? ` · Wing ${dept.wing}` : ''} · {Object.keys(byWard).length} ward{Object.keys(byWard).length !== 1 ? 's' : ''}
           </p>
         </div>
 
@@ -399,9 +399,9 @@ function DepartmentAccordion({
                   <BedDouble className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
                   <span className="text-body-sm font-bold" style={{ color: 'var(--text-primary)' }}>{wardName}</span>
                   <span className="text-caption ml-auto tabular-nums" style={{ color: 'var(--text-muted)' }}>
-                    {wardBeds.length} bed{wardBeds.length !== 1 ? 's' : ''} Â·{' '}
+                    {wardBeds.length} bed{wardBeds.length !== 1 ? 's' : ''} ·{' '}
                     <span style={{ color: '#22C55E' }}>{wAvail} free</span>
-                    {wOcc > 0 && <span style={{ color: '#EF4444' }}> Â· {wOcc} occupied</span>}
+                    {wOcc > 0 && <span style={{ color: '#EF4444' }}> · {wOcc} occupied</span>}
                   </span>
                 </div>
 
@@ -503,7 +503,7 @@ export default function BedManagement() {
         <div>
           <h1 className="text-h1" style={{ color: 'var(--text-primary)' }}>Departments & Wards</h1>
           <p className="text-body-sm mt-0.5" style={{ color: 'var(--text-muted)' }}>
-            {activeDepts.length} department{activeDepts.length !== 1 ? 's' : ''} Â· {total} beds
+            {activeDepts.length} department{activeDepts.length !== 1 ? 's' : ''} · {total} beds
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -545,7 +545,7 @@ export default function BedManagement() {
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--text-muted)' }} />
         <input
           value={search} onChange={e => setSearch(e.target.value)}
-          placeholder="Search bed, ward, or patientâ€¦"
+          placeholder="Search bed, ward, or patient"
           className="w-full pl-9 pr-4 py-2 text-sm rounded-xl outline-none"
           style={{ background: 'var(--bg-card)', border: '1px solid var(--border-default)', color: 'var(--text-primary)' }}
         />

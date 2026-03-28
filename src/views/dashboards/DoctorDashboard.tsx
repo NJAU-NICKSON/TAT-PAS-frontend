@@ -6,7 +6,7 @@ import { StatusBadge } from '../../components/ui/StatusBadge';
 import { Prescription } from '../../models/types';
 
 function formatTime(iso: string | undefined): string {
-  if (!iso) return 'â€”';
+  if (!iso) return ' - ';
   return new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
 }
 
@@ -194,7 +194,7 @@ export function DoctorDashboard() {
     <div className="flex flex-col h-full overflow-hidden">
       <div
         style={{
-          background: 'linear-gradient(135deg, #0F172A 0%, #064E3B 60%, #059669 100%)',
+          background: 'linear-gradient(135deg, #0F172A 0%, #1E3A8A 60%, #2563EB 100%)',
           borderBottom: '1px solid rgba(255,255,255,0.06)',
         }}
       >
@@ -221,7 +221,7 @@ export function DoctorDashboard() {
         <div className="grid grid-cols-3 gap-3">
           <StatCard
             label="Flagged"
-            value={vm.isLoading ? 'â€”' : flagged.length}
+            value={vm.isLoading ? ' - ' : flagged.length}
             icon={AlertTriangle}
             accentColor="#DC2626"
             accentBg="rgba(220,38,38,0.10)"
@@ -229,14 +229,14 @@ export function DoctorDashboard() {
           />
           <StatCard
             label="In Pipeline"
-            value={vm.isLoading ? 'â€”' : pipeline.length}
+            value={vm.isLoading ? ' - ' : pipeline.length}
             icon={Clock}
             accentColor="#D97706"
             accentBg="rgba(217,119,6,0.10)"
           />
           <StatCard
             label="Completed Today"
-            value={vm.isLoading ? 'â€”' : completedToday.length}
+            value={vm.isLoading ? ' - ' : completedToday.length}
             icon={CheckCircle2}
             accentColor="#059669"
             accentBg="rgba(5,150,105,0.10)"
@@ -361,7 +361,7 @@ export function DoctorDashboard() {
               <p className="text-caption font-bold uppercase tracking-wider" style={{ color: 'var(--clinical-700)' }}>Tips</p>
             </div>
             <p className="text-caption leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-              Prescriptions are written inside the Consultation Room â€” select a waiting patient to begin.
+              Prescriptions are written inside the Consultation Room  -  select a waiting patient to begin.
             </p>
           </div>
         </div>

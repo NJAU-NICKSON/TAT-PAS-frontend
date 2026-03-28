@@ -13,13 +13,13 @@ interface StageInfo {
 }
 
 const STAGES: StageInfo[] = [
-  { key: 'verification_queue',  name: 'Submit â†’ Verify',        shortName: 'Verification' },
-  { key: 'dispensing_queue',    name: 'Verify â†’ Dispense',      shortName: 'Dispensing' },
-  { key: 'administration_queue', name: 'Dispense â†’ Administer', shortName: 'Administration' },
+  { key: 'verification_queue',  name: 'Submit -> Verify',        shortName: 'Verification' },
+  { key: 'dispensing_queue',    name: 'Verify -> Dispense',      shortName: 'Dispensing' },
+  { key: 'administration_queue', name: 'Dispense -> Administer', shortName: 'Administration' },
 ];
 
 function formatMin(min: number): string {
-  if (min == null || isNaN(min)) return 'â€”';
+  if (min == null || isNaN(min)) return ' - ';
   if (min < 1) return '<1m';
   if (min < 60) return `${min.toFixed(0)}m`;
   return `${(min / 60).toFixed(1)}h`;
@@ -41,7 +41,7 @@ function DrillDown({ stageName, count, avg, p95, onClose }: DrillDownProps) {
     >
       <div className="flex items-center justify-between px-5 py-3 border-b border-[var(--border-default)]">
         <h4 className="text-body-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
-          {stageName} â€” Stage Detail
+          {stageName}  -  Stage Detail
         </h4>
         <button onClick={onClose} className="p-1 rounded hover:bg-[var(--bg-base)]" style={{ color: 'var(--text-muted)' }}>
           <X className="w-4 h-4" />
@@ -79,7 +79,7 @@ function DrillDown({ stageName, count, avg, p95, onClose }: DrillDownProps) {
               color: 'var(--sla-breached)',
             }}
           >
-            Average wait exceeds 1 hour â€” this stage is a bottleneck.
+            Average wait exceeds 1 hour  -  this stage is a bottleneck.
           </div>
         )}
       </div>

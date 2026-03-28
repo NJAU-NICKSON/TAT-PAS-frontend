@@ -23,7 +23,7 @@ export function SLAComplianceGauge({
   className,
 }: SLAComplianceGaugeProps) {
   const data = [{ name: 'SLA', value: compliance, fill: getGaugeColor(compliance) }];
-  const trendIcon = trend && trend > 0 ? 'â†‘' : 'â†“';
+  const trendIcon = trend && trend > 0 ? ''' : '"';
 
   return (
     <div className={cn('space-y-4 p-6 bg-surface-0 rounded-xl border shadow-card', className)}>

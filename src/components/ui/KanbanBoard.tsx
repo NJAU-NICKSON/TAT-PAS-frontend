@@ -8,7 +8,7 @@ export interface KanbanColumn {
   status: string;
   prescriptions: any[];
   avgWaitTime: number;
-  waitTimeBucket?: '<10' | 'â‰¥10';
+  waitTimeBucket?: '<10' | '%10';
 }
 
 interface KanbanBoardProps {
