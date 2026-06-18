@@ -1,6 +1,5 @@
-import { LucideIcon } from 'lucide-react';
 import { cn } from '../../lib/utils';
-import { STATUS_ICONS, FLAG_ICONS } from '../../lib/icons';
+import { STATUS_ICONS } from '../../lib/icons';
 
 interface StatusBadgeProps {
   status: string;
@@ -17,7 +16,6 @@ const sizeStyles = {
 
 export function StatusBadge({
   status,
-  severity = 'low',
   size = 'md',
   className,
 }: StatusBadgeProps) {
@@ -30,7 +28,6 @@ export function StatusBadge({
     className,
   );
 
-  // Status-based colours
   const statusClasses = {
     draft: 'bg-status-neutral border-status-neutral-border text-status-neutral-text',
     submitted: 'bg-status-info border-status-info-border text-status-info-text',

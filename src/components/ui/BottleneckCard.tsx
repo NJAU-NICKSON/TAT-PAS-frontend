@@ -16,7 +16,6 @@ export function BottleneckCard({
   vsYesterday,
   className,
 }: BottleneckCardProps) {
-  const percentageOver = ((avgMin - slaMin) / slaMin) * 100;
   const isOverSLA = avgMin > slaMin;
   const trendUp = vsYesterday > 0;
 
@@ -29,11 +28,11 @@ export function BottleneckCard({
 
   return (
     <div className={cn(
-      'relative overflow-hidden rounded-xl p-6 border shadow-elevated bg-gradient-to-br',
+      'relative overflow-hidden rounded-lg p-6 border shadow-elevated bg-gradient-to-br',
       isOverSLA ? 'from-status-warning to-status-warning/50 border-status-warning' : 'from-status-info to-status-info/50 border-status-info',
       className
     )}>
-{isOverSLA && (
+      {isOverSLA && (
         <div className="absolute top-4 right-4">
           <AlertTriangle className="h-6 w-6 text-status-warning" />
         </div>
@@ -53,7 +52,7 @@ export function BottleneckCard({
         <div className="grid grid-cols-2 gap-6">
           <div>
             <p className="text-caption text-text-muted mb-1 tracking-tight uppercase">Average</p>
-            <p className="text-display font-black text-text-primary">
+            <p className="text-display font-bold text-text-primary">
               {Math.round(avgMin)}m
             </p>
           </div>

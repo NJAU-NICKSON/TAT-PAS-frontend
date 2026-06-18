@@ -7,6 +7,8 @@ import ConfirmDialog from '../components/ConfirmDialog';
 import FormField from '../components/FormField';
 import { Prescription, PrescriptionStatus, AuditSeverity } from '../models/types';
 import Table, { Column } from '../components/Table';
+import TablePagination from '../components/TablePagination';
+import { useTableControls } from '../components/useTableControls';
 
 const STATUS_OPTIONS = [
   { value: '', label: 'All Statuses' },
@@ -122,10 +124,27 @@ export default function PrescriptionList() {
     setFlagModal(null);
   };
 
+  const tc = useTableControls<Prescription>({
+    data: vm.prescriptions,
+    initialSortKey: 'ordered_at',
+    initialSortDir: 'desc',
+    getSortValue: (row, key) => {
+      switch (key) {
+        case 'patient_id': return row.patient_name
+          || (row.patient ? `${row.patient.first_name} ${row.patient.last_name}`.trim() : '');
+        case 'medications': return row.medications.length;
+        case 'status': return row.status;
+        case 'ordered_at': return row.ordered_at || row.created_at;
+        default: return (row as unknown as Record<string, unknown>)[key];
+      }
+    },
+  });
+
   const columns: Column<Prescription>[] = [
     {
       key: 'patient_id',
       label: 'Patient',
+      sortable: true,
       render: (row) => {
         const name = row.patient_name
           || (row.patient ? `${row.patient.first_name} ${row.patient.last_name}`.trim() : '');
@@ -137,6 +156,7 @@ export default function PrescriptionList() {
     {
       key: 'medications',
       label: 'Medications',
+      sortable: true,
       render: (row) => (
         <span className="text-gray-700">
           {row.medications.length} item{row.medications.length !== 1 ? 's' : ''}
@@ -146,11 +166,13 @@ export default function PrescriptionList() {
     {
       key: 'status',
       label: 'Status',
+      sortable: true,
       render: (row) => <StatusBadge status={row.status} />,
     },
     {
       key: 'ordered_at',
       label: 'Ordered',
+      sortable: true,
       render: (row) => formatShortDate(row.ordered_at || row.created_at),
     },
     {
@@ -185,7 +207,7 @@ export default function PrescriptionList() {
                 e.stopPropagation();
                 setConfirmAction({ id: row.id, status: 'dispensed', label: 'Dispense Prescription' });
               }}
-              className="px-2.5 py-1 bg-teal-600 hover:bg-teal-700 text-white text-xs rounded-md font-medium transition-colors"
+              className="px-2.5 py-1 bg-sky-600 hover:bg-sky-700 text-white text-xs rounded-md font-medium transition-colors"
             >
               Dispense
             </button>
@@ -196,7 +218,7 @@ export default function PrescriptionList() {
                 e.stopPropagation();
                 setConfirmAction({ id: row.id, status: 'administered', label: 'Mark as Administered' });
               }}
-              className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs rounded-md font-medium transition-colors"
+              className="px-2.5 py-1 bg-green-700 hover:bg-green-800 text-white text-xs rounded-md font-medium transition-colors"
             >
               Administer
             </button>
@@ -242,7 +264,7 @@ export default function PrescriptionList() {
         </p>
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
+      <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4">
         <div className="flex flex-wrap gap-4 items-end">
           <div className="flex-1 min-w-[160px]">
             <label className="block text-xs font-medium text-gray-600 mb-1">Status</label>
@@ -289,18 +311,30 @@ export default function PrescriptionList() {
         </div>
       )}
 
-      <Table
-        columns={columns}
-        data={vm.prescriptions}
-        isLoading={vm.isLoading}
-        emptyMessage="No prescriptions found matching the current filters."
-      />
+      <div>
+        <Table
+          columns={columns}
+          data={tc.pageRows}
+          isLoading={vm.isLoading}
+          emptyMessage="No prescriptions found matching the current filters."
+          sortKey={tc.sortKey}
+          sortDir={tc.sortDir}
+          onSort={tc.toggleSort}
+        />
+        {!vm.isLoading && vm.prescriptions.length > 0 && (
+          <TablePagination
+            page={tc.page} pageCount={tc.pageCount} pageSize={tc.pageSize}
+            total={tc.total} rangeStart={tc.rangeStart} rangeEnd={tc.rangeEnd}
+            setPage={tc.setPage} setPageSize={tc.setPageSize}
+          />
+        )}
+      </div>
 
       {expandedId && (() => {
         const rx = vm.prescriptions.find((p) => p.id === expandedId);
         if (!rx) return null;
         return (
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+          <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
             <div className="flex items-center justify-between px-6 py-4 bg-gray-50 border-b border-gray-200">
               <div className="flex items-center gap-2">
                 <FileText className="h-4 w-4 text-[#1e3a5f]" />
@@ -409,7 +443,7 @@ export default function PrescriptionList() {
       {flagModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setFlagModal(null)} />
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md">
+          <div role="dialog" aria-modal="true" className="relative bg-white rounded-lg shadow-2xl w-full max-w-md">
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
               <div className="flex items-center gap-2">
                 <AlertTriangle className="h-5 w-5 text-red-500" />

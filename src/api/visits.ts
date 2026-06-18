@@ -55,19 +55,16 @@ export interface Visit {
   prescription_ids: string[];
   vitals?: VitalSigns;
   patient_name?: string;
-  // Actor tracking
   registered_by_id?: string;
   registered_by_name?: string;
   consultation_room?: string;
   consultation_nurse_id?: string;
   consultation_nurse_name?: string;
-  // Clinical data
   diagnosis?: string;
   clinical_findings?: string;
   recommendations?: string;
   follow_up_instructions?: string;
   discharge_notes?: string;
-  // Timestamps
   registered_at: string;
   triaged_at?: string;
   consultation_started_at?: string;
@@ -121,6 +118,7 @@ export interface TriagePayload {
 export interface AdmitPayload {
   bed_id: string;
   notes?: string;
+  assigned_doctor_id?: string;
 }
 
 export interface JourneyStageSummary {

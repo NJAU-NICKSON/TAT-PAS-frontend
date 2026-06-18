@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom';
 import { ChevronRight, ChevronDown, User, LogOut, Bell, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useWebSocket } from '../../context/WebSocketContext';
-import { NotificationPanel, useNotifications } from '../ui/NotificationPanel';
+import { NotificationPanel } from '../ui/NotificationPanel';
+import { useNotifications } from '../ui/useNotifications';
 
 interface Breadcrumb {
   label: string;
@@ -72,6 +73,7 @@ export function TopBar({ breadcrumbs }: TopBarProps) {
           <button onClick={() => setShowNotifs(v => !v)}
             className="relative p-2 rounded-lg transition-colors hover:bg-gray-100"
             title="Notifications"
+            aria-label={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : 'Notifications'}
             style={{ color: '#6B7280' }}>
             <Bell className="w-4.5 h-4.5" />
             {unreadCount > 0 && (
@@ -85,14 +87,17 @@ export function TopBar({ breadcrumbs }: TopBarProps) {
 
           <div className="relative">
             <button onClick={() => setShowUserMenu(v => !v)}
+              aria-label="Account menu"
+              aria-haspopup="menu"
+              aria-expanded={showUserMenu}
               className="flex items-center gap-2 pl-1 pr-2 py-1 rounded-lg hover:bg-gray-100 transition-colors">
-              <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0"
-                style={{ background: '#1D4ED8' }}>
+              <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold text-white flex-shrink-0"
+                style={{ background: '#178A3D' }}>
                 {avatarInitials}
               </div>
               <div className="hidden md:block text-left">
                 <p className="text-xs font-semibold text-gray-900 leading-tight">{user?.full_name}</p>
-                <p className="text-[10px] text-gray-400 capitalize leading-tight">{user?.role}</p>
+                <p className="text-micro text-gray-400 capitalize leading-tight">{user?.role}</p>
               </div>
               <ChevronDown className="w-3.5 h-3.5 text-gray-400" />
             </button>
@@ -100,7 +105,7 @@ export function TopBar({ breadcrumbs }: TopBarProps) {
             {showUserMenu && (
               <>
                 <div className="fixed inset-0 z-40" onClick={() => setShowUserMenu(false)} />
-                <div className="absolute right-0 top-full mt-2 w-52 rounded-xl border border-gray-200 overflow-hidden shadow-lg bg-white"
+                <div className="absolute right-0 top-full mt-2 w-52 rounded-lg border border-gray-200 overflow-hidden shadow-lg bg-white"
                   style={{ zIndex: 50 }}>
                   <div className="px-4 py-3 border-b border-gray-100 bg-gray-50">
                     <p className="text-sm font-semibold text-gray-900 leading-tight">{user?.full_name}</p>

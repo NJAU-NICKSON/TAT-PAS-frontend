@@ -1,6 +1,5 @@
-import { ReactNode } from 'react';
-import { User, ShieldAlert, ShieldCheck, HeartPulse } from 'lucide-react';
-import { cn } from '../../lib/utils';
+import { ShieldAlert, ShieldCheck, HeartPulse } from 'lucide-react';
+import { cn, withDoctorTitle } from '../../lib/utils';
 
 interface PatientHeaderProps {
   patient: {
@@ -11,7 +10,7 @@ interface PatientHeaderProps {
     dob?: string;
     weight?: number;
     blood_group?: string;
-    allergies: string[];
+    allergies: Array<string | { substance: string; severity?: string }>;
     chronic_conditions: string[];
   };
   visit?: {
@@ -27,7 +26,6 @@ export function PatientHeader({
   patient, 
   visit, 
   className,
-  variant = 'full',
 }: PatientHeaderProps) {
   const age = patient.dob ? Math.floor((new Date().getTime() - new Date(patient.dob).getTime()) / (365.25 * 24 * 60 * 60 * 1000)) : null;
   const fullName = `${patient.first_name} ${patient.last_name}`;
@@ -35,7 +33,7 @@ export function PatientHeader({
   const avatarInitials = fullName.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase();
 
   return (
-    <div className={cn('bg-surface-0 border border-surface-3 rounded-xl p-6 shadow-card', className)}>
+    <div className={cn('bg-surface-0 border border-surface-3 rounded-lg p-6 shadow-card', className)}>
       <div className="flex items-start gap-6">
         <div className="flex-shrink-0 w-16 h-16 bg-clinical-100 rounded-full flex items-center justify-center font-semibold text-clinical-700 text-lg">
           {avatarInitials}
@@ -79,16 +77,22 @@ export function PatientHeader({
               </div>
             ) : (
               <div className="flex flex-wrap gap-1">
-                {patient.allergies.map((allergy, idx) => (
+                {patient.allergies.map((allergy, idx) => {
+                  const label = typeof allergy === 'object' && allergy !== null
+                    ? String((allergy as Record<string, unknown>).substance ?? '')
+                    : String(allergy);
+                  return (
                   <div
                     key={idx}
                     className="inline-flex items-center gap-1 px-2.5 py-1 bg-status-critical text-status-critical-text rounded-md border border-status-critical-border font-medium text-caption shadow-sm hover:shadow-md transition-shadow"
                     role="alert"
-                    aria-label={`Allergy: ${allergy}`}
+                    aria-label={`Allergy: ${label}`}
                   >
                     <ShieldAlert className="h-3 w-3 flex-shrink-0" />
-                    <span className="leading-none">{allergy}</span>
+                    <span className="leading-none">{label}</span>
                   </div>
+                  );
+                })
                 ))}
               </div>
             )}
@@ -119,7 +123,7 @@ export function PatientHeader({
               </span>
               {visit.assigned_doctor && (
                 <span className="text-caption text-text-muted">
-                  Dr. {visit.assigned_doctor}
+                  {withDoctorTitle(visit.assigned_doctor)}
                 </span>
               )}
             </div>

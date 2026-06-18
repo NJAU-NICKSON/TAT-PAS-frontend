@@ -1,6 +1,10 @@
 import { useState } from 'react';
-import { Eye, EyeOff, AlertCircle, Loader2, ShieldCheck, Activity, BarChart3 } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
+import { Eye, EyeOff, AlertCircle, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { useAuth } from '../context/AuthContext';
+import { ScionMark } from '../components/ScionLogo';
+import { ApiError } from '../models/types';
 
 export default function LoginPage() {
   const [username, setUsername] = useState('');
@@ -8,7 +12,13 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [failedAttempts, setFailedAttempts] = useState(0);
+  const location = useLocation();
   const { login } = useAuth();
+  const redirectTo =
+    (location.state as { from?: { pathname?: string } } | null)?.from?.pathname || '/dashboard';
+
+  const MAX_ATTEMPTS = 5;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -19,9 +29,34 @@ export default function LoginPage() {
     setIsLoading(true);
     setError('');
     try {
-      await login(username.trim(), password);
-    } catch {
-      setError('Invalid credentials. Please check your username and password.');
+      await login(username.trim(), password, redirectTo);
+      setFailedAttempts(0);
+      toast.success(`Welcome back, ${username.trim()}`, { description: 'Signed in successfully.' });
+    } catch (err) {
+      const apiErr = err as ApiError;
+      const statusCode = apiErr?.status;
+
+      if (statusCode === 429) {
+        setError('Too many sign-in attempts. For security, please wait about a minute before trying again.');
+        toast.error('Account temporarily locked', {
+          description: 'You have exceeded the limit of 5 attempts per minute.',
+        });
+      } else if (statusCode === 403) {
+        setError('This account has been deactivated. Please contact your administrator.');
+      } else if (statusCode === 401 || statusCode === 400) {
+        const attempts = failedAttempts + 1;
+        setFailedAttempts(attempts);
+        const remaining = Math.max(0, MAX_ATTEMPTS - attempts);
+        setError(
+          remaining > 0
+            ? `Invalid username or password. ${remaining} attempt${remaining === 1 ? '' : 's'} remaining before a temporary lock.`
+            : 'Invalid username or password. The account may now be temporarily locked.'
+        );
+      } else if (statusCode === undefined) {
+        setError('Cannot reach the server. Please check your connection and try again.');
+      } else {
+        setError(apiErr?.detail || 'Sign-in failed. Please try again.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -33,58 +68,51 @@ export default function LoginPage() {
       style={{ background: 'var(--bg-base)' }}
     >
       <div
-        className="hidden lg:flex flex-col justify-between w-[480px] flex-shrink-0 p-12"
-        style={{ background: 'var(--clinical-900)' }}
+        className="hidden lg:flex flex-col justify-between w-[360px] flex-shrink-0 p-10 border-r"
+        style={{
+          background: 'var(--scion-green-700)',
+          borderColor: 'var(--scion-green-900)',
+        }}
       >
         <div className="flex items-center gap-3">
           <div
-            className="w-9 h-9 rounded-xl flex items-center justify-center"
-            style={{ background: 'rgba(255,255,255,0.15)' }}
+            className="w-10 h-10 flex items-center justify-center flex-shrink-0"
+            style={{ background: '#FFFFFF', borderRadius: 'var(--radius-button)' }}
           >
-            <Activity className="w-5 h-5 text-white" />
+            <ScionMark size={26} />
           </div>
-          <span className="text-xl font-black tracking-tight text-white">TAT-PAS</span>
-        </div>
-
-        <div className="space-y-10">
-          <div>
-            <h1 className="text-display text-white leading-tight">
-              Hospital<br />Workstation
-            </h1>
-            <p className="text-body-lg mt-4" style={{ color: 'rgba(255,255,255,0.65)' }}>
-              Prescription Audit & Patient Flow System
-            </p>
-          </div>
-
-          <div className="space-y-5">
-            {[
-              { Icon: Activity,   text: 'Track prescription progress from order to administration' },
-              { Icon: ShieldCheck, text: 'Full audit trail with multi-level review and sign-off' },
-              { Icon: BarChart3,  text: 'Performance reports and wait time monitoring' },
-            ].map(({ Icon, text }) => (
-              <div key={text} className="flex items-start gap-3.5">
-                <div
-                  className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5"
-                  style={{ background: 'rgba(255,255,255,0.1)' }}
-                >
-                  <Icon className="w-4 h-4 text-white" />
-                </div>
-                <p className="text-body-sm" style={{ color: 'rgba(255,255,255,0.7)' }}>{text}</p>
-              </div>
-            ))}
+          <div className="leading-tight">
+            <span className="text-h3 font-semibold tracking-tight text-white">
+              Scion Hospital
+            </span>
+            <p className="text-meta mt-0.5" style={{ color: 'rgba(255,255,255,0.65)' }}>Mwiki Branch</p>
           </div>
         </div>
 
-        <p className="text-meta" style={{ color: 'rgba(255,255,255,0.35)' }}>
-          St. Jude's General Hospital · v1.2.1
+        <div>
+          <p className="text-label mb-2" style={{ color: 'rgba(255,255,255,0.55)' }}>
+            Clinical Information System
+          </p>
+          <h1 className="text-h1 text-white leading-snug">
+            Turnaround Time &amp;<br />Prescription Audit
+          </h1>
+        </div>
+
+        <p className="text-meta" style={{ color: 'rgba(255,255,255,0.45)' }}>
+          TAT-PAS v1.2.1 · Authorised personnel only
         </p>
       </div>
 
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="w-full max-w-sm">
-          <div className="flex items-center gap-2 mb-8 lg:hidden">
-            <Activity className="w-5 h-5" style={{ color: 'var(--clinical-600)' }} />
-            <span className="text-h3 font-black" style={{ color: 'var(--text-primary)' }}>TAT-PAS</span>
+          <div className="flex items-center gap-2.5 mb-8 lg:hidden">
+            <ScionMark size={28} />
+            <div className="leading-none">
+              <span className="text-h3 font-bold" style={{ color: 'var(--text-primary)' }}>
+                SCION <span className="font-semibold" style={{ color: 'var(--scion-green-600)' }}>Hospital</span>
+              </span>
+              <p className="text-meta mt-0.5" style={{ color: 'var(--text-muted)' }}>Mwiki Branch</p>
+            </div>
           </div>
 
           <div className="mb-8">
@@ -96,7 +124,7 @@ export default function LoginPage() {
 
           {error && (
             <div
-              className="flex items-start gap-2.5 p-3.5 rounded-xl mb-5 text-body-sm border animate-fade-in"
+              className="flex items-start gap-2.5 p-3.5 rounded-lg mb-5 text-body-sm border animate-fade-in"
               style={{
                 background: 'var(--status-critical-bg)',
                 borderColor: 'var(--status-critical-border)',
@@ -125,7 +153,7 @@ export default function LoginPage() {
                 value={username}
                 onChange={e => setUsername(e.target.value)}
                 placeholder="Enter your username"
-                className="w-full px-3.5 py-2.5 text-body-sm border rounded-xl focus:outline-none transition-colors"
+                className="w-full px-3.5 py-2.5 text-body-sm border rounded-lg focus:outline-none transition-colors"
                 style={{
                   borderColor: 'var(--border-default)',
                   background: 'var(--bg-card)',
@@ -154,7 +182,7 @@ export default function LoginPage() {
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   placeholder="Enter your password"
-                  className="w-full px-3.5 py-2.5 pr-11 text-body-sm border rounded-xl focus:outline-none transition-colors"
+                  className="w-full px-3.5 py-2.5 pr-11 text-body-sm border rounded-lg focus:outline-none transition-colors"
                   style={{
                     borderColor: 'var(--border-default)',
                     background: 'var(--bg-card)',
@@ -180,11 +208,13 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full flex items-center justify-center gap-2 py-2.5 text-body-sm font-semibold text-white rounded-xl transition-colors disabled:opacity-60 disabled:cursor-not-allowed mt-2"
+              className="w-full flex items-center justify-center gap-2 py-2.5 text-body-sm font-semibold text-white rounded-lg transition-colors disabled:opacity-60 disabled:cursor-not-allowed mt-2"
               style={{
-                background: 'var(--clinical-600)',
+                background: 'var(--scion-green-600)',
                 borderRadius: 'var(--radius-card)',
               }}
+              onMouseEnter={e => (e.currentTarget.style.background = 'var(--scion-green-700)')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'var(--scion-green-600)')}
             >
               {isLoading ? (
                 <>

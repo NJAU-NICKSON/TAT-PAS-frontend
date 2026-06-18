@@ -37,17 +37,17 @@ function PulseNumber({ value, danger = false }: { value: number | string; danger
   const isDanger = danger && Number(value) > 0;
 
   return (
-    <p
+    <span
       key={key}
-      className="tabular-nums font-extrabold leading-none mt-1.5 animate-value-pulse"
+      className="tabular-nums font-bold leading-none animate-value-pulse"
       style={{
-        fontSize: '1.5rem',
-        letterSpacing: '-0.02em',
+        fontSize: '1.125rem',
+        letterSpacing: '-0.01em',
         color: isDanger ? 'var(--sla-breached)' : 'var(--text-primary)',
       }}
     >
       {value}
-    </p>
+    </span>
   );
 }
 
@@ -91,21 +91,21 @@ export function LiveMetricsSidebar({ metrics, title = 'Live Status', footer }: L
         </div>
       </div>
 
-      <div className="flex-1 px-3 py-3 space-y-2">
+      <div className="flex-1">
         {metrics.map(metric => {
           const isDanger = metric.danger && Number(metric.value) > 0;
           return (
             <div
               key={metric.label}
-              className="px-3 py-3 rounded-xl"
+              className="flex items-center justify-between px-4 py-2.5 border-b"
               style={{
-                background: isDanger ? 'var(--status-critical-bg)' : 'var(--bg-base)',
-                border: `1px solid ${isDanger ? 'var(--status-critical-border)' : 'var(--border-default)'}`,
+                borderColor: 'var(--border-default)',
+                background: isDanger ? 'var(--status-critical-bg)' : 'transparent',
               }}
             >
-              <p className="text-label" style={{ color: isDanger ? 'var(--status-critical-text)' : 'var(--text-muted)' }}>
+              <span className="text-caption" style={{ color: isDanger ? 'var(--status-critical-text)' : 'var(--text-muted)' }}>
                 {metric.label}
-              </p>
+              </span>
               <PulseNumber
                 value={metric.unit ? `${metric.value}${metric.unit}` : metric.value}
                 danger={metric.danger}
@@ -117,16 +117,16 @@ export function LiveMetricsSidebar({ metrics, title = 'Live Status', footer }: L
 
       {footer && (
         <div
-          className="px-4 py-4 border-t"
-          style={{ borderColor: 'var(--border-default)' }}
+          className="flex items-center justify-between px-4 py-3 border-t"
+          style={{ borderColor: 'var(--border-default)', background: 'var(--surface-1)' }}
         >
-          <p className="text-label" style={{ color: 'var(--text-muted)' }}>{footer.label}</p>
-          <p
-            className="tabular-nums font-extrabold leading-none mt-1.5"
-            style={{ fontSize: '1.5rem', letterSpacing: '-0.02em', color: 'var(--text-primary)' }}
+          <span className="text-caption" style={{ color: 'var(--text-muted)' }}>{footer.label}</span>
+          <span
+            className="tabular-nums font-bold leading-none"
+            style={{ fontSize: '1.125rem', letterSpacing: '-0.01em', color: 'var(--text-primary)' }}
           >
             {footer.value}
-          </p>
+          </span>
         </div>
       )}
     </aside>

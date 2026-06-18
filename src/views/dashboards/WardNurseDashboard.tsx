@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Syringe, BedDouble, RefreshCw, AlertCircle, Wrench, CheckCircle2, Clock, X, Loader2, Thermometer, ChevronRight } from 'lucide-react';
+import { Syringe, BedDouble, RefreshCw, AlertCircle, Wrench, CheckCircle2, X, Loader2, Thermometer, ChevronRight, MapPin, Bed as BedIcon } from 'lucide-react';
 import { prescriptionsApi } from '../../api/prescriptions';
 import { bedsApi, Bed } from '../../api/beds';
 import { visitsApi, Visit } from '../../api/visits';
@@ -8,6 +8,8 @@ import { Prescription } from '../../models/types';
 import { TATTimer } from '../../components/ui/TATTimer';
 import { StatusBadge } from '../../components/ui/StatusBadge';
 import { toast } from 'sonner';
+
+type ListResult<T> = T[] | { items?: T[] };
 
 function AdministerModal({
   rx,
@@ -49,24 +51,24 @@ function AdministerModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div
-        className="w-full max-w-md mx-4 rounded-2xl overflow-hidden"
+        className="w-full max-w-md mx-4 rounded-lg overflow-hidden"
         style={{ background: 'var(--bg-card)', boxShadow: 'var(--shadow-modal)' }}
       >
         <div className="flex items-center justify-between px-6 py-4 border-b" style={{ borderColor: 'var(--border-default)' }}>
           <div className="flex items-center gap-2">
-            <Syringe className="w-5 h-5" style={{ color: '#7C3AED' }} />
+            <Syringe className="w-5 h-5" style={{ color: '#178A3D' }} />
             <h2 className="text-h3">Record Administration</h2>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-[var(--bg-base)]" style={{ color: 'var(--text-muted)' }}>
+          <button onClick={onClose} aria-label="Close" className="p-1.5 rounded-lg hover:bg-[var(--bg-base)]" style={{ color: 'var(--text-muted)' }}>
             <X className="w-4 h-4" />
           </button>
         </div>
 
         <div className="px-6 py-3 border-b" style={{ background: '#EFF6FF', borderColor: 'var(--border-default)' }}>
-          <p className="text-body-sm font-bold" style={{ color: '#1D4ED8' }}>
+          <p className="text-body-sm font-bold" style={{ color: '#0F6E2F' }}>
             {rx.patient_name ?? rx.patient_id}
           </p>
-          <p className="text-meta mt-0.5" style={{ color: '#3B82F6' }}>
+          <p className="text-meta mt-0.5" style={{ color: '#1FA64A' }}>
             {rx.medications.map(m => `${m.name} ${m.dose}`).join(' · ')}
           </p>
           {rx.dispensed_by_name && (
@@ -86,7 +88,7 @@ function AdministerModal({
               value={dose}
               onChange={e => setDose(e.target.value)}
               placeholder="e.g. 500mg, 2 tablets"
-              className="w-full px-3 py-2 text-body-sm border rounded-xl focus:outline-none"
+              className="w-full px-3 py-2 text-body-sm border rounded-lg focus:outline-none"
               style={{ borderColor: 'var(--border-default)', background: 'var(--bg-base)', borderRadius: 'var(--radius-button)' }}
             />
           </div>
@@ -96,7 +98,7 @@ function AdministerModal({
             <select
               value={route}
               onChange={e => setRoute(e.target.value)}
-              className="w-full px-3 py-2 text-body-sm border rounded-xl focus:outline-none"
+              className="w-full px-3 py-2 text-body-sm border rounded-lg focus:outline-none"
               style={{ borderColor: 'var(--border-default)', background: 'var(--bg-base)', borderRadius: 'var(--radius-button)' }}
             >
               <option value="oral">Oral (PO)</option>
@@ -120,7 +122,7 @@ function AdministerModal({
               type="datetime-local"
               value={adminTime}
               onChange={e => setAdminTime(e.target.value)}
-              className="w-full px-3 py-2 text-body-sm border rounded-xl focus:outline-none"
+              className="w-full px-3 py-2 text-body-sm border rounded-lg focus:outline-none"
               style={{ borderColor: 'var(--border-default)', background: 'var(--bg-base)', borderRadius: 'var(--radius-button)' }}
             />
           </div>
@@ -134,7 +136,7 @@ function AdministerModal({
               onChange={e => setNotes(e.target.value)}
               rows={3}
               placeholder="Patient tolerated well, any adverse reactions, observations..."
-              className="w-full px-3 py-2.5 text-body-sm border rounded-xl resize-none focus:outline-none"
+              className="w-full px-3 py-2.5 text-body-sm border rounded-lg resize-none focus:outline-none"
               style={{ borderColor: 'var(--border-default)', background: 'var(--bg-base)', borderRadius: 'var(--radius-card)' }}
             />
           </div>
@@ -143,7 +145,7 @@ function AdministerModal({
         <div className="flex justify-end gap-3 px-6 py-4 border-t" style={{ borderColor: 'var(--border-default)' }}>
           <button
             onClick={onClose}
-            className="px-4 py-2 text-body-sm font-semibold border rounded-xl"
+            className="px-4 py-2 text-body-sm font-semibold border rounded-lg"
             style={{ borderColor: 'var(--border-default)', color: 'var(--text-secondary)', borderRadius: 'var(--radius-button)' }}
           >
             Cancel
@@ -151,8 +153,8 @@ function AdministerModal({
           <button
             onClick={handleSubmit}
             disabled={!dose.trim() || isSubmitting}
-            className="flex items-center gap-2 px-5 py-2 text-body-sm font-semibold text-white rounded-xl disabled:opacity-40"
-            style={{ background: '#7C3AED', borderRadius: 'var(--radius-button)' }}
+            className="flex items-center gap-2 px-5 py-2 text-body-sm font-semibold text-white rounded-lg disabled:opacity-40"
+            style={{ background: '#178A3D', borderRadius: 'var(--radius-button)' }}
           >
             {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
             Record Administration
@@ -176,42 +178,32 @@ function StatCard({
   label,
   value,
   icon: Icon,
-  accentColor,
-  accentBg,
   danger = false,
 }: {
   label: string;
   value: string | number;
   icon: React.ElementType;
-  accentColor: string;
-  accentBg: string;
+  accentColor?: string;
+  accentBg?: string;
   danger?: boolean;
 }) {
   const isDanger = danger && Number(value) > 0;
   return (
     <div
-      className="flex items-center gap-4 p-4 rounded-xl"
+      className="flex flex-col px-4 py-3"
       style={{
-        background: isDanger ? '#FEF2F2' : 'var(--bg-card)',
-        border: `1px solid ${isDanger ? '#FECACA' : 'var(--border-default)'}`,
-        borderLeft: `3px solid ${isDanger ? '#DC2626' : accentColor}`,
-        boxShadow: '0 1px 3px rgba(15,23,42,0.06), 0 4px 12px rgba(15,23,42,0.04)',
+        background: isDanger ? 'var(--status-critical-bg)' : 'var(--bg-card)',
+        border: `1px solid ${isDanger ? 'var(--status-critical-border)' : 'var(--border-default)'}`,
+        borderRadius: 'var(--radius-card)',
       }}
     >
-      <div
-        className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-        style={{ background: isDanger ? 'rgba(220,38,38,0.10)' : accentBg }}
-      >
-        <Icon className="w-5 h-5" style={{ color: isDanger ? '#DC2626' : accentColor }} />
+      <div className="flex items-center gap-1.5">
+        <Icon className="w-3.5 h-3.5" style={{ color: isDanger ? 'var(--status-critical-icon)' : 'var(--text-muted)' }} />
+        <span className="text-label" style={{ color: 'var(--text-muted)' }}>{label}</span>
       </div>
-      <div>
-        <p className="text-2xl font-extrabold tabular-nums leading-none" style={{ color: isDanger ? '#DC2626' : 'var(--text-primary)' }}>
-          {value}
-        </p>
-        <p className="text-caption font-semibold mt-0.5 uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
-          {label}
-        </p>
-      </div>
+      <p className="font-bold tabular-nums leading-none mt-2" style={{ fontSize: '1.75rem', color: isDanger ? 'var(--status-critical-text)' : 'var(--text-primary)' }}>
+        {value}
+      </p>
     </div>
   );
 }
@@ -219,7 +211,7 @@ function StatCard({
 function SkeletonRow() {
   return (
     <div
-      className="h-16 rounded-xl animate-shimmer"
+      className="h-16 rounded-lg animate-shimmer"
       style={{ borderRadius: 'var(--radius-card)' }}
     />
   );
@@ -255,7 +247,7 @@ function bedStatusStyle(status: Bed['status']): {
         background: 'rgba(245,158,11,0.07)',
         dotColor: 'var(--sla-warning)',
       };
-    default: // maintenance
+    default:
       return {
         borderColor: 'var(--border-default)',
         background: 'var(--bg-base)',
@@ -269,39 +261,44 @@ export function WardNurseDashboard() {
   const [dispensedRx, setDispensedRx] = useState<Prescription[]>([]);
   const [beds, setBeds] = useState<Bed[]>([]);
   const [triageQueue, setTriageQueue] = useState<Visit[]>([]);
+  const [wardPatients, setWardPatients] = useState<Visit[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [adminTarget, setAdminTarget] = useState<Prescription | null>(null);
 
   const loadData = async () => {
     setIsLoading(true);
     try {
-      const [rxRes, bedsRes, triageRes] = await Promise.all([
-        prescriptionsApi.list({ status: 'dispensed' as any, limit: 100 }),
+      const [rxRes, bedsRes, triageRes, admittedRes, inWardRes] = await Promise.all([
+        prescriptionsApi.list({ status: 'dispensed', limit: 100 }),
         bedsApi.list(),
         visitsApi.list({ status: 'registered', limit: 50 }),
+        visitsApi.list({ status: 'admitted', limit: 50 }),
+        visitsApi.list({ status: 'in_ward', limit: 50 }),
       ]);
-      const rxItems = Array.isArray(rxRes.data)
-        ? rxRes.data
-        : (rxRes.data as any).items ?? [];
-      const bedItems = Array.isArray(bedsRes.data)
-        ? bedsRes.data
-        : (bedsRes.data as any).items ?? [];
-      const triageItems = Array.isArray(triageRes.data)
-        ? triageRes.data
-        : (triageRes.data as any).items ?? [];
+      const rxData = rxRes.data as ListResult<Prescription>;
+      const bedsData = bedsRes.data as ListResult<Bed>;
+      const triageData = triageRes.data as ListResult<Visit>;
+      const admittedData = admittedRes.data as ListResult<Visit>;
+      const inWardData = inWardRes.data as ListResult<Visit>;
+      const rxItems = Array.isArray(rxData) ? rxData : rxData.items ?? [];
+      const bedItems = Array.isArray(bedsData) ? bedsData : bedsData.items ?? [];
+      const triageItems = Array.isArray(triageData) ? triageData : triageData.items ?? [];
+      const admittedItems = Array.isArray(admittedData) ? admittedData : admittedData.items ?? [];
+      const inWardItems = Array.isArray(inWardData) ? inWardData : inWardData.items ?? [];
+      const wardItems = [...admittedItems, ...inWardItems].filter(
+        (visit, index, arr) => arr.findIndex(item => item.id === visit.id) === index
+      );
       setDispensedRx(rxItems);
       setBeds(bedItems);
       setTriageQueue(triageItems);
-    } catch {
-      // non-critical; show empty state
-    } finally {
+      setWardPatients(wardItems);
+    } catch {} finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
     loadData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const availableBeds = beds.filter((b) => b.status === 'available').length;
@@ -313,29 +310,22 @@ export function WardNurseDashboard() {
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <div
-        style={{
-          background: 'linear-gradient(135deg, #0F172A 0%, #1E3A8A 60%, #2563EB 100%)',
-          borderBottom: '1px solid rgba(255,255,255,0.06)',
-        }}
+        className="flex items-center justify-between px-6 h-12 flex-shrink-0"
+        style={{ background: '#FFFFFF', borderBottom: '1px solid var(--border-default)' }}
       >
-        <div className="flex items-center justify-between px-7 py-6">
-          <div>
-            <p className="text-caption font-bold mb-1.5" style={{ color: 'rgba(255,255,255,0.55)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-              Ward Nurse Dashboard
-            </p>
-            <h1 className="text-xl font-bold text-white">Medication Administration</h1>
-            <p className="text-body-sm mt-0.5" style={{ color: 'rgba(255,255,255,0.5)' }}>{formatDate()}</p>
-          </div>
-          <button
-            onClick={loadData}
-            disabled={isLoading}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-body-sm text-white transition-all hover:opacity-90 disabled:opacity-60"
-            style={{ background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.2)' }}
-          >
-            <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-            Refresh
-          </button>
+        <div className="flex items-center gap-3">
+          <h1 className="text-base font-semibold tracking-tight" style={{ color: 'var(--text-primary)' }}>Medication Administration</h1>
+          <span className="text-meta tabular-nums" style={{ color: 'var(--text-muted)' }}>{formatDate()}</span>
         </div>
+        <button
+          onClick={loadData}
+          disabled={isLoading}
+          className="flex items-center gap-1.5 px-3 py-1.5 font-semibold text-body-sm transition-colors disabled:opacity-60"
+          style={{ background: 'var(--surface-2)', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-button)', color: 'var(--text-secondary)' }}
+        >
+          <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+          Refresh
+        </button>
       </div>
 
       <div
@@ -346,8 +336,8 @@ export function WardNurseDashboard() {
           label="Pending Triage"
           value={isLoading ? ' - ' : triageQueue.length}
           icon={Thermometer}
-          accentColor="#7C3AED"
-          accentBg="rgba(124,58,237,0.10)"
+          accentColor="#178A3D"
+          accentBg="rgba(23,138,61,0.10)"
           danger
         />
         <StatCard
@@ -362,15 +352,15 @@ export function WardNurseDashboard() {
           label="Available Beds"
           value={isLoading ? ' - ' : availableBeds}
           icon={BedDouble}
-          accentColor="#059669"
+          accentColor="#178A3D"
           accentBg="rgba(5,150,105,0.10)"
         />
         <StatCard
-          label="Occupied Beds"
-          value={isLoading ? ' - ' : occupiedBeds}
-          icon={Clock}
-          accentColor="#2563EB"
-          accentBg="rgba(37,99,235,0.10)"
+          label="Ward Patients"
+          value={isLoading ? ' - ' : wardPatients.length}
+          icon={BedIcon}
+          accentColor="#178A3D"
+          accentBg="rgba(23,138,61,0.10)"
         />
       </div>
 
@@ -394,14 +384,14 @@ export function WardNurseDashboard() {
         >
           <div className="flex items-center justify-between px-7 py-3 border-b" style={{ borderColor: 'var(--border-default)' }}>
             <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background: 'rgba(124,58,237,0.1)' }}>
-                <Thermometer className="w-3.5 h-3.5" style={{ color: '#7C3AED' }} />
+              <div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background: 'rgba(23,138,61,0.1)' }}>
+                <Thermometer className="w-3.5 h-3.5" style={{ color: '#178A3D' }} />
               </div>
               <span className="text-body-sm font-bold" style={{ color: 'var(--text-primary)' }}>
                 Patients Awaiting Triage
               </span>
               {!isLoading && triageQueue.length > 0 && (
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold text-white" style={{ background: '#7C3AED' }}>
+                <span className="px-2 py-0.5 rounded-full text-micro font-extrabold text-white" style={{ background: '#178A3D' }}>
                   {triageQueue.length}
                 </span>
               )}
@@ -412,7 +402,7 @@ export function WardNurseDashboard() {
             {isLoading ? (
               <div className="flex gap-3 px-7 py-3">
                 {[1, 2, 3].map(i => (
-                  <div key={i} className="h-16 w-56 flex-shrink-0 rounded-xl animate-shimmer" />
+                  <div key={i} className="h-16 w-56 flex-shrink-0 rounded-lg animate-shimmer" />
                 ))}
               </div>
             ) : (
@@ -420,11 +410,11 @@ export function WardNurseDashboard() {
                 {triageQueue.map(v => (
                   <div
                     key={v.id}
-                    className="flex-shrink-0 w-64 rounded-xl border p-3"
+                    className="flex-shrink-0 w-64 rounded-lg border p-3"
                     style={{
                       background: 'var(--bg-base)',
                       borderColor: 'var(--border-default)',
-                      borderLeft: '3px solid #7C3AED',
+                      borderLeft: '3px solid #178A3D',
                     }}
                   >
                     <p className="text-body-sm font-semibold truncate" style={{ color: 'var(--text-primary)' }}>
@@ -438,9 +428,88 @@ export function WardNurseDashboard() {
                       <button
                         onClick={() => navigate(`/visits/${v.id}/triage`)}
                         className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-caption font-bold text-white flex-shrink-0"
-                        style={{ background: '#7C3AED' }}
+                        style={{ background: '#178A3D' }}
                       >
                         Triage <ChevronRight className="w-3 h-3" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {(isLoading || wardPatients.length > 0) && (
+        <div
+          className="flex-shrink-0 border-b"
+          style={{ background: 'var(--bg-card)', borderColor: 'var(--border-default)' }}
+        >
+          <div className="flex items-center justify-between px-7 py-3 border-b" style={{ borderColor: 'var(--border-default)' }}>
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background: 'rgba(23,138,61,0.1)' }}>
+                <BedIcon className="w-3.5 h-3.5" style={{ color: '#178A3D' }} />
+              </div>
+              <span className="text-body-sm font-bold" style={{ color: 'var(--text-primary)' }}>
+                Current Ward Patients
+              </span>
+              {!isLoading && wardPatients.length > 0 && (
+                <span className="px-2 py-0.5 rounded-full text-micro font-extrabold text-white" style={{ background: '#178A3D' }}>
+                  {wardPatients.length}
+                </span>
+              )}
+            </div>
+          </div>
+
+          <div className="overflow-x-auto">
+            {isLoading ? (
+              <div className="flex gap-3 px-7 py-3">
+                {[1, 2, 3].map(i => (
+                  <div key={i} className="h-16 w-56 flex-shrink-0 rounded-lg animate-shimmer" />
+                ))}
+              </div>
+            ) : (
+              <div className="flex gap-3 px-7 py-3">
+                {wardPatients.map(v => (
+                  <div
+                    key={v.id}
+                    className="flex-shrink-0 w-72 rounded-lg border p-3"
+                    style={{
+                      background: 'var(--bg-base)',
+                      borderColor: 'var(--border-default)',
+                      borderLeft: '3px solid #178A3D',
+                    }}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-body-sm font-semibold truncate" style={{ color: 'var(--text-primary)' }}>
+                          {v.patient_name ?? 'Unknown Patient'}
+                        </p>
+                        <p className="text-caption truncate" style={{ color: 'var(--text-muted)' }}>
+                          {v.visit_number}
+                        </p>
+                      </div>
+                      <StatusBadge status={v.status} size="sm" />
+                    </div>
+                    <div className="mt-2 space-y-1">
+                      <p className="text-caption flex items-center gap-1.5" style={{ color: 'var(--text-secondary)' }}>
+                        <MapPin className="w-3 h-3" />
+                        {v.ward_name ?? 'Ward pending'}
+                      </p>
+                      <p className="text-caption flex items-center gap-1.5" style={{ color: 'var(--text-secondary)' }}>
+                        <BedIcon className="w-3 h-3" />
+                        {v.bed_label ?? 'Bed pending'}
+                      </p>
+                    </div>
+                    <div className="mt-3 flex items-center justify-between gap-2">
+                      <TATTimer startTime={v.admitted_at ?? v.updated_at} slaThresholdMin={240} mode="elapsed" size="sm" />
+                      <button
+                        onClick={() => navigate(`/visits/${v.id}`)}
+                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-caption font-bold text-white flex-shrink-0"
+                        style={{ background: '#178A3D' }}
+                      >
+                        View <ChevronRight className="w-3 h-3" />
                       </button>
                     </div>
                   </div>
@@ -462,7 +531,7 @@ export function WardNurseDashboard() {
           ) : dispensedRx.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-center">
               <div
-                className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4"
+                className="w-16 h-16 rounded-lg flex items-center justify-center mb-4"
                 style={{ background: 'rgba(16,185,129,0.1)' }}
               >
                 <CheckCircle2 size={32} style={{ color: 'var(--sla-safe)' }} />
@@ -485,11 +554,11 @@ export function WardNurseDashboard() {
               return (
                 <div
                   key={rx.id}
-                  className="p-4 rounded-xl border transition-all duration-100"
+                  className="p-4 rounded-lg border transition-all duration-100"
                   style={{
                     background: 'var(--bg-card)',
                     borderColor: 'var(--border-default)',
-                    borderLeft: '3px solid #7C3AED',
+                    borderLeft: '3px solid #178A3D',
                     boxShadow: '0 1px 3px rgba(15,23,42,0.06), 0 4px 12px rgba(15,23,42,0.04)',
                   }}
                 >
@@ -536,7 +605,7 @@ export function WardNurseDashboard() {
                       onClick={() => setAdminTarget(rx)}
                       className="flex-shrink-0 flex items-center gap-2 px-4 py-2 text-body-sm font-semibold text-white hover:opacity-90 transition-opacity"
                       style={{
-                        background: '#7C3AED',
+                        background: '#178A3D',
                         borderRadius: 'var(--radius-button)',
                       }}
                     >
@@ -561,8 +630,8 @@ export function WardNurseDashboard() {
             </p>
             <div className="flex items-center gap-3 mt-2">
               {[
-                { label: 'Available', color: '#059669' },
-                { label: 'Occupied',  color: '#2563EB' },
+                { label: 'Available', color: '#178A3D' },
+                { label: 'Occupied',  color: '#178A3D' },
                 { label: 'Other',     color: '#94A3B8' },
               ].map(({ label, color }) => (
                 <div key={label} className="flex items-center gap-1">
@@ -592,7 +661,7 @@ export function WardNurseDashboard() {
                   return (
                     <div
                       key={bed.id}
-                      className="rounded-xl border p-2 flex flex-col items-center justify-center text-center aspect-square"
+                      className="rounded-lg border p-2 flex flex-col items-center justify-center text-center aspect-square"
                       style={{ borderColor, background, borderRadius: 'var(--radius-badge)' }}
                     >
                       {bed.status === 'maintenance' || bed.status === 'cleaning' ? (
@@ -626,8 +695,8 @@ export function WardNurseDashboard() {
             </p>
             <div className="space-y-2">
               {[
-                { label: 'Available',         count: availableBeds,   color: '#059669', bg: '#F0FDF4',  border: '#BBF7D0' },
-                { label: 'Occupied',          count: occupiedBeds,    color: '#2563EB', bg: '#EFF6FF',  border: '#BFDBFE' },
+                { label: 'Available',         count: availableBeds,   color: '#178A3D', bg: '#F0FDF4',  border: '#BBF7D0' },
+                { label: 'Occupied',          count: occupiedBeds,    color: '#0369A1', bg: '#F0F9FF',  border: '#BAE6FD' },
                 { label: 'Maintenance/Other', count: maintenanceBeds, color: '#94A3B8', bg: '#F8FAFC',  border: '#E2E8F0' },
                 { label: 'Total',             count: beds.length,     color: '#0F172A', bg: 'var(--bg-card)', border: 'var(--border-default)' },
               ].map(({ label, count, color, bg, border }) => (

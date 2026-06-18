@@ -15,4 +15,6 @@ export const authApi = {
       headers: { Authorization: `Bearer ${refreshToken}` },
     }),
   logout: () => apiClient.post('/auth/logout'),
+  changePassword: (current_password: string, new_password: string) =>
+    apiClient.post('/auth/change-password', { current_password, new_password }),
 };

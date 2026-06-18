@@ -1,12 +1,27 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { CheckCircle2, AlertCircle, FlaskConical, ShieldAlert, Printer, X, Loader2 } from 'lucide-react';
-import { useWebSocket, WSEvent } from '../../context/WebSocketContext';
+import { useWebSocket } from '../../context/WebSocketContext';
 import { prescriptionsApi } from '../../api/prescriptions';
+import { visitsApi } from '../../api/visits';
 import { Prescription, PrescriptionStatus } from '../../models/types';
 import { BreachBanner } from '../../components/ui/BreachBanner';
 import { PrescriptionQueueCard } from '../../components/ui/PrescriptionQueueCard';
 import { getSLAState, formatElapsed } from '../../components/ui/SLAStatusBadge';
+import { printDispensingReceipt } from '../../lib/printDocs';
 import { toast } from 'sonner';
+
+async function printReceiptWithFollowUp(rx: Prescription): Promise<void> {
+  let followUp;
+  if (rx.visit_id) {
+    try {
+      const v = (await visitsApi.getById(rx.visit_id)).data;
+      if (v.follow_up_date || v.follow_up_instructions) {
+        followUp = { follow_up_date: v.follow_up_date, follow_up_instructions: v.follow_up_instructions };
+      }
+    } catch {}
+  }
+  printDispensingReceipt(rx, followUp);
+}
 
 interface Section {
   key: string;
@@ -50,23 +65,23 @@ function DispenseModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div
-        className="w-full max-w-lg mx-4 rounded-2xl overflow-hidden"
+        className="w-full max-w-lg mx-4 rounded-lg overflow-hidden"
         style={{ background: 'var(--bg-card)', boxShadow: 'var(--shadow-modal)' }}
       >
         <div className="flex items-center justify-between px-6 py-4 border-b" style={{ borderColor: 'var(--border-default)' }}>
           <div className="flex items-center gap-2">
-            <FlaskConical className="w-5 h-5 text-emerald-600" />
+            <FlaskConical className="w-5 h-5 text-green-700" />
             <h2 className="text-h3">Dispense Prescription</h2>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-[var(--bg-base)]" style={{ color: 'var(--text-muted)' }}>
+          <button onClick={onClose} aria-label="Close" className="p-1.5 rounded-lg hover:bg-[var(--bg-base)]" style={{ color: 'var(--text-muted)' }}>
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        <div className="mx-6 mt-5 border border-gray-200 rounded-xl overflow-hidden">
-          <div className="bg-emerald-600 px-4 py-2.5 flex items-center justify-between">
+        <div className="mx-6 mt-5 border border-gray-200 rounded-lg overflow-hidden">
+          <div className="bg-green-700 px-4 py-2.5 flex items-center justify-between">
             <span className="text-sm font-bold text-white">Dispensing Receipt</span>
-            <button onClick={() => window.print()} className="flex items-center gap-1 text-xs text-white/80 hover:text-white">
+            <button onClick={() => printReceiptWithFollowUp(rx)} className="flex items-center gap-1 text-xs text-white/80 hover:text-white">
               <Printer className="w-3.5 h-3.5" />
               Print
             </button>
@@ -110,7 +125,7 @@ function DispenseModal({
               value={receiptNumber}
               onChange={e => setReceiptNumber(e.target.value)}
               placeholder="e.g. RCP-20250321-001"
-              className="w-full px-3 py-2 text-body-sm border rounded-xl focus:outline-none"
+              className="w-full px-3 py-2 text-body-sm border rounded-lg focus:outline-none"
               style={{ borderColor: 'var(--border-default)', background: 'var(--bg-base)', borderRadius: 'var(--radius-button)' }}
             />
           </div>
@@ -121,7 +136,7 @@ function DispenseModal({
               onChange={e => setComment(e.target.value)}
               rows={2}
               placeholder="Substitutions, counselling notes, special instructions..."
-              className="w-full px-3 py-2.5 text-body-sm border rounded-xl resize-none focus:outline-none"
+              className="w-full px-3 py-2.5 text-body-sm border rounded-lg resize-none focus:outline-none"
               style={{ borderColor: 'var(--border-default)', background: 'var(--bg-base)', borderRadius: 'var(--radius-card)' }}
             />
           </div>
@@ -130,7 +145,7 @@ function DispenseModal({
         <div className="flex justify-end gap-3 px-6 py-4 border-t" style={{ borderColor: 'var(--border-default)' }}>
           <button
             onClick={onClose}
-            className="px-4 py-2 text-body-sm font-semibold border rounded-xl"
+            className="px-4 py-2 text-body-sm font-semibold border rounded-lg"
             style={{ borderColor: 'var(--border-default)', color: 'var(--text-secondary)', borderRadius: 'var(--radius-button)' }}
           >
             Cancel
@@ -138,8 +153,8 @@ function DispenseModal({
           <button
             onClick={handleDispense}
             disabled={isSubmitting}
-            className="flex items-center gap-2 px-5 py-2 text-body-sm font-semibold text-white rounded-xl disabled:opacity-40"
-            style={{ background: '#059669', borderRadius: 'var(--radius-button)' }}
+            className="flex items-center gap-2 px-5 py-2 text-body-sm font-semibold text-white rounded-lg disabled:opacity-40"
+            style={{ background: '#178A3D', borderRadius: 'var(--radius-button)' }}
           >
             {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
             Confirm Dispense
@@ -154,7 +169,7 @@ function SectionSkeleton() {
   return (
     <div className="space-y-3">
       {[1, 2, 3].map(i => (
-        <div key={i} className="h-20 rounded-xl animate-shimmer" />
+        <div key={i} className="h-20 rounded-lg animate-shimmer" />
       ))}
     </div>
   );
@@ -164,7 +179,6 @@ export function PharmacistDashboard() {
   const { subscribe } = useWebSocket();
   const [queue, setQueue]       = useState<Prescription[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [actingId, setActingId] = useState<string | null>(null);
   const [dispenseTarget, setDispenseTarget] = useState<Prescription | null>(null);
   const [now, setNow]           = useState(new Date());
   const focusedIdxRef           = useRef(0);
@@ -194,7 +208,7 @@ export function PharmacistDashboard() {
 
   useEffect(() => {
     const events = ['prescription.created', 'prescription.status_changed', 'sla.breached', 'audit.flag_created', 'audit.flag_resolved'];
-    const unsubs = events.map(ev => subscribe(ev, (_: WSEvent) => loadQueue()));
+    const unsubs = events.map(ev => subscribe(ev, () => loadQueue()));
     return () => unsubs.forEach(u => u());
   }, [subscribe, loadQueue]);
 
@@ -241,15 +255,15 @@ export function PharmacistDashboard() {
       statuses: ['verified'],
       actionLabel: 'Dispense',
       actionVariant: 'success',
-      accentColor: '#059669',
+      accentColor: '#178A3D',
       accentBg: 'rgba(5,150,105,0.08)',
     },
     {
       key: 'flagged',
-      label: 'Flagged  -  Pending Review',
+      label: 'Flagged - Pending Review',
       statuses: ['flagged'],
-      accentColor: '#7C3AED',
-      accentBg: 'rgba(124,58,237,0.08)',
+      accentColor: '#178A3D',
+      accentBg: 'rgba(23,138,61,0.08)',
     },
   ];
 
@@ -260,34 +274,25 @@ export function PharmacistDashboard() {
       <BreachBanner count={breachedItems.length} oldestElapsedMin={oldestBreachElapsed} />
 
       <div
-        style={{
-          background: 'linear-gradient(135deg, #0F172A 0%, #1E3A8A 60%, #2563EB 100%)',
-          borderBottom: '1px solid rgba(255,255,255,0.06)',
-        }}
+        className="flex items-center justify-between px-6 h-12 flex-shrink-0"
+        style={{ background: '#FFFFFF', borderBottom: '1px solid var(--border-default)' }}
       >
-        <div className="px-7 py-6">
-          <p className="text-caption font-bold mb-1.5" style={{ color: 'rgba(255,255,255,0.55)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-            Pharmacist Dashboard
-          </p>
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-xl font-bold text-white">Dispensing Queue</h1>
-              <p className="text-body-sm mt-0.5" style={{ color: 'rgba(255,255,255,0.5)' }}>
-                {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}
-              </p>
+        <div className="flex items-center gap-3">
+          <h1 className="text-base font-semibold tracking-tight" style={{ color: 'var(--text-primary)' }}>Dispensing Queue</h1>
+          <span className="text-meta tabular-nums" style={{ color: 'var(--text-muted)' }}>
+            {new Date().toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}
+          </span>
+        </div>
+        <div className="flex items-center gap-4">
+          {[
+            { label: 'Dispense', count: toDispense.length },
+            { label: 'Flagged',  count: flagged.length },
+          ].map(({ label, count }) => (
+            <div key={label} className="flex items-center gap-1.5">
+              <span className="text-label" style={{ color: 'var(--text-muted)' }}>{label}</span>
+              <span className="text-body font-bold tabular-nums" style={{ color: 'var(--text-primary)' }}>{count}</span>
             </div>
-            <div className="flex items-center gap-3">
-              {[
-                { label: 'Dispense',  count: toDispense.length, color: '#6EE7B7', bg: 'rgba(5,150,105,0.25)'  },
-                { label: 'Flagged',   count: flagged.length,    color: '#F9A8D4', bg: 'rgba(124,58,237,0.25)' },
-              ].map(({ label, count, color, bg }) => (
-                <div key={label} className="flex flex-col items-center px-3 py-2 rounded-xl" style={{ background: bg }}>
-                  <span className="text-xl font-extrabold tabular-nums leading-none" style={{ color }}>{count}</span>
-                  <span className="text-[10px] font-semibold mt-1" style={{ color, opacity: 0.8 }}>{label}</span>
-                </div>
-              ))}
-            </div>
-          </div>
+          ))}
         </div>
       </div>
 
@@ -299,10 +304,10 @@ export function PharmacistDashboard() {
           ) : queue.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-64">
               <div
-                className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4"
+                className="w-16 h-16 rounded-lg flex items-center justify-center mb-4"
                 style={{ background: '#F0FDF4' }}
               >
-                <CheckCircle2 className="w-8 h-8" style={{ color: '#059669' }} />
+                <CheckCircle2 className="w-8 h-8" style={{ color: '#178A3D' }} />
               </div>
               <p className="text-body font-semibold" style={{ color: 'var(--text-secondary)' }}>Queue is clear</p>
               <p className="text-body-sm mt-1" style={{ color: 'var(--text-muted)' }}>No active prescriptions in the queue</p>
@@ -343,7 +348,7 @@ export function PharmacistDashboard() {
                                 const target = queue.find(rx => rx.id === id);
                                 if (target) setDispenseTarget(target);
                               },
-                              loading: actingId === p.id,
+                              loading: false,
                               variant: section.actionVariant ?? 'primary',
                             } : undefined}
                             statusTag={
@@ -378,13 +383,13 @@ export function PharmacistDashboard() {
 
           <div className="flex-1 px-4 py-4 space-y-3">
             {[
-              { label: 'To Dispense',  value: toDispense.length, icon: FlaskConical,danger: false, color: '#059669', bg: '#F0FDF4', border: '#BBF7D0' },
+              { label: 'To Dispense',  value: toDispense.length, icon: FlaskConical,danger: false, color: '#178A3D', bg: '#F0FDF4', border: '#BBF7D0' },
               { label: 'Flagged',      value: flagged.length,    icon: AlertCircle, danger: true,  color: '#7C3AED', bg: '#FAF5FF', border: '#E9D5FF' },
-              { label: 'SLA Breached', value: breachedItems.length, icon: ShieldAlert, danger: true, color: breachedItems.length > 0 ? '#DC2626' : '#059669', bg: breachedItems.length > 0 ? '#FEF2F2' : '#F0FDF4', border: breachedItems.length > 0 ? '#FECACA' : '#BBF7D0' },
+              { label: 'SLA Breached', value: breachedItems.length, icon: ShieldAlert, danger: true, color: breachedItems.length > 0 ? '#DC2626' : '#178A3D', bg: breachedItems.length > 0 ? '#FEF2F2' : '#F0FDF4', border: breachedItems.length > 0 ? '#FECACA' : '#BBF7D0' },
             ].map(({ label, value, icon: Icon, color, bg, border }) => (
               <div
                 key={label}
-                className="flex items-center gap-3 p-3 rounded-xl"
+                className="flex items-center gap-3 p-3 rounded-lg"
                 style={{ background: bg, border: `1px solid ${border}` }}
               >
                 <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(255,255,255,0.7)' }}>
@@ -422,7 +427,7 @@ export function PharmacistDashboard() {
           )}
 
           <div className="px-4 py-3" style={{ borderTop: '1px solid var(--border-default)', background: 'var(--bg-base)' }}>
-            <p className="text-caption" style={{ color: 'var(--text-muted)' }}>'" arrows to navigate queue</p>
+            <p className="text-caption" style={{ color: 'var(--text-muted)' }}>Use arrow keys to navigate queue</p>
             <p className="text-caption mt-0.5" style={{ color: 'var(--text-muted)' }}>Enter to expand a card</p>
           </div>
         </aside>

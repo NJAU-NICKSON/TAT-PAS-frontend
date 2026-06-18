@@ -1,4 +1,4 @@
-import { LucideIcon, CheckCircle, AlertTriangle, AlertCircle } from 'lucide-react';
+import { CheckCircle, AlertTriangle, AlertCircle } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { StatusBadge } from './StatusBadge';
 
@@ -23,7 +23,7 @@ interface AuditTimelineProps {
 export function AuditTimeline({ events, className }: AuditTimelineProps) {
   if (events.length === 0) {
     return (
-      <div className="p-8 text-center border-2 border-dashed border-status-neutral rounded-xl">
+      <div className="p-8 text-center border-2 border-dashed border-status-neutral rounded-lg">
         <CheckCircle className="h-12 w-12 text-status-success mx-auto mb-4 opacity-40" />
         <h3 className="text-h3 font-semibold text-text-secondary mb-2">No audit events</h3>
         <p className="text-body text-text-muted max-w-sm mx-auto">

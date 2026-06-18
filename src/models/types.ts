@@ -14,6 +14,7 @@ export interface User {
   email: string;
   role: UserRole;
   department_id?: string;
+  is_active?: boolean;
   created_at: string;
   last_login?: string;
 }
@@ -27,7 +28,14 @@ export interface AuthTokens {
 
 export interface ContactInfo {
   phone?: string;
+  email?: string;
   address?: string;
+}
+
+export interface Allergy {
+  substance: string;
+  reaction_type?: string | null;
+  severity: 'mild' | 'moderate' | 'severe';
 }
 
 export interface Patient {
@@ -37,11 +45,14 @@ export interface Patient {
   last_name: string;
   dob?: string;
   gender?: string;
+  national_id?: string;
+  guardian_national_id?: string;
+  guardian_name?: string;
   contact?: ContactInfo;
   created_at: string;
   weight?: number;
   blood_group?: string;
-  allergies?: string[];
+  allergies?: Allergy[];
   chronic_conditions?: string[];
   current_visit_id?: string;
   current_department?: string;
@@ -104,7 +115,6 @@ export interface Prescription {
   sla_breached?: boolean;
   sla_breach_duration_min?: number;
   tat_breached_at?: string;
-  // Actor tracking
   auditor_id?: string;
   auditor_name?: string;
   auditor_approved_at?: string;
@@ -114,7 +124,6 @@ export interface Prescription {
   dispensed_by_name?: string;
   administered_by_id?: string;
   administered_by_name?: string;
-  // Administration details
   administered_dose?: string;
   administered_route?: string;
   administration_notes?: string;
@@ -125,7 +134,6 @@ export type AuditSeverity = 'low' | 'medium' | 'high' | 'critical';
 export type AuditType = 'automated' | 'manual' | 'sla_breach' | 'sla_warning';
 export type SecurityEventType = 'login_failure' | 'role_change' | 'password_reset' | 'sla_breach' | 'permission_change';
 
-// Add FlagCode type
 export type FlagCode = 
   | 'high_dose'
   | 'extended_duration'
@@ -167,8 +175,8 @@ export interface AuditRecord {
   countersigned_at?: string;
   countersign_note?: string;
   original_flag_id?: string;
-  before_snapshot?: any;
-  after_snapshot?: any;
+  before_snapshot?: Record<string, unknown> | null;
+  after_snapshot?: Record<string, unknown> | null;
   ip_address?: string;
   user_agent?: string;
   is_security_event: boolean;
@@ -209,6 +217,7 @@ export interface ApiError {
   detail: string;
   code?: string;
   status?: number;
+  data?: Record<string, unknown>;
 }
 
 export type BillCategory =
@@ -231,7 +240,7 @@ export interface BillLineItem {
 
 export interface Payment {
   amount: number;
-  method: 'cash' | 'card' | 'insurance' | 'mobile_money' | 'nhif' | 'mpesa';
+  method: 'cash' | 'card' | 'insurance' | 'mobile_money' | 'sha' | 'nhif' | 'mpesa';
   received_at: string;
   reference_number?: string;
   received_by?: string;
@@ -252,6 +261,7 @@ export interface Bill {
   line_items: BillLineItem[];
   subtotal: number;
   discount_amount: number;
+  discount_reason?: string;
   tax_amount: number;
   total_amount: number;
   paid_amount: number;

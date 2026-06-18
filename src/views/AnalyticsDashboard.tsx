@@ -23,8 +23,8 @@ function formatMinutes(minutes: number): string {
 function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   return (
     <div
-      className={`rounded-xl ${className}`}
-      style={{ background: 'var(--bg-card)', border: '1px solid var(--border-default)', boxShadow: 'var(--shadow-card)' }}
+      className={className}
+      style={{ background: 'var(--bg-card)', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-card)' }}
     >
       {children}
     </div>
@@ -41,15 +41,13 @@ interface KpiProps {
 function KpiCard({ label, value, sub, icon, accentColor }: KpiProps) {
   return (
     <Card>
-      <div className="flex items-start gap-4 p-5" style={{ borderLeft: `3px solid ${accentColor}` }}>
-        <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: `${accentColor}18` }}>
-          {icon}
+      <div className="px-4 py-3.5">
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-caption font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{label}</p>
+          <span className="flex-shrink-0" style={{ color: accentColor }}>{icon}</span>
         </div>
-        <div className="min-w-0">
-          <p className="text-caption font-semibold uppercase tracking-wider truncate" style={{ color: 'var(--text-muted)' }}>{label}</p>
-          <p className="text-2xl font-extrabold tabular-nums mt-0.5 leading-none" style={{ color: 'var(--text-primary)' }}>{value}</p>
-          {sub && <p className="text-caption mt-1" style={{ color: 'var(--text-muted)' }}>{sub}</p>}
-        </div>
+        <p className="text-xl font-bold tabular-nums mt-1.5 leading-none" style={{ color: 'var(--text-primary)' }}>{value}</p>
+        {sub && <p className="text-caption mt-1.5" style={{ color: 'var(--text-muted)' }}>{sub}</p>}
       </div>
     </Card>
   );
@@ -82,14 +80,12 @@ export default function AnalyticsDashboard() {
     setTimeout(() => vm.loadMetrics(), 0);
   };
 
-  /* Build stage chart data */
   const stageData = vm.metrics ? [
     { stage: 'Order -> Verify',   minutes: Math.round(vm.metrics.average_order_to_verify_minutes ?? 0) },
     { stage: 'Verify -> Dispense', minutes: Math.round(vm.metrics.average_verify_to_dispense_minutes ?? 0) },
     { stage: 'Dispense -> Admin',  minutes: Math.round(vm.metrics.average_dispense_to_administer_minutes ?? 0) },
   ] : [];
 
-  /* Simulated daily-trend area from slowest prescriptions (last 7) */
   const trendData = vm.metrics?.slowest_prescriptions
     ? [...vm.metrics.slowest_prescriptions]
         .sort((a, b) => new Date(a.ordered_at).getTime() - new Date(b.ordered_at).getTime())
@@ -111,78 +107,57 @@ export default function AnalyticsDashboard() {
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <div
-        style={{
-          background: 'linear-gradient(135deg, #0F172A 0%, #1E3A8A 60%, #2563EB 100%)',
-          borderBottom: '1px solid rgba(255,255,255,0.06)',
-          flexShrink: 0,
-        }}
+        className="flex items-center justify-between gap-4 flex-wrap px-6 py-2.5 flex-shrink-0"
+        style={{ background: '#FFFFFF', borderBottom: '1px solid var(--border-default)' }}
       >
-        <div className="px-7 py-6">
-          <p className="text-caption font-bold mb-1.5" style={{ color: 'rgba(255,255,255,0.55)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-            Analytics
-          </p>
-          <div className="flex items-start justify-between gap-4 flex-wrap">
-            <div>
-              <h1 className="text-xl font-bold text-white">Turnaround Time Report</h1>
-              <p className="text-body-sm mt-0.5" style={{ color: 'rgba(255,255,255,0.5)' }}>
-                {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-              </p>
-            </div>
-
-            <div className="flex items-end gap-2 flex-wrap">
-              <div>
-                <p className="text-[10px] font-semibold mb-1" style={{ color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>From</p>
-                <input
-                  type="date"
-                  value={vm.dateRange.from}
-                  onChange={e => vm.setDateRange(e.target.value, vm.dateRange.to)}
-                  className="px-2.5 py-1.5 rounded-lg text-sm tabular-nums focus:outline-none"
-                  style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)', color: '#fff', colorScheme: 'dark' }}
-                />
-              </div>
-              <div>
-                <p className="text-[10px] font-semibold mb-1" style={{ color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>To</p>
-                <input
-                  type="date"
-                  value={vm.dateRange.to}
-                  onChange={e => vm.setDateRange(vm.dateRange.from, e.target.value)}
-                  className="px-2.5 py-1.5 rounded-lg text-sm tabular-nums focus:outline-none"
-                  style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)', color: '#fff', colorScheme: 'dark' }}
-                />
-              </div>
-              <button
-                onClick={handleApply}
-                disabled={vm.isLoading}
-                className="px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors"
-                style={{ background: '#2563EB', color: '#fff' }}
-              >
-                Apply
-              </button>
-              <button
-                onClick={handleReset}
-                className="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
-                style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.7)', border: '1px solid rgba(255,255,255,0.12)' }}
-              >
-                Reset
-              </button>
-              <button
-                onClick={vm.exportCSV}
-                disabled={vm.isLoading}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50"
-                style={{ background: 'rgba(255,255,255,0.12)', color: '#fff', border: '1px solid rgba(255,255,255,0.15)' }}
-              >
-                {vm.isLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
-                Export CSV
-              </button>
-            </div>
-          </div>
+        <h1 className="text-base font-semibold tracking-tight" style={{ color: 'var(--text-primary)' }}>Turnaround Time Report</h1>
+        <div className="flex items-center gap-2 flex-wrap">
+          <input
+            type="date"
+            value={vm.dateRange.from}
+            onChange={e => vm.setDateRange(e.target.value, vm.dateRange.to)}
+            className="px-2.5 py-1.5 text-sm tabular-nums focus:outline-none"
+            style={{ background: 'var(--bg-card)', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-button)', color: 'var(--text-primary)' }}
+          />
+          <span className="text-meta" style={{ color: 'var(--text-muted)' }}>to</span>
+          <input
+            type="date"
+            value={vm.dateRange.to}
+            onChange={e => vm.setDateRange(vm.dateRange.from, e.target.value)}
+            className="px-2.5 py-1.5 text-sm tabular-nums focus:outline-none"
+            style={{ background: 'var(--bg-card)', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-button)', color: 'var(--text-primary)' }}
+          />
+          <button
+            onClick={handleApply}
+            disabled={vm.isLoading}
+            className="px-3 py-1.5 text-sm font-semibold text-white transition-colors"
+            style={{ background: 'var(--scion-green-600)', borderRadius: 'var(--radius-button)' }}
+          >
+            Apply
+          </button>
+          <button
+            onClick={handleReset}
+            className="px-3 py-1.5 text-sm font-medium transition-colors"
+            style={{ background: 'var(--surface-2)', color: 'var(--text-secondary)', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-button)' }}
+          >
+            Reset
+          </button>
+          <button
+            onClick={vm.exportCSV}
+            disabled={vm.isLoading}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold transition-colors disabled:opacity-50"
+            style={{ background: 'var(--surface-2)', color: 'var(--text-secondary)', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-button)' }}
+          >
+            {vm.isLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+            Export CSV
+          </button>
         </div>
       </div>
 
       <div className="flex-1 overflow-y-auto px-7 py-5 space-y-5" style={{ background: 'var(--bg-base)' }}>
 
         {vm.error && (
-          <div className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm" style={{ background: 'var(--status-critical-bg)', border: '1px solid var(--status-critical-border)', color: 'var(--status-critical-text)' }}>
+          <div className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm" style={{ background: 'var(--status-critical-bg)', border: '1px solid var(--status-critical-border)', color: 'var(--status-critical-text)' }}>
             <AlertTriangle className="w-4 h-4 flex-shrink-0" />
             {vm.error}
           </div>
@@ -191,7 +166,7 @@ export default function AnalyticsDashboard() {
         {vm.isLoading && !vm.metrics && (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
             {[...Array(5)].map((_, i) => (
-              <div key={i} className="h-24 rounded-xl animate-shimmer" />
+              <div key={i} className="h-24 rounded-lg animate-shimmer" />
             ))}
           </div>
         )}
@@ -202,15 +177,15 @@ export default function AnalyticsDashboard() {
               <KpiCard
                 label="Total Rx"
                 value={vm.metrics.total_prescriptions}
-                icon={<FileText className="w-4 h-4" style={{ color: '#2563EB' }} />}
-                accentColor="#2563EB"
+                icon={<FileText className="w-4 h-4" style={{ color: '#178A3D' }} />}
+                accentColor="#178A3D"
               />
               <KpiCard
                 label="Completed"
                 value={vm.metrics.completed_prescriptions}
                 sub={completionRate !== null ? `${completionRate}% completion` : undefined}
-                icon={<CheckCircle className="w-4 h-4" style={{ color: '#059669' }} />}
-                accentColor="#059669"
+                icon={<CheckCircle className="w-4 h-4" style={{ color: '#178A3D' }} />}
+                accentColor="#178A3D"
               />
               <KpiCard
                 label="Avg Total TAT"
@@ -228,14 +203,14 @@ export default function AnalyticsDashboard() {
               />
               <KpiCard
                 label="Resolution Rate"
-                value={`${Math.round((vm.metrics.resolution_rate ?? 0) * 100)}%`}
-                icon={<TrendingUp className="w-4 h-4" style={{ color: '#7C3AED' }} />}
-                accentColor="#7C3AED"
+                value={`${Math.round(vm.metrics.resolution_rate ?? 0)}%`}
+                icon={<TrendingUp className="w-4 h-4" style={{ color: '#178A3D' }} />}
+                accentColor="#178A3D"
               />
             </div>
 
             {vm.isLoading && (
-              <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm" style={{ background: 'rgba(37,99,235,0.08)', border: '1px solid rgba(37,99,235,0.15)', color: '#2563EB' }}>
+              <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm" style={{ background: 'rgba(23,138,61,0.08)', border: '1px solid rgba(23,138,61,0.15)', color: '#178A3D' }}>
                 <Loader2 className="w-4 h-4 animate-spin flex-shrink-0" />
                 Refreshing analytics data...
               </div>
@@ -244,17 +219,15 @@ export default function AnalyticsDashboard() {
             <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
 
               <Card className="lg:col-span-3">
-                <div className="flex items-center justify-between px-5 pt-5 pb-4" style={{ borderBottom: '1px solid var(--border-default)' }}>
+                <div className="flex items-center justify-between px-5 py-3.5" style={{ borderBottom: '1px solid var(--border-default)' }}>
                   <div className="flex items-center gap-2.5">
-                    <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: 'rgba(37,99,235,0.1)' }}>
-                      <BarChart2 className="w-3.5 h-3.5" style={{ color: '#2563EB' }} />
-                    </div>
+                    <BarChart2 className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
                     <div>
-                      <h2 className="text-body font-semibold" style={{ color: 'var(--text-primary)' }}>Average TAT per Stage</h2>
+                      <h2 className="text-body-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Average TAT per Stage</h2>
                       <p className="text-caption" style={{ color: 'var(--text-muted)' }}>Minutes from order to administration</p>
                     </div>
                   </div>
-                  <span className="text-caption font-bold px-2 py-0.5 rounded-full" style={{ background: 'rgba(37,99,235,0.1)', color: '#2563EB' }}>
+                  <span className="text-caption font-semibold px-2 py-0.5" style={{ background: 'var(--surface-2)', color: 'var(--text-secondary)', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-badge)' }}>
                     {new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
                   </span>
                 </div>
@@ -278,7 +251,7 @@ export default function AnalyticsDashboard() {
                           unit=" m"
                         />
                         <Tooltip content={<DarkTooltip />} />
-                        <Bar dataKey="minutes" name="Avg TAT" fill="#2563EB" radius={[6, 6, 0, 0]} maxBarSize={72} />
+                        <Bar dataKey="minutes" name="Avg TAT" fill="#178A3D" radius={[6, 6, 0, 0]} maxBarSize={72} />
                       </BarChart>
                     </ResponsiveContainer>
                   )}
@@ -286,12 +259,10 @@ export default function AnalyticsDashboard() {
               </Card>
 
               <Card className="lg:col-span-2">
-                <div className="flex items-center gap-2.5 px-5 pt-5 pb-4" style={{ borderBottom: '1px solid var(--border-default)' }}>
-                  <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: 'rgba(220,38,38,0.1)' }}>
-                    <TrendingUp className="w-3.5 h-3.5" style={{ color: '#DC2626' }} />
-                  </div>
+                <div className="flex items-center gap-2.5 px-5 py-3.5" style={{ borderBottom: '1px solid var(--border-default)' }}>
+                  <TrendingUp className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
                   <div>
-                    <h2 className="text-body font-semibold" style={{ color: 'var(--text-primary)' }}>Slowest Prescriptions</h2>
+                    <h2 className="text-body-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Slowest Prescriptions</h2>
                     <p className="text-caption" style={{ color: 'var(--text-muted)' }}>TAT trend (longest cases)</p>
                   </div>
                 </div>
@@ -342,21 +313,19 @@ export default function AnalyticsDashboard() {
 
               <Card className="p-5">
                 <div className="flex items-center gap-2 mb-4">
-                  <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: 'rgba(124,58,237,0.1)' }}>
-                    <CheckCircle className="w-3.5 h-3.5" style={{ color: '#7C3AED' }} />
-                  </div>
-                  <h3 className="text-body font-semibold" style={{ color: 'var(--text-primary)' }}>Flag Resolution</h3>
+                  <CheckCircle className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
+                  <h3 className="text-body-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Flag Resolution</h3>
                 </div>
                 <div className="flex items-end gap-2 mb-3">
-                  <span className="text-3xl font-extrabold tabular-nums leading-none" style={{ color: '#7C3AED' }}>
-                    {Math.round((vm.metrics.resolution_rate ?? 0) * 100)}%
+                  <span className="text-3xl font-extrabold tabular-nums leading-none" style={{ color: '#178A3D' }}>
+                    {Math.round(vm.metrics.resolution_rate ?? 0)}%
                   </span>
                   <span className="text-caption pb-1" style={{ color: 'var(--text-muted)' }}>resolution rate</span>
                 </div>
                 <div className="w-full h-2 rounded-full overflow-hidden" style={{ background: 'var(--surface-3)' }}>
                   <div
                     className="h-full rounded-full transition-all"
-                    style={{ width: `${Math.round((vm.metrics.resolution_rate ?? 0) * 100)}%`, background: '#7C3AED' }}
+                    style={{ width: `${Math.min(100, Math.round(vm.metrics.resolution_rate ?? 0))}%`, background: '#178A3D' }}
                   />
                 </div>
                 <div className="flex justify-between mt-2">
@@ -367,19 +336,17 @@ export default function AnalyticsDashboard() {
 
               <Card className="p-5 lg:col-span-2">
                 <div className="flex items-center gap-2 mb-4">
-                  <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: 'rgba(5,150,105,0.1)' }}>
-                    <Clock className="w-3.5 h-3.5" style={{ color: '#059669' }} />
-                  </div>
-                  <h3 className="text-body font-semibold" style={{ color: 'var(--text-primary)' }}>Stage Breakdown</h3>
+                  <Clock className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
+                  <h3 className="text-body-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Stage Breakdown</h3>
                 </div>
                 <div className="grid grid-cols-3 gap-3">
                   {[
-                    { label: 'Order -> Verify',    val: vm.metrics.average_order_to_verify_minutes,          color: '#2563EB' },
-                    { label: 'Verify -> Dispense', val: vm.metrics.average_verify_to_dispense_minutes,        color: '#059669' },
+                    { label: 'Order -> Verify',    val: vm.metrics.average_order_to_verify_minutes,          color: '#178A3D' },
+                    { label: 'Verify -> Dispense', val: vm.metrics.average_verify_to_dispense_minutes,        color: '#178A3D' },
                     { label: 'Dispense -> Admin',  val: vm.metrics.average_dispense_to_administer_minutes,    color: '#D97706' },
                   ].map(({ label, val, color }) => (
-                    <div key={label} className="rounded-xl p-3 text-center" style={{ background: `${color}10`, border: `1px solid ${color}30` }}>
-                      <p className="text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color }}>{label}</p>
+                    <div key={label} className="rounded-lg p-3 text-center" style={{ background: `${color}10`, border: `1px solid ${color}30` }}>
+                      <p className="text-micro font-semibold uppercase tracking-wider mb-1" style={{ color }}>{label}</p>
                       <p className="text-xl font-extrabold tabular-nums leading-none" style={{ color }}>{formatMinutes(val ?? 0)}</p>
                     </div>
                   ))}
@@ -389,8 +356,8 @@ export default function AnalyticsDashboard() {
 
             {vm.bottlenecks && (() => {
               const stages = [
-                { label: 'Audit / Verification Queue', key: 'verification_queue' as const, color: '#2563EB', desc: 'Submit -> Verify' },
-                { label: 'Dispensing Queue',            key: 'dispensing_queue'    as const, color: '#059669', desc: 'Verify -> Dispense' },
+                { label: 'Audit / Verification Queue', key: 'verification_queue' as const, color: '#178A3D', desc: 'Submit -> Verify' },
+                { label: 'Dispensing Queue',            key: 'dispensing_queue'    as const, color: '#178A3D', desc: 'Verify -> Dispense' },
                 { label: 'Administration Queue',        key: 'administration_queue' as const, color: '#D97706', desc: 'Dispense -> Administer' },
               ].map(s => ({ ...s, avg: vm.bottlenecks![s.key].avg, p95: vm.bottlenecks![s.key].p95, count: vm.bottlenecks![s.key].count }))
                .sort((a, b) => b.avg - a.avg);
@@ -399,13 +366,11 @@ export default function AnalyticsDashboard() {
 
               return (
                 <Card>
-                  <div className="flex items-center justify-between px-5 pt-5 pb-4" style={{ borderBottom: '1px solid var(--border-default)' }}>
+                  <div className="flex items-center justify-between px-5 py-3.5" style={{ borderBottom: '1px solid var(--border-default)' }}>
                     <div className="flex items-center gap-2.5">
-                      <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: 'rgba(220,38,38,0.1)' }}>
-                        <Zap className="w-3.5 h-3.5" style={{ color: '#DC2626' }} />
-                      </div>
+                      <Zap className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
                       <div>
-                        <h2 className="text-body font-semibold" style={{ color: 'var(--text-primary)' }}>Bottleneck Analysis</h2>
+                        <h2 className="text-body-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Bottleneck Analysis</h2>
                         <p className="text-caption" style={{ color: 'var(--text-muted)' }}>
                           Primary bottleneck: <strong style={{ color: '#DC2626' }}>{topBottleneck.label}</strong> - avg {formatMinutes(topBottleneck.avg)}
                         </p>
@@ -416,7 +381,7 @@ export default function AnalyticsDashboard() {
                     {stages.map((s, i) => (
                       <div
                         key={s.key}
-                        className="rounded-xl p-4"
+                        className="rounded-lg p-4"
                         style={{
                           background: i === 0 ? 'rgba(220,38,38,0.05)' : 'var(--surface-1)',
                           border: `1.5px solid ${i === 0 ? '#FCA5A5' : 'var(--border-default)'}`,
@@ -427,7 +392,7 @@ export default function AnalyticsDashboard() {
                             {i === 0 && ' '}{s.label}
                           </p>
                           {i === 0 && (
-                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: '#DC2626', color: 'white' }}>
+                            <span className="text-micro font-bold px-1.5 py-0.5 rounded-full" style={{ background: '#DC2626', color: 'white' }}>
                               SLOWEST
                             </span>
                           )}
@@ -435,19 +400,19 @@ export default function AnalyticsDashboard() {
                         <p className="text-caption mb-2" style={{ color: 'var(--text-muted)' }}>{s.desc}</p>
                         <div className="flex gap-4">
                           <div>
-                            <p className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Avg</p>
+                            <p className="text-micro uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Avg</p>
                             <p className="text-lg font-extrabold tabular-nums leading-none" style={{ color: i === 0 ? '#DC2626' : s.color }}>
                               {formatMinutes(s.avg)}
                             </p>
                           </div>
                           <div>
-                            <p className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>P95</p>
+                            <p className="text-micro uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>P95</p>
                             <p className="text-lg font-extrabold tabular-nums leading-none" style={{ color: 'var(--text-secondary)' }}>
                               {formatMinutes(s.p95)}
                             </p>
                           </div>
                           <div>
-                            <p className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Cases</p>
+                            <p className="text-micro uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Cases</p>
                             <p className="text-lg font-extrabold tabular-nums leading-none" style={{ color: 'var(--text-secondary)' }}>
                               {s.count}
                             </p>
@@ -462,17 +427,15 @@ export default function AnalyticsDashboard() {
 
             {slowest.length > 0 && (
               <Card>
-                <div className="flex items-center justify-between px-5 pt-5 pb-4" style={{ borderBottom: '1px solid var(--border-default)' }}>
+                <div className="flex items-center justify-between px-5 py-3.5" style={{ borderBottom: '1px solid var(--border-default)' }}>
                   <div className="flex items-center gap-2.5">
-                    <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: 'rgba(220,38,38,0.1)' }}>
-                      <AlertTriangle className="w-3.5 h-3.5" style={{ color: '#DC2626' }} />
-                    </div>
+                    <AlertTriangle className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
                     <div>
-                      <h2 className="text-body font-semibold" style={{ color: 'var(--text-primary)' }}>Slowest Prescriptions</h2>
+                      <h2 className="text-body-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Slowest Prescriptions</h2>
                       <p className="text-caption" style={{ color: 'var(--text-muted)' }}>Prescriptions with longest total turnaround time</p>
                     </div>
                   </div>
-                  <span className="text-caption font-bold px-2 py-0.5 rounded-full" style={{ background: 'rgba(220,38,38,0.1)', color: '#DC2626' }}>
+                  <span className="text-caption font-semibold px-2 py-0.5" style={{ background: 'var(--surface-2)', color: 'var(--text-secondary)', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-badge)' }}>
                     {slowest.length} items
                   </span>
                 </div>
@@ -515,7 +478,7 @@ export default function AnalyticsDashboard() {
                                 className="flex items-center gap-1.5 font-semibold tabular-nums w-fit px-2.5 py-1 rounded-lg"
                                 style={{
                                   background: isHigh ? '#FEF2F2' : '#F0FDF4',
-                                  color:      isHigh ? '#DC2626' : '#059669',
+                                  color:      isHigh ? '#DC2626' : '#178A3D',
                                   border:     `1px solid ${isHigh ? '#FECACA' : '#BBF7D0'}`,
                                 }}
                               >

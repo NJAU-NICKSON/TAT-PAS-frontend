@@ -24,7 +24,6 @@ function formatDuration(totalMinutes: number): string {
 export function TATTimer({
   startTime,
   slaThresholdMin,
-  mode = 'elapsed',
   size = 'md',
   showProgressBar = false,
   className,
@@ -32,10 +31,9 @@ export function TATTimer({
   const [elapsedMinutes, setElapsedMinutes] = useState(0);
   const [isBreached, setIsBreached] = useState(false);
 
-  const startDate = new Date(startTime);
-  const now = new Date();
-
   const updateTimer = useCallback(() => {
+    const startDate = new Date(startTime);
+    const now = new Date();
     const elapsedMs = now.getTime() - startDate.getTime();
     const elapsedMin = elapsedMs / (1000 * 60);
     setElapsedMinutes(elapsedMin);
@@ -43,7 +41,7 @@ export function TATTimer({
     if (elapsedMin > slaThresholdMin) {
       setIsBreached(true);
     }
-  }, [startDate, slaThresholdMin, now]);
+  }, [slaThresholdMin, startTime]);
 
   useEffect(() => {
     const interval = setInterval(updateTimer, 1000);

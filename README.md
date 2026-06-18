@@ -10,12 +10,12 @@ The UI has a separate dashboard for each of the 7 staff roles. Beyond the dashbo
 
 - Patient registration and visit management
 - Triage form with vitals input
-- Doctor workspace — clinical notes and prescription writing
-- Pharmacy queue — verify and dispense prescriptions
-- Audit queue — review flagged prescriptions, countersign
-- Patient journey timeline — visual TAT breakdown per stage
-- Analytics — TAT charts, SLA compliance gauges, bottleneck view
-- Billing — create bills, record payments, print receipts
+- Doctor workspace - clinical notes and prescription writing
+- Pharmacy queue - verify and dispense prescriptions
+- Audit queue - review flagged prescriptions, countersign
+- Patient journey timeline - visual TAT breakdown per stage
+- Analytics - TAT charts, SLA compliance gauges, bottleneck view
+- Billing - create bills, record payments, print receipts
 - Bed and ward management
 - Live notifications via WebSocket (SLA breaches, prescription events, payments)
 
@@ -61,7 +61,7 @@ src/
 ├── context/        AuthContext, WebSocketContext
 ├── lib/            Nav config, icon map, utility functions
 ├── models/         TypeScript interfaces (types.ts)
-├── viewModels/     Custom hooks — data fetching and derived state
+├── viewModels/     Custom hooks - data fetching and derived state
 └── views/
     ├── dashboards/ One dashboard component per role
     ├── ConsultationRoom.tsx

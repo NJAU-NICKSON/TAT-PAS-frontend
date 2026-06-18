@@ -15,14 +15,13 @@ interface AuthContextValue {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login: (username: string, password: string) => Promise<void>;
+  login: (username: string, password: string, redirectTo?: string) => Promise<void>;
   logout: () => void;
   hasRole: (...roles: UserRole[]) => boolean;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-/** Decode the JWT expiry (in ms) without a library. Returns 0 on failure. */
 function getTokenExpiry(token: string): number {
   try {
     const payload = JSON.parse(atob(token.split('.')[1]));
@@ -48,28 +47,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(async () => {
     clearRefreshTimer();
     try {
-      // Notify backend (best-effort; don't block logout on failure)
       await authApi.logout();
-    } catch {
-      // ignore
-    } finally {
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('refresh_token');
-      localStorage.removeItem('user');
+    } catch {} finally {
+      try {
+        localStorage.clear();
+        sessionStorage.clear();
+      } catch {
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        localStorage.removeItem('user');
+      }
       setUser(null);
       navigate('/login', { replace: true });
     }
   }, [navigate]);
 
-  /** Schedule a proactive token refresh ~60 s before the access token expires. */
   const scheduleRefresh = useCallback(
     (accessToken: string) => {
       clearRefreshTimer();
       const expiry = getTokenExpiry(accessToken);
       if (!expiry) return;
 
-      const msUntilRefresh = expiry - Date.now() - 60_000; // 60 s before expiry
-      if (msUntilRefresh <= 0) return; // Already expired or about to expire
+      const msUntilRefresh = expiry - Date.now() - 60_000;
+      if (msUntilRefresh <= 0) return;
 
       refreshTimerRef.current = setTimeout(async () => {
         const refreshToken = localStorage.getItem('refresh_token');
@@ -106,7 +106,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [logout, scheduleRefresh]);
 
   const login = useCallback(
-    async (username: string, password: string) => {
+    async (username: string, password: string, redirectTo = '/dashboard') => {
       const response = await authApi.login(username, password);
       const { access_token, refresh_token, user: userData } = response.data;
       localStorage.setItem('access_token', access_token);
@@ -114,7 +114,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.setItem('user', JSON.stringify(userData));
       setUser(userData);
       scheduleRefresh(access_token);
-      navigate('/dashboard', { replace: true });
+      navigate(redirectTo, { replace: true });
     },
     [navigate, scheduleRefresh]
   );

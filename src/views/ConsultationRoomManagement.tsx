@@ -2,7 +2,10 @@ import { useState, useEffect, useMemo } from 'react';
 import { X, Pencil, RefreshCw, Building2, DoorOpen, Plus } from 'lucide-react';
 import { consultationRoomsApi, ConsultationRoom, CreateConsultationRoomPayload } from '../api/consultationRooms';
 import { departmentsApi, Department } from '../api/departments';
+import { usersApi } from '../api/users';
+import { User } from '../models/types';
 import { useAuth } from '../context/AuthContext';
+import { withDoctorTitle } from '../lib/utils';
 import { toast } from 'sonner';
 
 type RoomStatus = ConsultationRoom['status'];
@@ -10,7 +13,7 @@ type RoomStatus = ConsultationRoom['status'];
 const ROOM_STATUS_CONFIG: Record<RoomStatus, { bg: string; color: string; border: string; dot: string; label: string }> = {
   available: { bg: '#F0FDF4', color: '#15803D', border: '#86EFAC', dot: '#22C55E', label: 'Available' },
   occupied:  { bg: '#FEF2F2', color: '#B91C1C', border: '#FCA5A5', dot: '#EF4444', label: 'Occupied'  },
-  cleaning:  { bg: '#EFF6FF', color: '#1D4ED8', border: '#93C5FD', dot: '#3B82F6', label: 'Cleaning'  },
+  cleaning:  { bg: '#EFF6FF', color: '#0F6E2F', border: '#93C5FD', dot: '#1FA64A', label: 'Cleaning'  },
   reserved:  { bg: '#FFFBEB', color: '#92400E', border: '#FCD34D', dot: '#F59E0B', label: 'Reserved'  },
 };
 
@@ -38,65 +41,86 @@ function RoomCell({ room, onEdit, canEdit }: {
   const cfg = ROOM_STATUS_CONFIG[room.status];
   return (
     <div
-      className="rounded-xl p-4 flex flex-col gap-2"
-      style={{ background: cfg.bg, border: `1.5px solid ${cfg.border}` }}
+      className="flex flex-col"
+      style={{ background: 'var(--bg-card)', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-card)' }}
     >
-      <div className="flex items-start justify-between gap-2">
-        <div>
-          <p className="font-bold text-sm" style={{ color: cfg.color }}>{room.room_name}</p>
-          <p className="text-caption mt-0.5" style={{ color: cfg.color, opacity: 0.8 }}>
+      <div className="px-4 pt-3.5 pb-3 flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <p className="text-body-sm font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{room.room_name}</p>
+          <p className="text-caption mt-0.5 font-mono" style={{ color: 'var(--text-muted)' }}>
             {room.room_number}{room.floor ? ` · Floor ${room.floor}` : ''}
           </p>
         </div>
         <span
-          className="flex items-center gap-1 text-caption font-bold px-2 py-0.5 rounded-full flex-shrink-0"
-          style={{ background: 'rgba(0,0,0,0.06)', color: cfg.color }}
+          className="flex items-center gap-1.5 text-meta font-semibold px-2 py-0.5 flex-shrink-0"
+          style={{ background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}`, borderRadius: 'var(--radius-badge)' }}
         >
           <span className="w-1.5 h-1.5 rounded-full" style={{ background: cfg.dot }} />
           {cfg.label}
         </span>
       </div>
 
-      {room.current_doctor_name && (
-        <p className="text-xs font-semibold" style={{ color: cfg.color }}>
-          Doctor: {room.current_doctor_name}
-        </p>
-      )}
-      {room.status === 'occupied' && room.current_patient_name && (
-        <p className="text-xs font-semibold" style={{ color: cfg.color }}>
-          Patient: {room.current_patient_name}
-        </p>
-      )}
-      {room.notes && (
-        <p className="text-caption italic truncate" style={{ color: cfg.color, opacity: 0.7 }}>{room.notes}</p>
-      )}
+      <div className="px-4 pb-3 space-y-1 border-t" style={{ borderColor: 'var(--border-default)', paddingTop: room.current_doctor_name || room.current_nurse_name || room.notes || room.current_patient_name ? '0.625rem' : '0' }}>
+        {room.current_doctor_name && (
+          <div className="flex justify-between gap-2 text-caption">
+            <span style={{ color: 'var(--text-muted)' }}>Doctor</span>
+            <span className="font-semibold text-right" style={{ color: 'var(--text-primary)' }}>{withDoctorTitle(room.current_doctor_name)}</span>
+          </div>
+        )}
+        {room.current_nurse_name && (
+          <div className="flex justify-between gap-2 text-caption">
+            <span style={{ color: 'var(--text-muted)' }}>Nurse</span>
+            <span className="font-semibold text-right" style={{ color: 'var(--text-primary)' }}>{room.current_nurse_name}</span>
+          </div>
+        )}
+        {room.status === 'occupied' && room.current_patient_name && (
+          <div className="flex justify-between gap-2 text-caption">
+            <span style={{ color: 'var(--text-muted)' }}>Patient</span>
+            <span className="font-semibold text-right" style={{ color: 'var(--text-primary)' }}>{room.current_patient_name}</span>
+          </div>
+        )}
+        {room.notes && (
+          <p className="text-caption truncate" style={{ color: 'var(--text-muted)' }}>{room.notes}</p>
+        )}
+      </div>
 
       {canEdit && (
-        <button
-          onClick={onEdit}
-          className="flex items-center gap-1 text-caption font-semibold px-2 py-1 rounded-lg border self-start mt-1 hover:opacity-80 transition-opacity"
-          style={{ borderColor: cfg.border, color: cfg.color }}
-        >
-          <Pencil className="w-3 h-3" /> Update
-        </button>
+        <div className="px-4 py-2.5 border-t" style={{ borderColor: 'var(--border-default)' }}>
+          <button
+            onClick={onEdit}
+            className="flex items-center gap-1.5 text-caption font-semibold transition-opacity hover:opacity-70"
+            style={{ color: 'var(--clinical-600)' }}
+          >
+            <Pencil className="w-3 h-3" /> Update
+          </button>
+        </div>
       )}
     </div>
   );
 }
 
-function EditRoomStatusModal({ room, onSave, onClose }: {
+function EditRoomStatusModal({ room, doctors, nurses, onSave, onClose }: {
   room: ConsultationRoom;
+  doctors: User[];
+  nurses: User[];
   onSave: (u: ConsultationRoom) => void;
   onClose: () => void;
 }) {
   const [status, setStatus] = useState<RoomStatus>(room.status);
   const [notes, setNotes]   = useState(room.notes ?? '');
+  const [doctorId, setDoctorId] = useState(room.current_doctor_id ?? '');
+  const [nurseId, setNurseId] = useState(room.current_nurse_id ?? '');
   const [saving, setSaving] = useState(false);
 
   const handleSave = async () => {
     setSaving(true);
     try {
-      const res = await consultationRoomsApi.update(room.id, { status, notes: notes || undefined });
+      const res = await consultationRoomsApi.update(room.id, {
+        status,
+        notes: notes || undefined,
+        current_doctor_id: doctorId,
+        current_nurse_id: nurseId,
+      });
       toast.success(`"${room.room_name}" updated to ${ROOM_STATUS_CONFIG[status].label}`);
       onSave(res.data);
     } catch {
@@ -108,13 +132,13 @@ function EditRoomStatusModal({ room, onSave, onClose }: {
     <>
       <div className="fixed inset-0 z-50 bg-black/40" onClick={onClose} />
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
-        <div onClick={e => e.stopPropagation()} className="w-full max-w-sm rounded-2xl overflow-hidden" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-default)', boxShadow: 'var(--shadow-modal)' }}>
+        <div role="dialog" aria-modal="true" onClick={e => e.stopPropagation()} className="w-full max-w-sm rounded-lg overflow-hidden" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-default)', boxShadow: 'var(--shadow-modal)' }}>
           <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid var(--border-default)' }}>
             <div>
               <h3 className="text-body font-bold" style={{ color: 'var(--text-primary)' }}>{room.room_name}</h3>
               <p className="text-caption mt-0.5" style={{ color: 'var(--text-muted)' }}>{room.room_number}</p>
             </div>
-            <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-[var(--bg-base)]" style={{ color: 'var(--text-muted)' }}><X className="w-4 h-4" /></button>
+            <button onClick={onClose} aria-label="Close" className="p-1.5 rounded-lg hover:bg-[var(--bg-base)]" style={{ color: 'var(--text-muted)' }}><X className="w-4 h-4" /></button>
           </div>
           <div className="px-5 py-4 space-y-4">
             <div className="grid grid-cols-2 gap-3">
@@ -122,7 +146,7 @@ function EditRoomStatusModal({ room, onSave, onClose }: {
                 <button
                   key={k}
                   onClick={() => setStatus(k)}
-                  className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-semibold text-left transition-all"
+                  className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-semibold text-left transition-all"
                   style={{
                     background: status === k ? v.bg   : 'var(--bg-base)',
                     border:    `1.5px solid ${status === k ? v.border : 'var(--border-default)'}`,
@@ -134,12 +158,34 @@ function EditRoomStatusModal({ room, onSave, onClose }: {
                 </button>
               ))}
             </div>
+            <Field label="Assigned Doctor">
+              <select value={doctorId} onChange={e => setDoctorId(e.target.value)} className={inputCls} style={inputStyle}>
+                <option value="">Unassigned</option>
+                {doctors.map(d => (
+                  <option key={d.id} value={d.id}>{withDoctorTitle(d.full_name || d.username)}</option>
+                ))}
+              </select>
+              <p className="text-caption mt-1" style={{ color: 'var(--text-muted)' }}>
+                The doctor who sits in this room. Patients assigned to this doctor are auto-directed here.
+              </p>
+            </Field>
+            <Field label="Assigned Nurse">
+              <select value={nurseId} onChange={e => setNurseId(e.target.value)} className={inputCls} style={inputStyle}>
+                <option value="">Unassigned</option>
+                {nurses.map(n => (
+                  <option key={n.id} value={n.id}>{n.full_name || n.username}</option>
+                ))}
+              </select>
+              <p className="text-caption mt-1" style={{ color: 'var(--text-muted)' }}>
+                The nurse who takes triage for this room. They are paired with the doctor above.
+              </p>
+            </Field>
             <Field label="Notes">
               <textarea value={notes} onChange={e => setNotes(e.target.value)} className={inputCls} style={{ ...inputStyle, resize: 'none' }} rows={2} placeholder="Optional notes" />
             </Field>
           </div>
           <div className="flex justify-end gap-3 px-5 py-4" style={{ borderTop: '1px solid var(--border-default)', background: 'var(--bg-base)' }}>
-            <button onClick={onClose} className="px-4 py-2 rounded-lg text-sm font-semibold border hover:bg-[var(--bg-row-hover)]" style={{ color: 'var(--text-primary)', borderColor: 'var(--border-default)' }}>Cancel</button>
+            <button onClick={onClose} aria-label="Close" className="px-4 py-2 rounded-lg text-sm font-semibold border hover:bg-[var(--bg-row-hover)]" style={{ color: 'var(--text-primary)', borderColor: 'var(--border-default)' }}>Cancel</button>
             <button onClick={handleSave} disabled={saving} className="px-4 py-2 rounded-lg text-sm font-semibold text-white hover:opacity-90 disabled:opacity-60" style={{ background: 'var(--clinical-600)' }}>
               {saving ? 'Saving' : 'Save'}
             </button>
@@ -185,7 +231,7 @@ function AddRoomModal({ departments, onSave, onClose }: {
         <form
           onSubmit={handleSubmit}
           onClick={e => e.stopPropagation()}
-          className="w-full max-w-md rounded-2xl overflow-hidden"
+          className="w-full max-w-md rounded-lg overflow-hidden"
           style={{ background: 'var(--bg-card)', border: '1px solid var(--border-default)', boxShadow: 'var(--shadow-modal)' }}
         >
           <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: '1px solid var(--border-default)' }}>
@@ -248,6 +294,8 @@ export default function ConsultationRoomManagement() {
   const { user } = useAuth();
   const [rooms, setRooms]           = useState<ConsultationRoom[]>([]);
   const [departments, setDepts]     = useState<Department[]>([]);
+  const [doctors, setDoctors]       = useState<User[]>([]);
+  const [nurses, setNurses]         = useState<User[]>([]);
   const [isLoading, setLoading]     = useState(false);
   const [editRoom, setEditRoom]     = useState<ConsultationRoom | null>(null);
   const [showAdd, setShowAdd]       = useState(false);
@@ -258,13 +306,19 @@ export default function ConsultationRoomManagement() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [roomRes, deptRes] = await Promise.all([
+      const [roomRes, deptRes, docRes, nurseRes] = await Promise.all([
         consultationRoomsApi.list(),
         departmentsApi.list({ limit: 100 }),
+        usersApi.listDoctors(),
+        usersApi.listNurses(),
       ]);
       setRooms(Array.isArray(roomRes.data) ? roomRes.data : []);
       const deptData = deptRes.data;
       setDepts(Array.isArray(deptData) ? deptData : (deptData as { items?: Department[] }).items ?? []);
+      const docData = docRes.data;
+      setDoctors(Array.isArray(docData) ? docData : (docData as { items?: User[] }).items ?? []);
+      const nurseData = nurseRes.data;
+      setNurses(Array.isArray(nurseData) ? nurseData : (nurseData as { items?: User[] }).items ?? []);
     } catch {
       toast.error('Failed to load consultation rooms');
     } finally {
@@ -282,7 +336,7 @@ export default function ConsultationRoomManagement() {
   const byDept = useMemo(() => {
     const map: Record<string, ConsultationRoom[]> = {};
     for (const r of rooms) {
-      const key = deptMap[r.department_id] ?? r.department_id;
+      const key = deptMap[r.department_id] ?? 'Unassigned Department';
       if (!map[key]) map[key] = [];
       map[key].push(r);
     }
@@ -325,14 +379,17 @@ export default function ConsultationRoomManagement() {
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: 'Total',     value: rooms.length, color: 'var(--text-primary)', bg: 'var(--bg-card)' },
-          { label: 'Available', value: available,    color: '#15803D',             bg: '#F0FDF4' },
-          { label: 'Occupied',  value: occupied,     color: '#B91C1C',             bg: '#FEF2F2' },
-          { label: 'Cleaning',  value: cleaning + reserved, color: '#1D4ED8',      bg: '#EFF6FF' },
-        ].map(({ label, value, color, bg }) => (
-          <div key={label} className="rounded-xl p-4 text-center" style={{ background: bg, border: '1px solid var(--border-default)' }}>
-            <p className="text-caption font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{label}</p>
-            <p className="text-2xl font-extrabold tabular-nums mt-1" style={{ color }}>{value}</p>
+          { label: 'Total',     value: rooms.length,        dot: 'var(--text-muted)' },
+          { label: 'Available', value: available,           dot: '#22C55E' },
+          { label: 'Occupied',  value: occupied,            dot: '#EF4444' },
+          { label: 'Cleaning',  value: cleaning + reserved, dot: '#1FA64A' },
+        ].map(({ label, value, dot }) => (
+          <div key={label} className="px-4 py-3" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-card)' }}>
+            <div className="flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full" style={{ background: dot }} />
+              <p className="text-caption font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{label}</p>
+            </div>
+            <p className="text-xl font-bold tabular-nums mt-1" style={{ color: 'var(--text-primary)' }}>{value}</p>
           </div>
         ))}
       </div>
@@ -340,7 +397,7 @@ export default function ConsultationRoomManagement() {
       {isLoading ? (
         <div className="space-y-3">
           {[1, 2].map(i => (
-            <div key={i} className="h-32 rounded-2xl animate-pulse" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-default)' }} />
+            <div key={i} className="h-32 rounded-lg animate-pulse" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-default)' }} />
           ))}
         </div>
       ) : rooms.length === 0 ? (
@@ -393,6 +450,8 @@ export default function ConsultationRoomManagement() {
       {editRoom && (
         <EditRoomStatusModal
           room={editRoom}
+          doctors={doctors}
+          nurses={nurses}
           onSave={updated => {
             setRooms(prev => prev.map(r => r.id === updated.id ? updated : r));
             setEditRoom(null);

@@ -54,7 +54,7 @@ export function CountersignModal({ flag, onSuccess, onClose }: CountersignModalP
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div
-        className="w-full max-w-lg mx-4 rounded-2xl overflow-hidden animate-slide-up"
+        className="w-full max-w-lg mx-4 rounded-lg overflow-hidden animate-slide-up"
         style={{ background: 'var(--bg-card)', boxShadow: 'var(--shadow-modal)' }}
       >
         <div
@@ -105,7 +105,7 @@ export function CountersignModal({ flag, onSuccess, onClose }: CountersignModalP
         <div className="px-6 py-5 space-y-4">
           {isSameUser && (
             <div
-              className="flex items-start gap-2.5 p-3 rounded-xl border text-body-sm"
+              className="flex items-start gap-2.5 p-3 rounded-lg border text-body-sm"
               style={{ background: 'var(--status-warning-bg)', borderColor: 'var(--status-warning-border)', color: 'var(--status-warning-text)' }}
             >
               <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
@@ -126,7 +126,7 @@ export function CountersignModal({ flag, onSuccess, onClose }: CountersignModalP
               disabled={isSameUser || isSubmitting}
               rows={4}
               placeholder="State your clinical assessment and attestation for this flag"
-              className="w-full px-3 py-2.5 text-body-sm border rounded-xl resize-none focus:outline-none transition-colors disabled:opacity-50"
+              className="w-full px-3 py-2.5 text-body-sm border rounded-lg resize-none focus:outline-none transition-colors disabled:opacity-50"
               style={{
                 borderColor: noteValid ? 'var(--border-focus)' : 'var(--border-default)',
                 background: 'var(--bg-base)',
@@ -142,7 +142,7 @@ export function CountersignModal({ flag, onSuccess, onClose }: CountersignModalP
 
           {error && (
             <div
-              className="p-3 rounded-xl border text-body-sm font-medium"
+              className="p-3 rounded-lg border text-body-sm font-medium"
               style={{ background: 'var(--bg-alert)', borderColor: 'var(--border-breach)', color: 'var(--sla-breached)' }}
             >
               {error}
@@ -154,7 +154,7 @@ export function CountersignModal({ flag, onSuccess, onClose }: CountersignModalP
           <button
             onClick={onClose}
             disabled={isSubmitting}
-            className="px-4 py-2 text-body-sm font-semibold rounded-xl border hover:bg-[var(--bg-base)] transition-colors disabled:opacity-50"
+            className="px-4 py-2 text-body-sm font-semibold rounded-lg border hover:bg-[var(--bg-base)] transition-colors disabled:opacity-50"
             style={{ borderColor: 'var(--border-default)', color: 'var(--text-secondary)', borderRadius: 'var(--radius-button)' }}
           >
             Cancel
@@ -162,7 +162,7 @@ export function CountersignModal({ flag, onSuccess, onClose }: CountersignModalP
           <button
             onClick={handleSubmit}
             disabled={!canSubmit}
-            className="flex items-center gap-2 px-4 py-2 text-body-sm font-semibold text-white rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex items-center gap-2 px-4 py-2 text-body-sm font-semibold text-white rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             style={{ background: canSubmit ? 'var(--sla-breached)' : 'var(--text-muted)', borderRadius: 'var(--radius-button)' }}
           >
             {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}

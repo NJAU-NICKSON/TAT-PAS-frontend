@@ -12,7 +12,7 @@ import { prescriptionsApi } from '../api/prescriptions';
 import { patientsApi } from '../api/patients';
 import { consultationRoomsApi, ConsultationRoom as CRoom } from '../api/consultationRooms';
 import { useAuth } from '../context/AuthContext';
-import { Patient, MedicationItem, Priority } from '../models/types';
+import { OrderSource, Patient, MedicationItem, Priority } from '../models/types';
 
 const ROUTE_OPTIONS = [
   { value: 'oral',        label: 'Oral' },
@@ -40,10 +40,10 @@ const FREQ_OPTIONS = [
 ];
 
 const PRIORITY_OPTIONS: { value: Priority; label: string; color: string }[] = [
-  { value: 'routine',   label: 'Routine',   color: '#2563EB' },
+  { value: 'routine',   label: 'Routine',   color: '#178A3D' },
   { value: 'urgent',    label: 'Urgent',    color: '#D97706' },
   { value: 'stat',      label: 'STAT',      color: '#DC2626' },
-  { value: 'discharge', label: 'Discharge', color: '#7C3AED' },
+  { value: 'discharge', label: 'Discharge', color: '#178A3D' },
 ];
 
 function calcAge(dob?: string): string {
@@ -60,8 +60,8 @@ function timeWaiting(iso: string): string {
   return `${hrs}h ${mins % 60}m`;
 }
 
-function visitOrderSource(visitType: string): string {
-  const map: Record<string, string> = {
+function visitOrderSource(visitType: string): OrderSource {
+  const map: Record<string, OrderSource> = {
     opd: 'opd', ipd: 'ipd', emergency: 'emergency',
     day_surgery: 'theatre', maternity: 'maternity',
     paediatric: 'paediatric', nicu: 'nicu',
@@ -95,117 +95,10 @@ function Lbl({ children, required }: { children: React.ReactNode; required?: boo
   );
 }
 
-function RoomPickerModal({
-  rooms, loading, onAssign, onSkip,
-}: {
-  rooms: CRoom[];
-  loading: boolean;
-  onAssign: (room: CRoom) => void;
-  onSkip: () => void;
-}) {
-  const [selected, setSelected] = useState<string | null>(null);
-  const available = rooms.filter(r => r.status === 'available');
-
-  return (
-    <>
-      <div className="fixed inset-0 z-40" style={{ background: 'rgba(0,0,0,0.45)' }} />
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div
-          className="w-full max-w-md rounded-2xl overflow-hidden"
-          style={{ background: 'var(--bg-card)', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}
-        >
-          <div className="px-6 py-5" style={{ borderBottom: '1px solid var(--border-default)' }}>
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: '#EFF6FF' }}>
-                <DoorOpen className="w-5 h-5" style={{ color: '#2563EB' }} />
-              </div>
-              <div>
-                <p className="text-body font-bold" style={{ color: 'var(--text-primary)' }}>Assign Consultation Room</p>
-                <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                  {available.length > 0 ? `${available.length} room${available.length > 1 ? 's' : ''} available` : 'No rooms currently available'}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="p-4 space-y-2 max-h-64 overflow-y-auto">
-            {loading ? (
-              [1, 2, 3].map(i => (
-                <div key={i} className="h-14 rounded-xl animate-pulse" style={{ background: 'var(--bg-base)' }} />
-              ))
-            ) : available.length === 0 ? (
-              <div className="py-6 text-center">
-                <p className="text-body-sm" style={{ color: 'var(--text-muted)' }}>All rooms are occupied or unavailable.</p>
-                <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>You can still proceed without a room assignment.</p>
-              </div>
-            ) : (
-              available.map(room => {
-                const isSelected = selected === room.id;
-                return (
-                  <button
-                    key={room.id}
-                    onClick={() => setSelected(room.id)}
-                    className="w-full text-left rounded-xl p-3.5 transition-all"
-                    style={{
-                      background: isSelected ? '#EFF6FF' : 'var(--bg-base)',
-                      border: `2px solid ${isSelected ? '#2563EB' : 'var(--border-default)'}`,
-                    }}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
-                          {room.room_name}
-                        </p>
-                        <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                          Room {room.room_number}{room.floor ? ` · Floor ${room.floor}` : ''}
-                        </p>
-                      </div>
-                      <span
-                        className="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase"
-                        style={{ background: '#DCFCE7', color: '#059669' }}
-                      >
-                        Available
-                      </span>
-                    </div>
-                  </button>
-                );
-              })
-            )}
-          </div>
-
-          <div
-            className="flex items-center justify-between px-6 py-4 gap-3"
-            style={{ borderTop: '1px solid var(--border-default)' }}
-          >
-            <button
-              onClick={onSkip}
-              className="px-4 py-2 rounded-lg text-sm font-semibold border hover:bg-[var(--bg-base)] transition-colors"
-              style={{ color: 'var(--text-secondary)', borderColor: 'var(--border-default)' }}
-            >
-              Skip  -  No Room
-            </button>
-            <button
-              onClick={() => {
-                const room = available.find(r => r.id === selected);
-                if (room) onAssign(room);
-              }}
-              disabled={!selected}
-              className="flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold text-white hover:opacity-90 disabled:opacity-40 transition-opacity"
-              style={{ background: '#2563EB' }}
-            >
-              <DoorOpen className="w-4 h-4" /> Assign Room
-            </button>
-          </div>
-        </div>
-      </div>
-    </>
-  );
-}
-
 function NoPatientSelected() {
   return (
     <div className="flex flex-col items-center justify-center h-full gap-4 p-12 text-center">
-      <div className="w-20 h-20 rounded-2xl flex items-center justify-center" style={{ background: 'var(--clinical-100)' }}>
+      <div className="w-20 h-20 rounded-lg flex items-center justify-center" style={{ background: 'var(--clinical-100)' }}>
         <Stethoscope className="w-10 h-10" style={{ color: 'var(--clinical-600)' }} />
       </div>
       <div>
@@ -266,10 +159,10 @@ function QueuePanel({
               {label}
               {count > 0 && (
                 <span
-                  className="w-4 h-4 rounded-full text-[10px] flex items-center justify-center font-bold"
+                  className="w-4 h-4 rounded-full text-micro flex items-center justify-center font-bold"
                   style={{
-                    background: key === 'waiting' ? '#DBEAFE' : '#D1FAE5',
-                    color:      key === 'waiting' ? '#1D4ED8' : '#065F46',
+                    background: key === 'waiting' ? '#DBEAFE' : '#C8EED6',
+                    color:      key === 'waiting' ? '#0F6E2F' : '#0F6E2F',
                   }}
                 >
                   {count}
@@ -284,7 +177,7 @@ function QueuePanel({
         {loading && list.length === 0 ? (
           <div className="space-y-2 px-3 py-2">
             {[1, 2, 3].map(i => (
-              <div key={i} className="h-20 rounded-xl animate-pulse" style={{ background: 'var(--bg-base)' }} />
+              <div key={i} className="h-20 rounded-lg animate-pulse" style={{ background: 'var(--bg-base)' }} />
             ))}
           </div>
         ) : list.length === 0 ? (
@@ -341,7 +234,7 @@ function QueuePanel({
                       </span>
                       {(isCritical || isUrgent) && (
                         <span
-                          className="text-[10px] font-bold px-1.5 py-0.5 rounded"
+                          className="text-micro font-bold px-1.5 py-0.5 rounded"
                           style={{
                             background: isCritical ? '#FEE2E2' : '#FEF3C7',
                             color:      isCritical ? '#DC2626' : '#D97706',
@@ -419,7 +312,7 @@ function MedRow({
 
   return (
     <div
-      className="rounded-xl p-4"
+      className="rounded-lg p-4"
       style={{
         background: isHighDose ? '#FFFBEB' : 'var(--bg-base)',
         border: `1.5px solid ${isHighDose ? '#FCD34D' : 'var(--border-default)'}`,
@@ -504,7 +397,7 @@ const NEXT_OPTIONS: { value: NextStatus; label: string; desc: string; color: str
     value: 'treatment_in_progress',
     label: 'Treatment in Progress',
     desc: 'Prescription sent to pharmacy  -  patient receives medication on-site.',
-    color: '#059669',
+    color: '#178A3D',
   },
   {
     value: 'awaiting_results',
@@ -516,7 +409,7 @@ const NEXT_OPTIONS: { value: NextStatus; label: string; desc: string; color: str
     value: 'ready_for_discharge',
     label: 'Ready for Discharge',
     desc: 'Consultation complete  -  patient may be discharged with instructions.',
-    color: '#7C3AED',
+    color: '#178A3D',
   },
 ];
 
@@ -537,7 +430,7 @@ function CompleteModal({
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
         <div
           onClick={e => e.stopPropagation()}
-          className="w-full max-w-md rounded-2xl overflow-hidden"
+          className="w-full max-w-md rounded-lg overflow-hidden"
           style={{ background: 'var(--bg-card)', border: '1px solid var(--border-default)', boxShadow: 'var(--shadow-modal)' }}
         >
           <div className="px-6 py-5" style={{ borderBottom: '1px solid var(--border-default)' }}>
@@ -554,7 +447,7 @@ function CompleteModal({
             {NEXT_OPTIONS.map(opt => (
               <button
                 key={opt.value} onClick={() => setNext(opt.value)}
-                className="w-full text-left p-4 rounded-xl transition-all"
+                className="w-full text-left p-4 rounded-lg transition-all"
                 style={{
                   background: next === opt.value ? `${opt.color}12` : 'var(--bg-base)',
                   border: `2px solid ${next === opt.value ? opt.color : 'var(--border-default)'}`,
@@ -569,8 +462,8 @@ function CompleteModal({
           </div>
 
           {hasPendingMeds && next === 'treatment_in_progress' && (
-            <div className="mx-6 mb-4 px-4 py-3 rounded-xl" style={{ background: '#F0FDF4', border: '1px solid #BBF7D0' }}>
-              <p className="text-xs font-semibold" style={{ color: '#065F46' }}>
+            <div className="mx-6 mb-4 px-4 py-3 rounded-lg" style={{ background: '#F0FDF4', border: '1px solid #BBF7D0' }}>
+              <p className="text-xs font-semibold" style={{ color: '#0F6E2F' }}>
                 Prescription will be submitted and sent to the pharmacy queue now.
               </p>
             </div>
@@ -620,36 +513,26 @@ export default function ConsultationRoom() {
   const navigate  = useNavigate();
   const isAdmin   = user?.role === 'admin';
 
-  // Queue
   const [loading,    setLoading]    = useState(false);
   const [allVisits,  setAllVisits]  = useState<Visit[]>([]);
 
-  // Active consultation
   const [activeVisit,    setActiveVisit]    = useState<Visit | null>(null);
   const [patient,        setPatient]        = useState<Patient | null>(null);
   const [patientLoading, setPatientLoading] = useState(false);
 
-  // Room assignment
-  const [availableRooms,  setAvailableRooms]  = useState<CRoom[]>([]);
-  const [roomsLoading,    setRoomsLoading]    = useState(false);
-  const [showRoomPicker,  setShowRoomPicker]  = useState(false);
   const [assignedRoomId,  setAssignedRoomId]  = useState<string | null>(null);
   const [assignedRoomName,setAssignedRoomName]= useState<string | null>(null);
-  const [pendingVisit,    setPendingVisit]    = useState<Visit | null>(null);
 
-  // Consultation note
   const [note,      setNote]      = useState<NoteState>(emptyNote());
   const [noteSaved, setNoteSaved] = useState(false);
   const [noteSaving,setNoteSaving]= useState(false);
 
-  // Prescription
   const [meds,         setMeds]         = useState<MedicationItem[]>([emptyMed()]);
   const [priority,     setPriority]     = useState<Priority>('routine');
   const [rxNotes,      setRxNotes]      = useState('');
   const [rxSubmitted,  setRxSubmitted]  = useState(false);
   const [rxSubmitting, setRxSubmitting] = useState(false);
 
-  // Complete modal
   const [showComplete, setShowComplete] = useState(false);
   const [completing,   setCompleting]   = useState(false);
 
@@ -710,39 +593,21 @@ export default function ConsultationRoom() {
     }
   }, []);
 
-  const activateVisit = useCallback(async (visit: Visit, room?: CRoom) => {
+  const activateVisit = useCallback(async (visit: Visit) => {
     setActiveVisit(visit);
-    setAssignedRoomId(room?.id ?? null);
-    setAssignedRoomName(room?.room_name ?? null);
+    setAssignedRoomId(null);
+    setAssignedRoomName(visit.consultation_room ?? null);
 
     if (visit.status === 'waiting_for_doctor') {
       try {
-        const updated = await visitsApi.update(visit.id, {
-          status: 'in_consultation',
-          ...(room ? { consultation_room: room.room_name } : {}),
-        });
+        const updated = await visitsApi.update(visit.id, { status: 'in_consultation' });
         setActiveVisit(updated.data);
         setAllVisits(prev => prev.map(v => v.id === visit.id ? updated.data : v));
-      } catch {
-        // non-critical  -  status update failure doesn't block consultation
-      }
+      } catch {}
     }
-
-    if (room) {
-      try {
-        await consultationRoomsApi.update(room.id, {
-          status:             'occupied',
-          current_patient_id: visit.patient_id,
-          current_doctor_id:  user?.id,
-        });
-      } catch {
-        // non-critical
-      }
-    }
-  }, [user?.id]);
+  }, []);
 
   const handleSelectVisit = useCallback(async (visit: Visit) => {
-    // Reset workspace
     setNote(emptyNote());
     setMeds([emptyMed()]);
     setPriority('routine');
@@ -750,42 +615,17 @@ export default function ConsultationRoom() {
     setRxSubmitted(false);
     setNoteSaved(false);
 
-    // Load patient data immediately (don't wait for room choice)
     setActiveVisit(visit);
     await loadPatientAndNote(visit);
 
-    // If already in consultation (re-selecting active), skip room picker
     if (visit.status === 'in_consultation') {
       setAssignedRoomId(null);
       setAssignedRoomName(visit.consultation_room ?? null);
       return;
     }
 
-    // Load available rooms and show picker
-    setPendingVisit(visit);
-    setRoomsLoading(true);
-    setShowRoomPicker(true);
-    try {
-      const res = await consultationRoomsApi.list({ status: 'available' });
-      setAvailableRooms(Array.isArray(res.data) ? res.data : []);
-    } catch {
-      setAvailableRooms([]);
-    } finally {
-      setRoomsLoading(false);
-    }
-  }, [loadPatientAndNote]);
-
-  const handleRoomAssigned = useCallback(async (room: CRoom) => {
-    setShowRoomPicker(false);
-    if (pendingVisit) await activateVisit(pendingVisit, room);
-    setPendingVisit(null);
-  }, [pendingVisit, activateVisit]);
-
-  const handleRoomSkipped = useCallback(async () => {
-    setShowRoomPicker(false);
-    if (pendingVisit) await activateVisit(pendingVisit);
-    setPendingVisit(null);
-  }, [pendingVisit, activateVisit]);
+    await activateVisit(visit);
+  }, [loadPatientAndNote, activateVisit]);
 
   const updateMed = (i: number, field: keyof MedicationItem, val: string | number) =>
     setMeds(prev => prev.map((m, idx) => idx === i ? { ...m, [field]: val } : m));
@@ -826,7 +666,7 @@ export default function ConsultationRoom() {
         medications:  valid,
         visit_id:     activeVisit.id,
         priority,
-        order_source: visitOrderSource(activeVisit.visit_type) as any,
+        order_source: visitOrderSource(activeVisit.visit_type),
         notes:        rxNotes || undefined,
       });
       setRxSubmitted(true);
@@ -843,7 +683,6 @@ export default function ConsultationRoom() {
     if (!activeVisit) return;
     setCompleting(true);
     try {
-      // 1. Save note if it has content and hasn't been saved
       if (!noteSaved && Object.values(note).some(v => v.trim())) {
         await visitsApi.addConsultationNote(activeVisit.id, {
           clinical_findings:     note.clinical_findings     || undefined,
@@ -854,7 +693,6 @@ export default function ConsultationRoom() {
         });
       }
 
-      // 2. Submit prescription if meds have been entered but not yet submitted
       if (!rxSubmitted && hasValidMeds) {
         const valid = meds.filter(m => m.name.trim() && m.dose.trim() && m.route && m.frequency);
         await prescriptionsApi.create({
@@ -862,15 +700,13 @@ export default function ConsultationRoom() {
           medications:  valid,
           visit_id:     activeVisit.id,
           priority,
-          order_source: visitOrderSource(activeVisit.visit_type) as any,
+          order_source: visitOrderSource(activeVisit.visit_type),
           notes:        rxNotes || undefined,
         });
       }
 
-      // 3. Advance visit status
       await visitsApi.update(activeVisit.id, { status: nextStatus });
 
-      // 4. Release the consultation room
       if (assignedRoomId) {
         try {
           await consultationRoomsApi.update(assignedRoomId, {
@@ -878,9 +714,7 @@ export default function ConsultationRoom() {
             current_patient_id: undefined,
             current_doctor_id:  undefined,
           });
-        } catch {
-          // non-critical
-        }
+        } catch {}
       }
 
       toast.success('Consultation completed');
@@ -922,10 +756,10 @@ export default function ConsultationRoom() {
             <div className="flex items-start justify-between px-5 py-4">
               <div className="flex items-start gap-3">
                 {patientLoading ? (
-                  <div className="w-12 h-12 rounded-xl animate-pulse" style={{ background: 'var(--bg-base)' }} />
+                  <div className="w-12 h-12 rounded-lg animate-pulse" style={{ background: 'var(--bg-base)' }} />
                 ) : (
                   <div
-                    className="w-12 h-12 rounded-xl flex items-center justify-center text-lg font-bold flex-shrink-0"
+                    className="w-12 h-12 rounded-lg flex items-center justify-center text-lg font-bold flex-shrink-0"
                     style={{ background: 'var(--clinical-100)', color: 'var(--clinical-600)' }}
                   >
                     {(activeVisit.patient_name ?? 'P').charAt(0).toUpperCase()}
@@ -977,7 +811,7 @@ export default function ConsultationRoom() {
                 {assignedRoomName && (
                   <span
                     className="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full"
-                    style={{ background: '#DCFCE7', color: '#059669', border: '1px solid #A7F3D0' }}
+                    style={{ background: '#DCFCE7', color: '#178A3D', border: '1px solid #A7F3D0' }}
                   >
                     <DoorOpen className="w-3.5 h-3.5" />
                     {assignedRoomName}
@@ -1021,18 +855,18 @@ export default function ConsultationRoom() {
           <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6" style={{ background: '#F1F5F9' }}>
 
             <div
-              className="rounded-2xl overflow-hidden"
+              className="rounded-lg overflow-hidden"
               style={{ background: 'var(--bg-card)', border: '1px solid var(--border-default)', boxShadow: 'var(--shadow-card)' }}
             >
               <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid var(--border-default)' }}>
                 <div className="flex items-center gap-2.5">
                   <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: '#EFF6FF' }}>
-                    <FileText className="w-4 h-4" style={{ color: '#2563EB' }} />
+                    <FileText className="w-4 h-4" style={{ color: '#178A3D' }} />
                   </div>
                   <p className="text-body font-semibold" style={{ color: 'var(--text-primary)' }}>Consultation Notes</p>
                 </div>
                 {noteSaved && (
-                  <span className="flex items-center gap-1 text-xs font-semibold" style={{ color: '#059669' }}>
+                  <span className="flex items-center gap-1 text-xs font-semibold" style={{ color: '#178A3D' }}>
                     <CheckCircle2 className="w-3.5 h-3.5" /> Saved
                   </span>
                 )}
@@ -1089,7 +923,7 @@ export default function ConsultationRoom() {
                   <button
                     onClick={handleSaveNote} disabled={noteSaving}
                     className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white hover:opacity-90 disabled:opacity-60"
-                    style={{ background: '#2563EB' }}
+                    style={{ background: '#178A3D' }}
                   >
                     {noteSaving ? 'Saving' : 'Save Notes'}
                   </button>
@@ -1098,18 +932,18 @@ export default function ConsultationRoom() {
             </div>
 
             <div
-              className="rounded-2xl overflow-hidden"
+              className="rounded-lg overflow-hidden"
               style={{ background: 'var(--bg-card)', border: '1px solid var(--border-default)', boxShadow: 'var(--shadow-card)' }}
             >
               <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid var(--border-default)' }}>
                 <div className="flex items-center gap-2.5">
                   <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: '#F0FDF4' }}>
-                    <Pill className="w-4 h-4" style={{ color: '#059669' }} />
+                    <Pill className="w-4 h-4" style={{ color: '#178A3D' }} />
                   </div>
                   <p className="text-body font-semibold" style={{ color: 'var(--text-primary)' }}>Prescription</p>
                 </div>
                 {rxSubmitted && (
-                  <span className="flex items-center gap-1 text-xs font-semibold" style={{ color: '#059669' }}>
+                  <span className="flex items-center gap-1 text-xs font-semibold" style={{ color: '#178A3D' }}>
                     <CheckCircle2 className="w-3.5 h-3.5" /> Sent to Pharmacy
                   </span>
                 )}
@@ -1169,12 +1003,12 @@ export default function ConsultationRoom() {
                     onClick={handleSubmitRx}
                     disabled={rxSubmitting || rxSubmitted || !hasValidMeds}
                     className="flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold text-white hover:opacity-90 disabled:opacity-60"
-                    style={{ background: '#059669' }}
+                    style={{ background: '#178A3D' }}
                   >
                     {rxSubmitting
                       ? 'Submitting'
                       : rxSubmitted
-                        ? 'oe" Prescription Sent'
+                        ? '✓ Prescription Sent'
                         : (<><Pill className="w-4 h-4" /> Submit to Pharmacy</>)
                     }
                   </button>
@@ -1182,7 +1016,7 @@ export default function ConsultationRoom() {
               </div>
             </div>
 
-          </div>{/* end scrollable */}
+          </div>
 
           <div
             className="flex items-center justify-between px-6 py-4"
@@ -1197,7 +1031,7 @@ export default function ConsultationRoom() {
                       current_patient_id: undefined,
                       current_doctor_id:  undefined,
                     });
-                  } catch { /* non-critical */ }
+                  } catch {}
                 }
                 setActiveVisit(null);
                 setPatient(null);
@@ -1211,7 +1045,7 @@ export default function ConsultationRoom() {
             </button>
             <button
               onClick={() => setShowComplete(true)}
-              className="flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white rounded-xl hover:opacity-90 transition-opacity"
+              className="flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white rounded-lg hover:opacity-90 transition-opacity"
               style={{ background: 'var(--clinical-600)' }}
             >
               <ClipboardList className="w-4 h-4" />
@@ -1221,15 +1055,6 @@ export default function ConsultationRoom() {
           </div>
 
         </div>
-      )}
-
-      {showRoomPicker && (
-        <RoomPickerModal
-          rooms={availableRooms}
-          loading={roomsLoading}
-          onAssign={handleRoomAssigned}
-          onSkip={handleRoomSkipped}
-        />
       )}
 
       {showComplete && (

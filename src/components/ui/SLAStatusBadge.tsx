@@ -82,7 +82,6 @@ export function SLAStatusBadge({ elapsedMin, thresholdMin, size = 'md' }: SLASta
   );
 }
 
-/** Standalone elapsed time formatter used by queue cards */
 export function formatElapsed(min: number): string {
   if (min < 1) return '<1m';
   if (min < 60) return `${Math.floor(min)}m`;
@@ -91,7 +90,6 @@ export function formatElapsed(min: number): string {
   return m > 0 ? `${h}h ${m}m` : `${h}h`;
 }
 
-/** Narrow timer just for the SLA bar */
 export function SLABar({ elapsedMin, thresholdMin }: { elapsedMin: number; thresholdMin: number }) {
   const state = getSLAState(elapsedMin, thresholdMin);
   const pct = Math.min((elapsedMin / thresholdMin) * 100, 100);
@@ -109,7 +107,6 @@ export function SLABar({ elapsedMin, thresholdMin }: { elapsedMin: number; thres
   );
 }
 
-/** Tiny dot indicator for tight spaces */
 export function SLADot({ state }: { state: SLAState }) {
   const color =
     state === 'breached' ? 'var(--sla-breached)' :
@@ -123,5 +120,4 @@ export function SLADot({ state }: { state: SLAState }) {
   );
 }
 
-/** Inline clock icon for cards */
 export { Clock };

@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { Plus, CalendarDays, Users, Clock, ChevronRight } from 'lucide-react';
 import { visitsApi, Visit, VisitStatus } from '../../api/visits';
 
+type ListResult<T> = T[] | { items?: T[] };
+
 function formatDate(): string {
   return new Date().toLocaleDateString('en-GB', {
     weekday: 'long',
@@ -22,7 +24,7 @@ function formatRegisteredTime(iso: string): string {
 function visitStatusStyle(status: VisitStatus): { bg: string; text: string } {
   switch (status) {
     case 'registered':
-      return { bg: 'var(--status-info-bg, rgba(59,130,246,0.1))', text: 'var(--status-info-text, #2563eb)' };
+      return { bg: 'var(--status-info-bg, rgba(31,166,74,0.1))', text: 'var(--status-info-text, #178A3D)' };
     case 'in_consultation':
       return { bg: 'var(--status-flagged-bg, rgba(109,40,217,0.1))', text: 'var(--status-flagged-text, #6d28d9)' };
     case 'discharged':
@@ -43,7 +45,7 @@ function priorityStyle(priority: VisitPriority): { bg: string; text: string } {
       return { bg: 'rgba(220,38,38,0.1)', text: 'var(--sla-breached)' };
     case 'urgent':
       return { bg: 'rgba(245,158,11,0.1)', text: 'var(--sla-warning)' };
-    default: // routine
+    default:
       return { bg: 'rgba(16,185,129,0.1)', text: 'var(--sla-safe)' };
   }
 }
@@ -52,7 +54,6 @@ function humanStatus(status: VisitStatus): string {
   return status.replace(/_/g, ' ');
 }
 
-// Collect distinct statuses across all visits for the breakdown panel
 const STATUS_ORDER: VisitStatus[] = [
   'registered',
   'triaged',
@@ -78,7 +79,7 @@ function StatTile({
 }) {
   return (
     <div
-      className="p-4 rounded-2xl border"
+      className="p-4 rounded-lg border"
       style={{
         background: danger ? 'var(--bg-alert)' : 'var(--bg-card)',
         borderColor: danger ? 'var(--border-breach)' : 'var(--border-default)',
@@ -100,7 +101,7 @@ function StatTile({
 function SkeletonRow() {
   return (
     <div
-      className="h-12 rounded-xl animate-shimmer"
+      className="h-12 rounded-lg animate-shimmer"
       style={{ borderRadius: 'var(--radius-card)' }}
     />
   );
@@ -115,11 +116,10 @@ export function ReceptionistDashboard() {
     setIsLoading(true);
     try {
       const res = await visitsApi.list();
-      const items = Array.isArray(res.data) ? res.data : (res.data as any).items ?? [];
+      const data = res.data as ListResult<Visit>;
+      const items = Array.isArray(data) ? data : data.items ?? [];
       setVisits(items);
-    } catch {
-      // show empty state
-    } finally {
+    } catch {} finally {
       setIsLoading(false);
     }
   };
@@ -137,7 +137,6 @@ export function ReceptionistDashboard() {
   );
   const waitingForTriage = visits.filter((v) => v.status === 'registered');
 
-  // Status breakdown counts
   const statusCounts = STATUS_ORDER.reduce<Record<string, number>>((acc, s) => {
     const c = visits.filter((v) => v.status === s).length;
     if (c > 0) acc[s] = c;
@@ -200,7 +199,7 @@ export function ReceptionistDashboard() {
             ) : visits.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-center">
                 <div
-                  className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4"
+                  className="w-16 h-16 rounded-lg flex items-center justify-center mb-4"
                   style={{ background: 'var(--clinical-100)' }}
                 >
                   <CalendarDays size={32} style={{ color: 'var(--clinical-600)' }} />
@@ -225,7 +224,7 @@ export function ReceptionistDashboard() {
               </div>
             ) : (
               <div
-                className="rounded-2xl border overflow-hidden"
+                className="rounded-lg border overflow-hidden"
                 style={{
                   borderColor: 'var(--border-default)',
                   boxShadow: 'var(--shadow-card)',
@@ -278,7 +277,14 @@ export function ReceptionistDashboard() {
                             className="px-5 py-3 font-medium"
                             style={{ color: 'var(--text-primary)' }}
                           >
-                            {visit.patient_name ?? 'Unknown Patient'}
+                            <div>
+                              <div>{visit.patient_name ?? 'Unknown Patient'}</div>
+                              {(visit.ward_name || visit.bed_label) && (
+                                <div className="text-meta mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                                  {[visit.ward_name, visit.bed_label].filter(Boolean).join(' · ')}
+                                </div>
+                              )}
+                            </div>
                           </td>
                           <td
                             className="px-5 py-3 capitalize"
@@ -343,7 +349,7 @@ export function ReceptionistDashboard() {
             <div className="space-y-2">
               <button
                 onClick={() => navigate('/patients')}
-                className="w-full flex items-center gap-3 p-3 rounded-xl border hover:bg-[var(--bg-row-hover)] transition-colors text-left"
+                className="w-full flex items-center gap-3 p-3 rounded-lg border hover:bg-[var(--bg-row-hover)] transition-colors text-left"
                 style={{
                   borderColor: 'var(--border-default)',
                   borderRadius: 'var(--radius-badge)',
@@ -366,7 +372,7 @@ export function ReceptionistDashboard() {
               </button>
               <button
                 onClick={() => navigate('/visits')}
-                className="w-full flex items-center gap-3 p-3 rounded-xl border hover:bg-[var(--bg-row-hover)] transition-colors text-left"
+                className="w-full flex items-center gap-3 p-3 rounded-lg border hover:bg-[var(--bg-row-hover)] transition-colors text-left"
                 style={{
                   borderColor: 'var(--border-default)',
                   borderRadius: 'var(--radius-badge)',
@@ -389,7 +395,7 @@ export function ReceptionistDashboard() {
               </button>
               <button
                 onClick={() => navigate('/visits?new=1')}
-                className="w-full flex items-center gap-3 p-3 rounded-xl border hover:bg-[var(--bg-row-hover)] transition-colors text-left"
+                className="w-full flex items-center gap-3 p-3 rounded-lg border hover:bg-[var(--bg-row-hover)] transition-colors text-left"
                 style={{
                   borderColor: 'var(--border-default)',
                   borderRadius: 'var(--radius-badge)',
@@ -397,9 +403,9 @@ export function ReceptionistDashboard() {
               >
                 <div
                   className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                  style={{ background: 'rgba(124,58,237,0.1)' }}
+                  style={{ background: 'rgba(23,138,61,0.1)' }}
                 >
-                  <Plus size={15} style={{ color: '#7C3AED' }} />
+                  <Plus size={15} style={{ color: '#178A3D' }} />
                 </div>
                 <div>
                   <p className="text-body-sm font-semibold" style={{ color: 'var(--text-primary)' }}>

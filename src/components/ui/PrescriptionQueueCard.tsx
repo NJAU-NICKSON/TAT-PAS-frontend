@@ -15,7 +15,6 @@ interface PrescriptionQueueCardProps {
   now: Date;
   action?: QueueCardAction;
   statusTag?: React.ReactNode;
-  /** Tab-stop index for keyboard navigation */
   tabIndex?: number;
   onFocus?: () => void;
 }
@@ -25,7 +24,7 @@ const PRIORITY_CONFIG: Record<string, { label: string; bg: string; text: string 
   nicu:      { label: 'NICU',      bg: '#DB2777',                 text: '#fff' },
   urgent:    { label: 'URGENT',    bg: 'var(--priority-urgent)',  text: '#fff' },
   discharge: { label: 'DISCHARGE', bg: 'var(--priority-discharge)', text: '#fff' },
-  chemo:     { label: 'CHEMO',     bg: '#065F46',                 text: '#fff' },
+  chemo:     { label: 'CHEMO',     bg: '#0F6E2F',                 text: '#fff' },
   routine:   { label: 'ROUTINE',   bg: 'var(--surface-3)',        text: 'var(--text-secondary)' },
 };
 
@@ -64,7 +63,6 @@ export function PrescriptionQueueCard({
     slaState === 'warning'  ? 'var(--sla-warning)'  :
     'var(--sla-safe)';
 
-  // Pulse on status change
   useEffect(() => {
     if (prevStatusRef.current !== prescription.status) {
       prevStatusRef.current = prescription.status;
@@ -86,7 +84,7 @@ export function PrescriptionQueueCard({
   return (
     <div
       ref={cardRef}
-      className={`rounded-xl border overflow-hidden outline-none focus-within:ring-2 ${pulsed ? 'animate-value-pulse' : ''}`}
+      className={`rounded-lg border overflow-hidden outline-none focus-within:ring-2 ${pulsed ? 'animate-value-pulse' : ''}`}
       style={{
         background: isStat ? 'var(--bg-card-stat)' : 'var(--bg-card)',
         borderColor: isStat ? 'var(--border-stat)' : 'var(--border-default)',
@@ -94,7 +92,6 @@ export function PrescriptionQueueCard({
         boxShadow: 'var(--shadow-card)',
         borderRadius: 'var(--radius-card)',
       }}
-      // eslint-disable-next-line jsx-a11y/no-noninteractive-element-props -- role added below
       role="article"
       aria-label={`Prescription ${prescription.rx_number ?? prescription.id}, ${priority} priority`}
     >

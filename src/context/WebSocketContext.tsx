@@ -41,7 +41,6 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     if (handlers) {
       handlers.forEach(h => h(event));
     }
-    // Also dispatch to wildcard subscribers
     const wildcards = handlersRef.current.get('*');
     if (wildcards) {
       wildcards.forEach(h => h(event));
@@ -56,21 +55,18 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) return;
 
-    // Connect WITHOUT token in URL  -  token is sent in the first message after open
     const url = `${WS_BASE}/ws`;
     const ws = new WebSocket(url);
     wsRef.current = ws;
 
     ws.onopen = () => {
       if (!mountedRef.current) return;
-      // Send authentication frame as the first message
       ws.send(JSON.stringify({ type: 'auth', token }));
     };
 
     ws.onmessage = (evt: MessageEvent) => {
       try {
         const parsed = JSON.parse(evt.data as string);
-        // auth_ok is a control frame, not a domain event
         if (parsed.type === 'auth_ok') {
           if (mountedRef.current) {
             setConnected(true);
@@ -79,9 +75,7 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           return;
         }
         dispatch(parsed as WSEvent);
-      } catch {
-        // Ignore malformed frames
-      }
+      } catch {}
     };
 
     ws.onclose = () => {
@@ -89,7 +83,6 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       setConnected(false);
       wsRef.current = null;
 
-      // Exponential backoff reconnect (max 30s)
       const delay = Math.min(reconnectDelayRef.current, 30000);
       reconnectDelayRef.current = Math.min(delay * 2, 30000);
       reconnectTimerRef.current = setTimeout(() => {

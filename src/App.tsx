@@ -16,6 +16,8 @@ import PrescriptionDetailPage from './views/PrescriptionDetailPage';
 import AuditQueue from './views/AuditQueue';
 import AnalyticsDashboard from './views/AnalyticsDashboard';
 import UserManagement from './views/UserManagement';
+import SLAConfigPage from './views/SLAConfigPage';
+import SystemStatusPage from './views/SystemStatusPage';
 import BillingPage from './views/BillingPage';
 import BedManagement from './views/BedManagement';
 import ConsultationRoomManagement from './views/ConsultationRoomManagement';
@@ -74,10 +76,9 @@ function ProtectedRoute({ children, roles }: ProtectedRouteProps) {
   return <>{children}</>;
 }
 
-/** Page wrapper for non-dashboard views */
 function PageContainer({ children }: { children: ReactNode }) {
   return (
-    <div className="max-w-7xl mx-auto px-6 py-6">{children}</div>
+    <div className="w-full px-6 py-6">{children}</div>
   );
 }
 
@@ -252,7 +253,7 @@ function AppRoutes() {
       <Route
         path="/visits"
         element={
-          <ProtectedRoute roles={['receptionist', 'doctor', 'nurse', 'admin']}>
+          <ProtectedRoute roles={['receptionist', 'doctor', 'nurse', 'admin', 'billing']}>
             <AppShell>
               <PageContainer><VisitManagement /></PageContainer>
             </AppShell>
@@ -263,7 +264,7 @@ function AppRoutes() {
       <Route
         path="/visits/:id"
         element={
-          <ProtectedRoute roles={['receptionist', 'doctor', 'nurse', 'admin', 'auditor']}>
+          <ProtectedRoute roles={['receptionist', 'doctor', 'nurse', 'admin', 'auditor', 'billing']}>
             <AppShell>
               <PageContainer><VisitDetailPage /></PageContainer>
             </AppShell>
@@ -285,7 +286,7 @@ function AppRoutes() {
       <Route
         path="/triage"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute roles={['nurse', 'admin']}>
             <AppShell>
               <TriageQueuePage />
             </AppShell>
@@ -296,7 +297,7 @@ function AppRoutes() {
       <Route
         path="/visits/:id/triage"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute roles={['nurse', 'admin']}>
             <AppShell>
               <TriagePage />
             </AppShell>
@@ -310,6 +311,28 @@ function AppRoutes() {
           <ProtectedRoute roles={['receptionist', 'doctor', 'nurse', 'admin', 'auditor', 'pharmacist', 'billing']}>
             <AppShell>
               <PatientJourneyPage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/sla-config"
+        element={
+          <ProtectedRoute roles={['admin']}>
+            <AppShell>
+              <PageContainer><SLAConfigPage /></PageContainer>
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/system-status"
+        element={
+          <ProtectedRoute roles={['admin']}>
+            <AppShell>
+              <PageContainer><SystemStatusPage /></PageContainer>
             </AppShell>
           </ProtectedRoute>
         }

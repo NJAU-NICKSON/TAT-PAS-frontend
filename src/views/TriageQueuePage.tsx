@@ -14,7 +14,7 @@ const PRIORITY_STYLE: Record<string, { bg: string; color: string; border: string
   immediate: { bg: '#FFF1F2', color: '#9F1239', border: '#FDA4AF' },
 };
 
-const TRIAGE_SLA_MIN = 10; // target: triage within 10 min of registration
+const TRIAGE_SLA_MIN = 10;
 
 function useNow(intervalMs = 10000) {
   const [now, setNow] = useState(() => Date.now());
@@ -62,7 +62,7 @@ function PatientCard({ visit, onClick }: { visit: Visit; onClick: () => void }) 
   return (
     <button
       onClick={onClick}
-      className="w-full text-left rounded-2xl p-4 transition-all hover:shadow-md group"
+      className="w-full text-left rounded-lg p-4 transition-all hover:shadow-md group"
       style={{
         background: 'white',
         border: `1.5px solid ${breached ? '#FCA5A5' : '#E2E8F0'}`,
@@ -70,7 +70,7 @@ function PatientCard({ visit, onClick }: { visit: Visit; onClick: () => void }) 
     >
       <div className="flex items-start gap-4">
         <div
-          className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+          className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
           style={{ background: p.bg, border: `1.5px solid ${p.border}` }}
         >
           <Activity className="w-5 h-5" style={{ color: p.color }} />
@@ -82,13 +82,13 @@ function PatientCard({ visit, onClick }: { visit: Visit; onClick: () => void }) 
               {visit.patient_name ?? 'Unknown Patient'}
             </span>
             <span
-              className="text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider"
+              className="text-micro font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider"
               style={{ background: p.bg, color: p.color, border: `1px solid ${p.border}` }}
             >
               {visit.priority}
             </span>
             {visit.visit_type === 'emergency' && (
-              <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider" style={{ background: '#FEE2E2', color: '#DC2626' }}>
+              <span className="text-micro font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider" style={{ background: '#FEE2E2', color: '#DC2626' }}>
                 Emergency
               </span>
             )}
@@ -132,17 +132,17 @@ function PatientCard({ visit, onClick }: { visit: Visit; onClick: () => void }) 
 function CompletedCard({ visit }: { visit: Visit }) {
   return (
     <div
-      className="w-full text-left rounded-2xl p-4"
+      className="w-full text-left rounded-lg p-4"
       style={{ background: '#F8FAFC', border: '1.5px solid #E2E8F0', opacity: 0.75 }}
     >
       <div className="flex items-start gap-4">
-        <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: '#F0FDF4' }}>
+        <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: '#F0FDF4' }}>
           <CheckCircle2 className="w-5 h-5 text-green-600" />
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-0.5 flex-wrap">
             <span className="text-sm font-semibold text-gray-700">{visit.patient_name ?? 'Unknown'}</span>
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: '#DCFCE7', color: '#166534' }}>
+            <span className="text-micro font-bold px-2 py-0.5 rounded-full" style={{ background: '#DCFCE7', color: '#166534' }}>
               Triaged
             </span>
           </div>
@@ -188,7 +188,6 @@ export default function TriageQueuePage() {
             : (recentRes.value.data as { items: Visit[] }).items ?? [])
         : [];
 
-      // Sort pending: immediate first, then critical, urgent, routine; within same priority by wait time
       const PRIORITY_ORDER: Record<string, number> = { immediate: 0, critical: 1, urgent: 2, routine: 3 };
       pendingList.sort((a, b) => {
         const pd = (PRIORITY_ORDER[a.priority] ?? 3) - (PRIORITY_ORDER[b.priority] ?? 3);
@@ -196,7 +195,6 @@ export default function TriageQueuePage() {
         return new Date(a.registered_at).getTime() - new Date(b.registered_at).getTime();
       });
 
-      // Completed = triaged today (waiting_for_doctor), sorted most recent first
       recentList.sort((a, b) =>
         new Date(b.triaged_at ?? b.updated_at).getTime() - new Date(a.triaged_at ?? a.updated_at).getTime()
       );
@@ -210,7 +208,6 @@ export default function TriageQueuePage() {
 
   useEffect(() => { load(); }, [load]);
 
-  // Auto-refresh every 30 seconds
   useEffect(() => {
     const t = setInterval(load, 30000);
     return () => clearInterval(t);
@@ -236,7 +233,7 @@ export default function TriageQueuePage() {
           <ShieldOff className="w-10 h-10 text-gray-400" />
           <p className="text-base font-semibold text-gray-700">Access Restricted</p>
           <p className="text-sm text-gray-400">Your role (<strong>{user?.role ?? 'unknown'}</strong>) does not have access to the Triage Queue.</p>
-          <button onClick={() => navigate('/dashboard')} className="mt-2 px-4 py-2 rounded-lg text-sm font-semibold text-white" style={{ background: '#2563EB' }}>
+          <button onClick={() => navigate('/dashboard')} className="mt-2 px-4 py-2 rounded-lg text-sm font-semibold text-white" style={{ background: '#178A3D' }}>
             Back to Dashboard
           </button>
         </div>
@@ -246,60 +243,45 @@ export default function TriageQueuePage() {
 
   return (
     <div className="min-h-screen" style={{ background: '#F1F5F9' }}>
-      <div style={{ background: 'linear-gradient(135deg, #0F172A 0%, #1E3A8A 60%, #2563EB 100%)' }}>
-        <div className="max-w-4xl mx-auto px-6 py-6">
-          <div className="flex items-center justify-between gap-4 flex-wrap">
-            <div className="flex items-center gap-3">
-              <div
-                className="w-11 h-11 rounded-2xl flex items-center justify-center"
-                style={{ background: 'rgba(217,119,6,0.3)' }}
-              >
-                <Thermometer className="w-6 h-6 text-amber-300" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold text-white">Triage Queue</h1>
-                <p className="text-sm" style={{ color: 'rgba(255,255,255,0.6)' }}>
-                  {loading ? 'Loading' : `${pending.length} patient${pending.length !== 1 ? 's' : ''} awaiting triage`}
-                  {breachedCount > 0 && (
-                    <span className="ml-2 font-bold text-red-300">
-                      · {breachedCount} overdue
-                    </span>
-                  )}
-                </p>
-              </div>
+      <div className="flex items-center justify-between px-6 h-12" style={{ background: '#FFFFFF', borderBottom: '1px solid var(--border-default)' }}>
+        <div className="flex items-center gap-2">
+          <Thermometer className="w-4 h-4" style={{ color: 'var(--text-muted)' }} />
+          <h1 className="text-base font-semibold tracking-tight" style={{ color: 'var(--text-primary)' }}>Triage Queue</h1>
+          <span className="text-meta" style={{ color: 'var(--text-muted)' }}>
+            {loading ? 'Loading' : `${pending.length} awaiting`}
+            {breachedCount > 0 && <span className="ml-1 font-semibold" style={{ color: 'var(--status-critical-text)' }}>· {breachedCount} overdue</span>}
+          </span>
+        </div>
+        <button
+          onClick={load}
+          disabled={loading}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold disabled:opacity-50"
+          style={{ background: 'var(--surface-2)', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-button)', color: 'var(--text-secondary)' }}
+        >
+          {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+          Refresh
+        </button>
+      </div>
+      <div className="w-full px-6 pt-4">
+        <div className="grid grid-cols-4 gap-3">
+          {[
+            { label: 'Pending',   value: pending.length,  danger: false },
+            { label: 'SLA Breach',value: breachedCount,   danger: breachedCount > 0 },
+            { label: 'Immediate', value: pending.filter(v => v.priority === 'immediate').length, danger: pending.filter(v => v.priority === 'immediate').length > 0 },
+            { label: 'Critical',  value: pending.filter(v => v.priority === 'critical').length,  danger: pending.filter(v => v.priority === 'critical').length > 0 },
+          ].map(({ label, value, danger }) => (
+            <div key={label} className="px-4 py-3" style={{ background: danger ? 'var(--status-critical-bg)' : 'var(--bg-card)', border: `1px solid ${danger ? 'var(--status-critical-border)' : 'var(--border-default)'}`, borderRadius: 'var(--radius-card)' }}>
+              <p className="text-label" style={{ color: 'var(--text-muted)' }}>{label}</p>
+              <p className="font-bold tabular-nums leading-none mt-1.5" style={{ fontSize: '1.75rem', color: danger ? 'var(--status-critical-text)' : 'var(--text-primary)' }}>{value}</p>
             </div>
-
-            <button
-              onClick={load}
-              disabled={loading}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-opacity hover:opacity-80 disabled:opacity-50"
-              style={{ background: 'rgba(255,255,255,0.12)', color: 'white' }}
-            >
-              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-              Refresh
-            </button>
-          </div>
-
-          <div className="grid grid-cols-4 gap-3 mt-5">
-            {[
-              { label: 'Pending',   value: pending.length,  color: '#FCD34D', bg: 'rgba(217,119,6,0.2)'  },
-              { label: 'SLA Breach',value: breachedCount,   color: '#FCA5A5', bg: 'rgba(220,38,38,0.2)'  },
-              { label: 'Immediate', value: pending.filter(v => v.priority === 'immediate').length, color: '#FDA4AF', bg: 'rgba(159,18,57,0.25)' },
-              { label: 'Critical',  value: pending.filter(v => v.priority === 'critical').length,  color: '#FCA5A5', bg: 'rgba(220,38,38,0.2)'  },
-            ].map(({ label, value, color, bg }) => (
-              <div key={label} className="rounded-xl px-3 py-2.5 text-center" style={{ background: bg }}>
-                <p className="text-2xl font-extrabold tabular-nums" style={{ color }}>{value}</p>
-                <p className="text-[11px] font-semibold mt-0.5" style={{ color: 'rgba(255,255,255,0.6)' }}>{label}</p>
-              </div>
-            ))}
-          </div>
+          ))}
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-6 py-6 space-y-6">
+      <div className="w-full px-6 py-6 space-y-6">
 
         <div
-          className="flex items-center gap-3 px-4 py-2.5 rounded-2xl bg-white"
+          className="flex items-center gap-3 px-4 py-2.5 rounded-lg bg-white"
           style={{ border: '1.5px solid #E2E8F0' }}
         >
           <Search className="w-4 h-4 text-gray-400 flex-shrink-0" />
@@ -321,7 +303,7 @@ export default function TriageQueuePage() {
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-sm font-bold text-gray-900 flex items-center gap-2">
               <span
-                className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-extrabold text-white"
+                className="w-5 h-5 rounded-full flex items-center justify-center text-micro font-extrabold text-white"
                 style={{ background: pending.length > 0 ? '#D97706' : '#94A3B8' }}
               >
                 {filteredPending.length}
@@ -337,7 +319,7 @@ export default function TriageQueuePage() {
             </div>
           ) : filteredPending.length === 0 ? (
             <div
-              className="flex flex-col items-center justify-center py-12 rounded-2xl"
+              className="flex flex-col items-center justify-center py-12 rounded-lg"
               style={{ background: 'white', border: '1.5px dashed #E2E8F0' }}
             >
               <CheckCircle2 className="w-10 h-10 text-green-400 mb-3" />

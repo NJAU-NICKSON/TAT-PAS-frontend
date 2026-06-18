@@ -1,18 +1,24 @@
 import React, { useState, ChangeEvent } from 'react';
 import { Search, Plus, X, CreditCard as Edit2, User } from 'lucide-react';
 import Table, { Column } from '../components/Table';
+import TablePagination from '../components/TablePagination';
+import { useTableControls } from '../components/useTableControls';
 import FormField from '../components/FormField';
 import { usePatientViewModel } from '../viewModels/usePatientViewModel';
-import { Patient } from '../models/types';
-import { CreatePatientPayload, UpdatePatientPayload } from '../api/patients';
+import { Patient, ApiError, Allergy } from '../models/types';
+import { patientsApi, CreatePatientPayload, UpdatePatientPayload } from '../api/patients';
 
 interface PatientFormData {
   first_name: string;
   last_name: string;
   dob: string;
   gender: string;
+  national_id: string;
+  guardian_national_id: string;
+  guardian_name: string;
   phone: string;
   address: string;
+  allergies: Allergy[];
 }
 
 const emptyForm: PatientFormData = {
@@ -20,13 +26,34 @@ const emptyForm: PatientFormData = {
   last_name: '',
   dob: '',
   gender: '',
+  national_id: '',
+  guardian_national_id: '',
+  guardian_name: '',
   phone: '',
   address: '',
+  allergies: [],
 };
 
 interface FormErrors {
   first_name?: string;
   last_name?: string;
+  national_id?: string;
+  guardian_national_id?: string;
+}
+
+function ageFromDob(dob: string): number | null {
+  if (!dob) return null;
+  const d = new Date(dob);
+  if (isNaN(d.getTime())) return null;
+  const now = new Date();
+  let age = now.getFullYear() - d.getFullYear();
+  const m = now.getMonth() - d.getMonth();
+  if (m < 0 || (m === 0 && now.getDate() < d.getDate())) age--;
+  return age;
+}
+
+function isValidNationalId(v: string): boolean {
+  return /^\d{7,8}$/.test(v.trim());
 }
 
 export default function PatientFormPage() {
@@ -36,6 +63,28 @@ export default function PatientFormPage() {
   const [formData, setFormData] = useState<PatientFormData>(emptyForm);
   const [formErrors, setFormErrors] = useState<FormErrors>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
+
+  const [newAllergy, setNewAllergy] = useState('');
+  const [newSeverity, setNewSeverity] = useState<Allergy['severity']>('moderate');
+
+  const addAllergy = () => {
+    const substance = newAllergy.trim();
+    if (!substance) return;
+    if (formData.allergies.some(a => a.substance.toLowerCase() === substance.toLowerCase())) {
+      setNewAllergy('');
+      return;
+    }
+    setFormData(prev => ({
+      ...prev,
+      allergies: [...prev.allergies, { substance, severity: newSeverity }],
+    }));
+    setNewAllergy('');
+    setNewSeverity('moderate');
+  };
+
+  const removeAllergy = (idx: number) => {
+    setFormData(prev => ({ ...prev, allergies: prev.allergies.filter((_, i) => i !== idx) }));
+  };
 
   const openNewPatient = () => {
     setEditingPatient(null);
@@ -50,10 +99,14 @@ export default function PatientFormPage() {
     setFormData({
       first_name: patient.first_name,
       last_name: patient.last_name,
-      dob: patient.dob ?? '',
+      dob: patient.dob ? patient.dob.slice(0, 10) : '',
       gender: patient.gender ?? '',
+      national_id: patient.national_id ?? '',
+      guardian_national_id: patient.guardian_national_id ?? '',
+      guardian_name: patient.guardian_name ?? '',
       phone: patient.contact?.phone ?? '',
       address: patient.contact?.address ?? '',
+      allergies: patient.allergies ?? [],
     });
     setFormErrors({});
     setSubmitError(null);
@@ -82,6 +135,24 @@ export default function PatientFormPage() {
     const errors: FormErrors = {};
     if (!formData.first_name.trim()) errors.first_name = 'First name is required';
     if (!formData.last_name.trim()) errors.last_name = 'Last name is required';
+
+    const age = ageFromDob(formData.dob);
+    const isMinor = age !== null && age < 18;
+
+    if (isMinor) {
+      if (!formData.guardian_national_id.trim()) {
+        errors.guardian_national_id = 'Guardian National ID is required for under-18 patients';
+      } else if (!isValidNationalId(formData.guardian_national_id)) {
+        errors.guardian_national_id = 'National ID must be 7-8 digits';
+      }
+    } else {
+      if (!formData.national_id.trim()) {
+        errors.national_id = 'National ID is required for patients aged 18 and above';
+      } else if (!isValidNationalId(formData.national_id)) {
+        errors.national_id = 'National ID must be 7-8 digits';
+      }
+    }
+
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -91,52 +162,118 @@ export default function PatientFormPage() {
     if (!validate()) return;
     setSubmitError(null);
 
+    const trimmedPhone = formData.phone.trim();
+    const trimmedAddress = formData.address.trim();
+    const hasContact = Boolean(trimmedPhone || trimmedAddress);
+
+    const age = ageFromDob(formData.dob);
+    const isMinor = age !== null && age < 18;
+
     const payload: CreatePatientPayload = {
       first_name: formData.first_name.trim(),
       last_name: formData.last_name.trim(),
-      dob: formData.dob || undefined,
-      gender: formData.gender || undefined,
-      contact: {
-        phone: formData.phone || undefined,
-        address: formData.address || undefined,
-      },
+      ...(formData.dob ? { dob: formData.dob } : {}),
+      ...(formData.gender ? { gender: formData.gender } : {}),
+      ...(isMinor
+        ? {
+            guardian_national_id: formData.guardian_national_id.trim(),
+            ...(formData.guardian_name.trim() ? { guardian_name: formData.guardian_name.trim() } : {}),
+          }
+        : { national_id: formData.national_id.trim() }),
+      ...(hasContact
+        ? {
+            contact: {
+              ...(trimmedPhone ? { phone: trimmedPhone } : {}),
+              ...(trimmedAddress ? { address: trimmedAddress } : {}),
+            },
+          }
+        : {}),
+      ...(formData.allergies.length > 0 ? { allergies: formData.allergies } : {}),
     };
 
-    let result: Patient | null = null;
     if (editingPatient) {
       const updatePayload: UpdatePatientPayload = payload;
-      result = await vm.updatePatient(editingPatient.id, updatePayload);
-    } else {
-      result = await vm.createPatient(payload);
+      const updated = await vm.updatePatient(editingPatient.id, updatePayload);
+      if (updated) closeModal();
+      else setSubmitError(vm.error ?? 'Could not save the patient. Please try again.');
+      return;
     }
 
-    if (result) {
+    await submitCreate(payload, false);
+  };
+
+  const submitCreate = async (payload: CreatePatientPayload, force: boolean) => {
+    try {
+      const res = await patientsApi.create(payload, force);
+      vm.absorbCreated(res.data);
       closeModal();
-    } else if (vm.error) {
-      setSubmitError(vm.error);
+    } catch (err) {
+      const apiErr = err as ApiError;
+      if (apiErr?.code === 'POSSIBLE_DUPLICATE_PATIENT' && !force) {
+        const existingMrn = (apiErr.data?.existing_mrn as string) ?? '';
+        const proceed = window.confirm(
+          `${apiErr.detail}\n\nRegister this patient anyway as a separate record?`
+        );
+        if (proceed) {
+          await submitCreate(payload, true);
+        } else {
+          setSubmitError(
+            `A matching patient already exists${existingMrn ? ` (MRN ${existingMrn})` : ''}. ` +
+            `Search for them in the patient list instead of creating a duplicate.`
+          );
+        }
+        return;
+      }
+      setSubmitError(apiErr?.detail ?? 'Could not save the patient. Please try again.');
     }
   };
 
+  const tc = useTableControls<Patient>({
+    data: vm.patients,
+    initialSortKey: 'name',
+    getSortValue: (row, key) => {
+      if (key === 'name') return `${row.first_name} ${row.last_name}`;
+      if (key === 'phone') return row.contact?.phone;
+      if (key === 'national_id') return row.national_id ?? row.guardian_national_id;
+      return (row as unknown as Record<string, unknown>)[key];
+    },
+  });
+
   const columns: Column<Patient>[] = [
-    { key: 'mrn', label: 'MRN' },
+    { key: 'mrn', label: 'MRN', sortable: true },
     {
       key: 'name',
       label: 'Name',
+      sortable: true,
       render: (row) => `${row.first_name} ${row.last_name}`,
+    },
+    {
+      key: 'national_id',
+      label: 'National ID',
+      sortable: true,
+      render: (row) =>
+        row.national_id
+          ? row.national_id
+          : row.guardian_national_id
+            ? <span className="text-gray-500">Guardian: {row.guardian_national_id}</span>
+            : <span className="text-gray-400">N/A</span>,
     },
     {
       key: 'dob',
       label: 'Date of Birth',
+      sortable: true,
       render: (row) => row.dob ?? 'N/A',
     },
     {
       key: 'gender',
       label: 'Gender',
+      sortable: true,
       render: (row) => row.gender ? <span className="capitalize">{row.gender}</span> : <span className="text-gray-400">N/A</span>,
     },
     {
       key: 'phone',
       label: 'Phone',
+      sortable: true,
       render: (row) => row.contact?.phone ?? 'N/A',
     },
     {
@@ -145,7 +282,7 @@ export default function PatientFormPage() {
       render: (row) => (
         <button
           onClick={(e) => { e.stopPropagation(); openEditPatient(row); }}
-          className="flex items-center gap-1 text-[#1e3a5f] hover:text-blue-700 text-sm font-medium transition-colors"
+          className="flex items-center gap-1 text-[var(--clinical-600)] hover:opacity-80 text-sm font-medium transition-colors"
           title="Edit patient"
         >
           <Edit2 className="h-4 w-4" />
@@ -164,7 +301,7 @@ export default function PatientFormPage() {
         </div>
         <button
           onClick={openNewPatient}
-          className="flex items-center gap-2 bg-[#1e3a5f] hover:bg-[#162d4a] text-white px-4 py-2.5 rounded-lg text-sm font-semibold transition-colors shadow-sm"
+          className="flex items-center gap-2 bg-[var(--clinical-600)] hover:opacity-90 text-white px-4 py-2.5 rounded-lg text-sm font-semibold transition-colors shadow-sm"
         >
           <Plus className="h-4 w-4" />
           New Patient
@@ -178,7 +315,7 @@ export default function PatientFormPage() {
           placeholder="Search by name or MRN..."
           value={vm.searchQuery}
           onChange={(e) => vm.setSearchQuery(e.target.value)}
-          className="w-full pl-9 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1e3a5f] focus:border-transparent"
+          className="w-full pl-9 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[var(--clinical-600)] focus:border-transparent"
         />
       </div>
 
@@ -188,13 +325,25 @@ export default function PatientFormPage() {
         </div>
       )}
 
-      <Table
-        columns={columns}
-        data={vm.patients}
-        isLoading={vm.isLoading}
-        emptyMessage="No patients found. Try a different search or add a new patient."
-        onRowClick={openEditPatient}
-      />
+      <div>
+        <Table
+          columns={columns}
+          data={tc.pageRows}
+          isLoading={vm.isLoading}
+          emptyMessage="No patients found. Try a different search or add a new patient."
+          onRowClick={openEditPatient}
+          sortKey={tc.sortKey}
+          sortDir={tc.sortDir}
+          onSort={tc.toggleSort}
+        />
+        {!vm.isLoading && vm.patients.length > 0 && (
+          <TablePagination
+            page={tc.page} pageCount={tc.pageCount} pageSize={tc.pageSize}
+            total={tc.total} rangeStart={tc.rangeStart} rangeEnd={tc.rangeEnd}
+            setPage={tc.setPage} setPageSize={tc.setPageSize}
+          />
+        )}
+      </div>
 
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -202,10 +351,10 @@ export default function PatientFormPage() {
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
             onClick={closeModal}
           />
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+          <div role="dialog" aria-modal="true" className="relative bg-white rounded-lg shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
               <div className="flex items-center gap-2">
-                <User className="h-5 w-5 text-[#1e3a5f]" />
+                <User className="h-5 w-5 text-[var(--clinical-600)]" />
                 <h2 className="text-lg font-semibold text-gray-900">
                   {editingPatient ? 'Edit Patient' : 'New Patient'}
                 </h2>
@@ -264,11 +413,48 @@ export default function PatientFormPage() {
                     { value: 'male', label: 'Male' },
                     { value: 'female', label: 'Female' },
                     { value: 'other', label: 'Other' },
-                    { value: 'prefer_not_to_say', label: 'Prefer not to say' },
                   ]}
                   placeholder="Select gender"
                 />
               </div>
+
+              {(() => {
+                const age = ageFromDob(formData.dob);
+                const isMinor = age !== null && age < 18;
+                return isMinor ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4">
+                    <FormField
+                      label="Guardian National ID"
+                      name="guardian_national_id"
+                      type="text"
+                      value={formData.guardian_national_id}
+                      onChange={handleChange}
+                      error={formErrors.guardian_national_id}
+                      required
+                      placeholder="7-8 digits"
+                    />
+                    <FormField
+                      label="Guardian Name"
+                      name="guardian_name"
+                      type="text"
+                      value={formData.guardian_name}
+                      onChange={handleChange}
+                      placeholder="e.g. Jane Doe"
+                    />
+                  </div>
+                ) : (
+                  <FormField
+                    label="National ID"
+                    name="national_id"
+                    type="text"
+                    value={formData.national_id}
+                    onChange={handleChange}
+                    error={formErrors.national_id}
+                    required
+                    placeholder="7-8 digits"
+                  />
+                );
+              })()}
 
               <FormField
                 label="Phone Number"
@@ -284,9 +470,58 @@ export default function PatientFormPage() {
                 type="textarea"
                 value={formData.address}
                 onChange={handleChange}
-                placeholder="Street address, city, state..."
+                placeholder="Street address, estate, Nairobi..."
                 rows={2}
               />
+
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Allergies</label>
+
+                {formData.allergies.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mb-2">
+                    {formData.allergies.map((a, idx) => (
+                      <span
+                        key={`${a.substance}-${idx}`}
+                        className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full"
+                        style={{ background: '#FEF2F2', color: '#B91C1C', border: '1px solid #FECACA' }}
+                      >
+                        {a.substance} <span className="opacity-70">({a.severity})</span>
+                        <button type="button" onClick={() => removeAllergy(idx)} className="hover:opacity-70" aria-label={`Remove ${a.substance}`}>
+                          <X className="w-3 h-3" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={newAllergy}
+                    onChange={e => setNewAllergy(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addAllergy(); } }}
+                    placeholder="e.g. Penicillin"
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[var(--clinical-600)]"
+                  />
+                  <select
+                    value={newSeverity}
+                    onChange={e => setNewSeverity(e.target.value as Allergy['severity'])}
+                    className="px-2 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[var(--clinical-600)]"
+                  >
+                    <option value="mild">Mild</option>
+                    <option value="moderate">Moderate</option>
+                    <option value="severe">Severe</option>
+                  </select>
+                  <button
+                    type="button"
+                    onClick={addAllergy}
+                    className="px-3 py-2 rounded-lg text-sm font-semibold text-white bg-[var(--clinical-600)] hover:opacity-90"
+                  >
+                    Add
+                  </button>
+                </div>
+                <p className="text-xs text-gray-400 mt-1">Press Enter or click Add. Severe allergies trigger clinical safety flags on prescriptions.</p>
+              </div>
 
               <div className="flex justify-end gap-3 mt-2">
                 <button
@@ -299,7 +534,7 @@ export default function PatientFormPage() {
                 <button
                   type="submit"
                   disabled={vm.isLoading}
-                  className="px-4 py-2 rounded-lg text-sm font-semibold bg-[#1e3a5f] hover:bg-[#162d4a] text-white transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="px-4 py-2 rounded-lg text-sm font-semibold bg-[var(--clinical-600)] hover:opacity-90 text-white transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   {vm.isLoading ? 'Saving...' : editingPatient ? 'Save Changes' : 'Create Patient'}
                 </button>

@@ -38,7 +38,7 @@ export interface CountersignPayload {
 
 export const auditsApi = {
   list: (filters: AuditFilters = {}) =>
-    apiClient.get<AuditRecord[]>('/audits', { params: filters }),
+    apiClient.get<AuditRecord[]>('/audits/', { params: filters }),
 
   unresolved: (params: { skip?: number; limit?: number } = {}) =>
     apiClient.get<AuditRecord[]>('/audits/unresolved', { params }),
@@ -52,10 +52,16 @@ export const auditsApi = {
   createFlag: (payload: FlagCreatePayload) =>
     apiClient.post<AuditRecord>('/audits/flag', payload),
 
-  resolve: (prescription_id: string, resolution_note: string, resolution_type: string) =>
+  resolve: (
+    prescription_id: string,
+    resolution_note: string,
+    resolution_type: string,
+    esig_password?: string
+  ) =>
     apiClient.post<AuditRecord[]>(`/audits/${prescription_id}/resolve`, {
       resolution_note,
       resolution_type,
+      ...(esig_password ? { esig_password } : {}),
     }),
 
   countersign: (payload: CountersignPayload) =>

@@ -57,7 +57,6 @@ export function useAuditViewModel(): AuditViewModel {
       setError(null);
       try {
         await auditsApi.resolve(prescription_id, note, resolution_type, esig_password);
-        // Mark matching audits as resolved in local state
         setAudits((prev) =>
           prev.map((a) =>
             a.prescription_id === prescription_id

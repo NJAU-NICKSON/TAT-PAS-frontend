@@ -39,7 +39,7 @@ export function MetricCard({
   return (
     <div 
       className={cn(
-        'group relative p-6 rounded-xl border shadow-card transition-all duration-200 hover:shadow-elevated cursor-pointer',
+        'group relative p-6 rounded-lg border shadow-card transition-all duration-200 hover:shadow-elevated cursor-pointer',
         variantStyles,
         isInteractive && 'hover:transform hover:-translate-y-0.5',
         className
@@ -65,7 +65,7 @@ export function MetricCard({
 
       <div className="space-y-1">
         <div className="flex items-baseline gap-1">
-          <span className="text-display font-black text-text-primary leading-none">
+          <span className="text-display font-bold text-text-primary leading-none">
             {value}
           </span>
           {unit && (

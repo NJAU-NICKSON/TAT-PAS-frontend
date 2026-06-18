@@ -1,14 +1,14 @@
 import { FileText } from 'lucide-react';
-import { cn } from '../../lib/utils';
 import { TATTimer } from './TATTimer';
+import { Prescription } from '../../models/types';
 
 export interface KanbanColumn {
   id: string;
   title: string;
   status: string;
-  prescriptions: any[];
+  prescriptions: Prescription[];
   avgWaitTime: number;
-  waitTimeBucket?: '<10' | '%10';
+  waitTimeBucket?: '<10' | '>10';
 }
 
 interface KanbanBoardProps {
@@ -37,8 +37,6 @@ export function KanbanBoard({ columns, onCardAction, currentUserRole }: KanbanBo
               </div>
             ) : (
               column.prescriptions.map((prescription) => {
-                const waitTime = prescription.waitTimeMinutes || 0;
-                const timerColor = waitTime < 10 ? 'bg-green-600' : waitTime < 20 ? 'bg-yellow-600' : 'bg-red-600';
                 return (
                   <div
                     key={prescription.id}
@@ -52,8 +50,8 @@ export function KanbanBoard({ columns, onCardAction, currentUserRole }: KanbanBo
                         <p className="font-semibold text-text-primary">{prescription.patient_name}</p>
                       </div>
                       <TATTimer
-                        startTime={prescription.ordered_at}
-                        slaThresholdMin={prescription.slaThresholdMin || 15}
+                        startTime={prescription.ordered_at ?? prescription.created_at}
+                        slaThresholdMin={prescription.sla_threshold_min ?? 15}
                         size="sm"
                       />
                     </div>

@@ -30,7 +30,7 @@ function fmtDateTime(iso?: string): string {
 const PRIORITY_COLORS: Record<string, { color: string; bg: string; border: string }> = {
   stat:      { color: '#7C3AED', bg: '#FAF5FF', border: '#E9D5FF' },
   urgent:    { color: '#D97706', bg: '#FFFBEB', border: '#FDE68A' },
-  routine:   { color: '#059669', bg: '#F0FDF4', border: '#BBF7D0' },
+  routine:   { color: '#178A3D', bg: '#F0FDF4', border: '#BBF7D0' },
   discharge: { color: '#7C3AED', bg: '#FAF5FF', border: '#E9D5FF' },
   nicu:      { color: '#DB2777', bg: '#FDF2F8', border: '#FBCFE8' },
   critical:  { color: '#DC2626', bg: '#FEF2F2', border: '#FECACA' },
@@ -38,10 +38,10 @@ const PRIORITY_COLORS: Record<string, { color: string; bg: string; border: strin
 };
 
 const STATUS_COLORS: Record<string, { color: string; bg: string; border: string; dot: string }> = {
-  submitted:    { color: '#2563EB', bg: '#EFF6FF', border: '#BFDBFE', dot: '#2563EB' },
-  verified:     { color: '#059669', bg: '#F0FDF4', border: '#BBF7D0', dot: '#059669' },
-  dispensed:    { color: '#D97706', bg: '#FFFBEB', border: '#FDE68A', dot: '#D97706' },
-  administered: { color: '#059669', bg: '#F0FDF4', border: '#BBF7D0', dot: '#059669' },
+  submitted:    { color: '#0369A1', bg: '#F0F9FF', border: '#BAE6FD', dot: '#0284C7' },
+  verified:     { color: '#178A3D', bg: '#F0FDF4', border: '#BBF7D0', dot: '#22C55E' },
+  dispensed:    { color: '#0369A1', bg: '#F0F9FF', border: '#BAE6FD', dot: '#0284C7' },
+  administered: { color: '#178A3D', bg: '#F0FDF4', border: '#BBF7D0', dot: '#22C55E' },
   flagged:      { color: '#7C3AED', bg: '#FAF5FF', border: '#E9D5FF', dot: '#7C3AED' },
   draft:        { color: '#475569', bg: '#F8FAFC', border: '#E2E8F0', dot: '#94A3B8' },
   archived:     { color: '#94A3B8', bg: '#F8FAFC', border: '#E2E8F0', dot: '#CBD5E1' },
@@ -89,7 +89,7 @@ function VitalsRow({ vitals }: { vitals: NonNullable<Visit['vitals']> }) {
 
 function Section({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) {
   return (
-    <div className="rounded-xl overflow-hidden" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-default)', boxShadow: 'var(--shadow-card)' }}>
+    <div className="rounded-lg overflow-hidden" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-default)', boxShadow: 'var(--shadow-card)' }}>
       <div className="flex items-center gap-2.5 px-5 py-4" style={{ borderBottom: '1px solid var(--border-default)' }}>
         {icon}
         <h2 className="text-body font-semibold" style={{ color: 'var(--text-primary)' }}>{title}</h2>
@@ -172,16 +172,16 @@ export default function PatientDetailPage() {
       </Link>
 
       <div
-        className="rounded-xl px-6 py-5 flex items-start gap-5"
+        className="px-6 py-4 flex items-start gap-4"
         style={{
-          background: 'linear-gradient(135deg, #0F172A 0%, #1E3A8A 60%, #2563EB 100%)',
-          border: '1px solid rgba(255,255,255,0.06)',
-          boxShadow: 'var(--shadow-card)',
+          background: 'var(--bg-card)',
+          border: '1px solid var(--border-default)',
+          borderRadius: 'var(--radius-card)',
         }}
       >
         <div
-          className="w-14 h-14 rounded-2xl flex items-center justify-center text-xl font-extrabold flex-shrink-0"
-          style={{ background: 'rgba(255,255,255,0.15)', color: '#fff' }}
+          className="w-12 h-12 flex items-center justify-center text-lg font-bold flex-shrink-0"
+          style={{ background: 'var(--surface-2)', color: 'var(--text-secondary)', borderRadius: 'var(--radius-card)' }}
         >
           {initials}
         </div>
@@ -189,20 +189,20 @@ export default function PatientDetailPage() {
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-4 flex-wrap">
             <div>
-              <h1 className="text-xl font-bold text-white leading-tight">{fullName}</h1>
-              <p className="text-body-sm mt-0.5 font-mono" style={{ color: 'rgba(255,255,255,0.55)' }}>
+              <h1 className="text-lg font-semibold leading-tight tracking-tight" style={{ color: 'var(--text-primary)' }}>{fullName}</h1>
+              <p className="text-body-sm mt-0.5 font-mono" style={{ color: 'var(--text-muted)' }}>
                 MRN: {patient.mrn}
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
               {patient.current_department && (
-                <span className="flex items-center gap-1 text-caption font-semibold px-2.5 py-1 rounded-full" style={{ background: 'rgba(37,99,235,0.35)', color: '#93C5FD' }}>
+                <span className="flex items-center gap-1 text-meta font-semibold px-2 py-0.5" style={{ background: 'var(--status-info-bg)', color: 'var(--status-info-text)', border: '1px solid var(--status-info-border)', borderRadius: 'var(--radius-badge)' }}>
                   <MapPin className="w-3 h-3" />
                   {patient.current_department}
                 </span>
               )}
               {patient.blood_group && (
-                <span className="flex items-center gap-1 text-caption font-semibold px-2.5 py-1 rounded-full" style={{ background: 'rgba(220,38,38,0.3)', color: '#FCA5A5' }}>
+                <span className="flex items-center gap-1 text-meta font-semibold px-2 py-0.5" style={{ background: 'var(--status-critical-bg)', color: 'var(--status-critical-text)', border: '1px solid var(--status-critical-border)', borderRadius: 'var(--radius-badge)' }}>
                   <Droplets className="w-3 h-3" />
                   {patient.blood_group}
                 </span>
@@ -210,7 +210,7 @@ export default function PatientDetailPage() {
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-x-5 gap-y-1 mt-3">
+          <div className="flex flex-wrap gap-x-5 gap-y-1 mt-2.5">
             {[
               { icon: Calendar, label: patient.dob ? `${fmtDate(patient.dob)} (${age(patient.dob)})` : ' - ' },
               { icon: User,     label: patient.gender ?? ' - ' },
@@ -219,8 +219,8 @@ export default function PatientDetailPage() {
             ].filter(Boolean).map((item, i) => {
               const { icon: Icon, label } = item as { icon: typeof User; label: string };
               return (
-                <span key={i} className="flex items-center gap-1.5 text-body-sm" style={{ color: 'rgba(255,255,255,0.65)' }}>
-                  <Icon className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'rgba(255,255,255,0.4)' }} />
+                <span key={i} className="flex items-center gap-1.5 text-body-sm" style={{ color: 'var(--text-secondary)' }}>
+                  <Icon className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
                   {label}
                 </span>
               );
@@ -235,7 +235,7 @@ export default function PatientDetailPage() {
 
           <Section
             title="Demographics"
-            icon={<div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background: 'rgba(37,99,235,0.1)' }}><User className="w-3.5 h-3.5" style={{ color: '#2563EB' }} /></div>}
+            icon={<div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background: 'rgba(23,138,61,0.1)' }}><User className="w-3.5 h-3.5" style={{ color: '#178A3D' }} /></div>}
           >
             <div>
               <InfoRow label="Full name"  value={fullName} />
@@ -260,9 +260,9 @@ export default function PatientDetailPage() {
                   <div>
                     <p className="text-caption font-bold uppercase tracking-wider mb-2" style={{ color: 'var(--text-muted)' }}>Allergies</p>
                     <div className="flex flex-wrap gap-1.5">
-                      {patient.allergies.map(a => (
-                        <span key={a} className="text-caption font-semibold px-2.5 py-1 rounded-full" style={{ background: '#FEF2F2', color: '#DC2626', border: '1px solid #FECACA' }}>
-                          {a}
+                      {patient.allergies.map((a, i) => (
+                        <span key={`${a.substance}-${i}`} className="text-caption font-semibold px-2.5 py-1 rounded-full" style={{ background: '#FEF2F2', color: '#DC2626', border: '1px solid #FECACA' }}>
+                          {a.substance}{a.severity ? ` (${a.severity})` : ''}
                         </span>
                       ))}
                     </div>
@@ -289,7 +289,7 @@ export default function PatientDetailPage() {
 
           <Section
             title={`Recent Prescriptions (${prescriptions.length})`}
-            icon={<div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background: 'rgba(124,58,237,0.1)' }}><Pill className="w-3.5 h-3.5" style={{ color: '#7C3AED' }} /></div>}
+            icon={<div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background: 'rgba(23,138,61,0.1)' }}><Pill className="w-3.5 h-3.5" style={{ color: '#178A3D' }} /></div>}
           >
             {prescriptions.length === 0 ? (
               <div className="flex items-center justify-center h-24 text-body-sm" style={{ color: 'var(--text-muted)' }}>
@@ -354,7 +354,7 @@ export default function PatientDetailPage() {
 
           <Section
             title={`Recent Visits (${visits.length})`}
-            icon={<div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background: 'rgba(5,150,105,0.1)' }}><Stethoscope className="w-3.5 h-3.5" style={{ color: '#059669' }} /></div>}
+            icon={<div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background: 'rgba(5,150,105,0.1)' }}><Stethoscope className="w-3.5 h-3.5" style={{ color: '#178A3D' }} /></div>}
           >
             {visits.length === 0 ? (
               <div className="flex items-center justify-center h-24 text-body-sm" style={{ color: 'var(--text-muted)' }}>
@@ -371,7 +371,7 @@ export default function PatientDetailPage() {
                       to={`/visits/${v.id}`}
                       className="flex items-start gap-3 px-5 py-3.5 transition-colors hover:bg-[var(--bg-row-hover)]"
                     >
-                      <span className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0" style={{ background: isActive ? '#059669' : '#94A3B8' }} />
+                      <span className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0" style={{ background: isActive ? '#178A3D' : '#94A3B8' }} />
 
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
@@ -382,7 +382,7 @@ export default function PatientDetailPage() {
                             className="text-caption font-bold px-2 py-0.5 rounded-full"
                             style={{
                               background: isActive ? '#F0FDF4' : '#F8FAFC',
-                              color:      isActive ? '#059669' : '#94A3B8',
+                              color:      isActive ? '#178A3D' : '#94A3B8',
                               border:     `1px solid ${isActive ? '#BBF7D0' : '#E2E8F0'}`,
                             }}
                           >
@@ -402,7 +402,7 @@ export default function PatientDetailPage() {
                             <>
                               <span className="text-meta">·</span>
                               <MapPin className="w-3 h-3" />
-                              <span className="text-caption">{v.ward_name}</span>
+                              <span className="text-caption">{[v.ward_name, v.bed_label].filter(Boolean).join(' · ')}</span>
                             </>
                           )}
                         </div>

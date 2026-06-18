@@ -10,8 +10,11 @@ export interface ConsultationRoom {
   floor?: string;
   status: ConsultationRoomStatus;
   current_doctor_id?: string;
+  current_nurse_id?: string;
   current_patient_id?: string;
+  department_name?: string;
   current_doctor_name?: string;
+  current_nurse_name?: string;
   current_patient_name?: string;
   notes?: string;
   created_at: string;
@@ -32,6 +35,7 @@ export interface CreateConsultationRoomPayload {
 export interface UpdateConsultationRoomPayload {
   status?: ConsultationRoomStatus;
   current_doctor_id?: string;
+  current_nurse_id?: string;
   current_patient_id?: string;
   notes?: string;
 }

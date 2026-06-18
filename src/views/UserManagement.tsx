@@ -1,6 +1,9 @@
 import React, { useState, useEffect, ChangeEvent } from 'react';
-import { Plus, CreditCard as Edit2, X, Users, Loader as Loader2, AlertCircle } from 'lucide-react';
+import { Plus, CreditCard as Edit2, X, Users, Loader as Loader2, AlertCircle, KeyRound, UserX, UserCheck } from 'lucide-react';
+import { toast } from 'sonner';
 import Table, { Column } from '../components/Table';
+import TablePagination from '../components/TablePagination';
+import { useTableControls } from '../components/useTableControls';
 import FormField from '../components/FormField';
 import { RoleBadge } from '../components/StatusBadge';
 import { usersApi, CreateUserPayload, UpdateUserPayload } from '../api/users';
@@ -56,6 +59,12 @@ export default function UserManagement() {
   const [formErrors, setFormErrors] = useState<FormErrors>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  const [resetUser, setResetUser] = useState<User | null>(null);
+  const [resetPwd, setResetPwd] = useState('');
+  const [resetErr, setResetErr] = useState<string | null>(null);
+  const [resetBusy, setResetBusy] = useState(false);
+  const [busyId, setBusyId] = useState<string | null>(null);
 
   const loadUsers = async () => {
     setIsLoading(true);
@@ -169,37 +178,131 @@ export default function UserManagement() {
     }
   };
 
+  const openReset = (user: User) => {
+    setResetUser(user);
+    setResetPwd('');
+    setResetErr(null);
+  };
+
+  const submitReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!resetUser) return;
+    if (resetPwd.length < 8 || !/\d/.test(resetPwd)) {
+      setResetErr('Password must be at least 8 characters and include a number.');
+      return;
+    }
+    setResetBusy(true);
+    setResetErr(null);
+    try {
+      await usersApi.resetPassword(resetUser.id, resetPwd);
+      toast.success(`Password reset for ${resetUser.full_name}`);
+      setResetUser(null);
+    } catch (err) {
+      setResetErr((err as ApiError)?.detail || 'Failed to reset password.');
+    } finally {
+      setResetBusy(false);
+    }
+  };
+
+  const toggleActive = async (user: User) => {
+    const deactivating = user.is_active !== false;
+    const verb = deactivating ? 'deactivate' : 'reactivate';
+    if (deactivating && !window.confirm(`Deactivate ${user.full_name}? They will no longer be able to log in. The record is preserved for the audit trail.`)) {
+      return;
+    }
+    setBusyId(user.id);
+    try {
+      const res = deactivating
+        ? await usersApi.deactivate(user.id)
+        : await usersApi.reactivate(user.id);
+      setUsers((prev) => prev.map((u) => (u.id === user.id ? res.data : u)));
+      toast.success(`${user.full_name} ${deactivating ? 'deactivated' : 'reactivated'}`);
+    } catch (err) {
+      toast.error((err as ApiError)?.detail || `Failed to ${verb} user.`);
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const tc = useTableControls({ data: users, initialSortKey: 'full_name' });
+
   const columns: Column<User>[] = [
-    { key: 'username', label: 'Username' },
-    { key: 'full_name', label: 'Full Name' },
-    { key: 'email', label: 'Email' },
+    { key: 'username', label: 'Username', sortable: true },
+    { key: 'full_name', label: 'Full Name', sortable: true },
+    { key: 'email', label: 'Email', sortable: true },
     {
       key: 'role',
       label: 'Role',
+      sortable: true,
       render: (row) => <RoleBadge role={row.role} />,
     },
     {
       key: 'created_at',
       label: 'Created',
+      sortable: true,
       render: (row) => formatDate(row.created_at),
     },
     {
       key: 'last_login',
       label: 'Last Login',
+      sortable: true,
       render: (row) => formatDate(row.last_login),
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      render: (row) => {
+        const active = row.is_active !== false;
+        return (
+          <span
+            className="inline-flex items-center gap-1.5 text-xs font-semibold px-2 py-0.5 rounded-full"
+            style={{
+              background: active ? '#F0FDF4' : '#FEF2F2',
+              color: active ? '#15803D' : '#B91C1C',
+              border: `1px solid ${active ? '#86EFAC' : '#FCA5A5'}`,
+            }}
+          >
+            <span className="w-1.5 h-1.5 rounded-full" style={{ background: active ? '#22C55E' : '#EF4444' }} />
+            {active ? 'Active' : 'Inactive'}
+          </span>
+        );
+      },
     },
     {
       key: 'actions',
       label: 'Actions',
-      render: (row) => (
-        <button
-          onClick={(e) => { e.stopPropagation(); openEditUser(row); }}
-          className="flex items-center gap-1 text-[#1e3a5f] hover:text-blue-700 text-sm font-medium transition-colors"
-        >
-          <Edit2 className="h-4 w-4" />
-          Edit
-        </button>
-      ),
+      render: (row) => {
+        const active = row.is_active !== false;
+        return (
+          <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
+            <button
+              onClick={() => openEditUser(row)}
+              className="flex items-center gap-1 text-sm font-medium transition-colors"
+              style={{ color: 'var(--clinical-600)' }}
+            >
+              <Edit2 className="h-4 w-4" /> Edit
+            </button>
+            <button
+              onClick={() => openReset(row)}
+              className="flex items-center gap-1 text-sm font-medium transition-colors"
+              style={{ color: 'var(--text-secondary)' }}
+            >
+              <KeyRound className="h-4 w-4" /> Reset
+            </button>
+            <button
+              onClick={() => toggleActive(row)}
+              disabled={busyId === row.id}
+              className="flex items-center gap-1 text-sm font-medium transition-colors disabled:opacity-50"
+              style={{ color: active ? '#B91C1C' : '#15803D' }}
+            >
+              {busyId === row.id
+                ? <Loader2 className="h-4 w-4 animate-spin" />
+                : active ? <UserX className="h-4 w-4" /> : <UserCheck className="h-4 w-4" />}
+              {active ? 'Deactivate' : 'Reactivate'}
+            </button>
+          </div>
+        );
+      },
     },
   ];
 
@@ -226,13 +329,25 @@ export default function UserManagement() {
         </div>
       )}
 
-      <Table
-        columns={columns}
-        data={users}
-        isLoading={isLoading}
-        emptyMessage="No users found."
-        onRowClick={openEditUser}
-      />
+      <div>
+        <Table
+          columns={columns}
+          data={tc.pageRows}
+          isLoading={isLoading}
+          emptyMessage="No users found."
+          onRowClick={openEditUser}
+          sortKey={tc.sortKey}
+          sortDir={tc.sortDir}
+          onSort={tc.toggleSort}
+        />
+        {!isLoading && users.length > 0 && (
+          <TablePagination
+            page={tc.page} pageCount={tc.pageCount} pageSize={tc.pageSize}
+            total={tc.total} rangeStart={tc.rangeStart} rangeEnd={tc.rangeEnd}
+            setPage={tc.setPage} setPageSize={tc.setPageSize}
+          />
+        )}
+      </div>
 
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -240,7 +355,7 @@ export default function UserManagement() {
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
             onClick={closeModal}
           />
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+          <div role="dialog" aria-modal="true" className="relative bg-white rounded-lg shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
               <div className="flex items-center gap-2">
                 <Users className="h-5 w-5 text-[#1e3a5f]" />
@@ -330,6 +445,46 @@ export default function UserManagement() {
                 >
                   {submitting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                   {submitting ? 'Saving...' : editingUser ? 'Save Changes' : 'Create User'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {resetUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setResetUser(null)} />
+          <div role="dialog" aria-modal="true" className="relative bg-white rounded-lg shadow-2xl w-full max-w-sm">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+              <div className="flex items-center gap-2">
+                <KeyRound className="h-5 w-5" style={{ color: 'var(--clinical-600)' }} />
+                <h2 className="text-base font-semibold text-gray-900">Reset Password</h2>
+              </div>
+              <button onClick={() => setResetUser(null)} className="text-gray-400 hover:text-gray-600"><X className="h-5 w-5" /></button>
+            </div>
+            <form onSubmit={submitReset} className="px-5 py-5 space-y-4">
+              <p className="text-sm text-gray-500">
+                Set a new password for <span className="font-semibold text-gray-800">{resetUser.full_name}</span> ({resetUser.username}).
+              </p>
+              {resetErr && (
+                <div className="flex items-start gap-2 bg-red-50 border border-red-200 text-red-700 rounded-lg px-3 py-2 text-sm">
+                  <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" /> {resetErr}
+                </div>
+              )}
+              <input
+                type="password"
+                value={resetPwd}
+                onChange={(e) => setResetPwd(e.target.value)}
+                placeholder="New password (min 8 chars, 1 number)"
+                className="w-full px-3 py-2.5 rounded-lg text-sm border border-gray-300 outline-none focus:border-[var(--clinical-600)]"
+                autoFocus
+              />
+              <div className="flex justify-end gap-3">
+                <button type="button" onClick={() => setResetUser(null)} className="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 border border-gray-300 bg-white hover:bg-gray-50">Cancel</button>
+                <button type="submit" disabled={resetBusy} className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white disabled:opacity-60" style={{ background: 'var(--clinical-600)' }}>
+                  {resetBusy && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                  {resetBusy ? 'Resetting...' : 'Reset Password'}
                 </button>
               </div>
             </form>

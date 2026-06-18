@@ -1,7 +1,7 @@
 interface Column<T> {
   key: keyof T;
   label: string;
-  format?: (value: any) => string;
+  format?: (value: T[keyof T]) => string;
 }
 
 interface PerformanceTableProps<T> {
@@ -9,7 +9,7 @@ interface PerformanceTableProps<T> {
   columns: Column<T>[];
 }
 
-export function PerformanceTable<T extends Record<string, any>>({ data, columns }: PerformanceTableProps<T>) {
+export function PerformanceTable<T extends Record<string, unknown>>({ data, columns }: PerformanceTableProps<T>) {
   if (data.length === 0) {
     return <p className="text-center text-text-muted py-4">No data available.</p>;
   }
@@ -31,7 +31,7 @@ export function PerformanceTable<T extends Record<string, any>>({ data, columns 
             <tr key={idx} className="border-b last:border-b-0 hover:bg-surface-1">
               {columns.map((col) => (
                 <td key={col.key as string} className="py-3 px-4 text-sm text-text-primary">
-                  {col.format ? col.format(row[col.key]) : row[col.key]}
+                  {col.format ? col.format(row[col.key]) : String(row[col.key] ?? '')}
                 </td>
               ))}
             </tr>

@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { analyticsApi, BottleneckData, TATHistoryEntry, LiveBreachResponse } from '../../api/analytics';
 import { bedsApi, BedAvailabilitySummary } from '../../api/beds';
-import { useWebSocket, WSEvent } from '../../context/WebSocketContext';
+import { useWebSocket } from '../../context/WebSocketContext';
 import { TATMetrics } from '../../models/types';
 import { BreachBanner } from '../../components/ui/BreachBanner';
 import { LiveMetricsSidebar, formatMin } from '../../components/ui/LiveMetricsSidebar';
@@ -25,17 +25,17 @@ interface PerformanceRow {
 }
 
 function Skeleton({ className = '' }: { className?: string }) {
-  return <div className={`animate-shimmer rounded-xl ${className}`} />;
+  return <div className={`animate-shimmer rounded-lg ${className}`} />;
 }
 
 function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   return (
     <div
-      className={`rounded-xl overflow-hidden ${className}`}
+      className={`overflow-hidden ${className}`}
       style={{
         background: 'var(--bg-card)',
         border: '1px solid var(--border-default)',
-        boxShadow: '0 1px 3px rgba(15,23,42,0.06), 0 4px 16px rgba(15,23,42,0.04)',
+        borderRadius: 'var(--radius-card)',
       }}
     >
       {children}
@@ -43,7 +43,7 @@ function Card({ children, className = '' }: { children: React.ReactNode; classNa
   );
 }
 
-function CardHeader({ title, subtitle, icon: Icon, iconColor, iconBg, right }: {
+function CardHeader({ title, subtitle, icon: Icon, right }: {
   title: string;
   subtitle?: string;
   icon?: React.ElementType;
@@ -53,22 +53,15 @@ function CardHeader({ title, subtitle, icon: Icon, iconColor, iconBg, right }: {
 }) {
   return (
     <div
-      className="flex items-center justify-between px-5 py-4"
-      style={{ borderBottom: '1px solid var(--border-default)' }}
+      className="flex items-center justify-between px-4 py-2.5"
+      style={{ borderBottom: '1px solid var(--border-default)', background: 'var(--surface-1)' }}
     >
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 min-w-0">
         {Icon && (
-          <div
-            className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-            style={{ background: iconBg ?? 'var(--bg-base)' }}
-          >
-            <Icon className="w-4 h-4" style={{ color: iconColor ?? 'var(--text-secondary)' }} />
-          </div>
+          <Icon className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
         )}
-        <div>
-          <p className="text-body font-semibold" style={{ color: 'var(--text-primary)' }}>{title}</p>
-          {subtitle && <p className="text-caption mt-0.5" style={{ color: 'var(--text-muted)' }}>{subtitle}</p>}
-        </div>
+        <span className="text-label truncate" style={{ color: 'var(--text-secondary)' }}>{title}</span>
+        {subtitle && <span className="text-meta truncate hidden xl:inline" style={{ color: 'var(--text-muted)' }}>· {subtitle}</span>}
       </div>
       {right && <div className="flex-shrink-0">{right}</div>}
     </div>
@@ -80,69 +73,54 @@ interface KpiCardProps {
   value: string | number;
   sub?: string;
   icon: React.ElementType;
-  accentColor: string;
-  accentBg: string;
+  accentColor?: string;
+  accentBg?: string;
   trend?: 'up' | 'down' | 'neutral';
   trendLabel?: string;
   danger?: boolean;
 }
 
-function KpiCard({ label, value, sub, icon: Icon, accentColor, accentBg, trend, trendLabel, danger }: KpiCardProps) {
+function KpiCard({ label, value, sub, icon: Icon, trend, trendLabel, danger }: KpiCardProps) {
   return (
     <div
-      className="flex flex-col p-5 rounded-xl transition-all duration-150 cursor-default"
+      className="flex flex-col px-4 py-3"
       style={{
-        background: danger ? '#FEF2F2' : 'var(--bg-card)',
-        border: `1px solid ${danger ? '#FECACA' : 'var(--border-default)'}`,
-        boxShadow: '0 1px 3px rgba(15,23,42,0.06), 0 4px 16px rgba(15,23,42,0.04)',
-        borderLeft: `3px solid ${danger ? '#DC2626' : accentColor}`,
-      }}
-      onMouseEnter={e => {
-        (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)';
-        (e.currentTarget as HTMLElement).style.boxShadow = '0 8px 24px rgba(15,23,42,0.10)';
-      }}
-      onMouseLeave={e => {
-        (e.currentTarget as HTMLElement).style.transform = '';
-        (e.currentTarget as HTMLElement).style.boxShadow = '0 1px 3px rgba(15,23,42,0.06), 0 4px 16px rgba(15,23,42,0.04)';
+        background: danger ? 'var(--status-critical-bg)' : 'var(--bg-card)',
+        border: `1px solid ${danger ? 'var(--status-critical-border)' : 'var(--border-default)'}`,
+        borderRadius: 'var(--radius-card)',
       }}
     >
-      <div className="flex items-start justify-between mb-4">
-        <div
-          className="w-10 h-10 rounded-xl flex items-center justify-center"
-          style={{ background: danger ? 'rgba(220,38,38,0.10)' : accentBg }}
-        >
-          <Icon className="w-5 h-5" style={{ color: danger ? '#DC2626' : accentColor }} />
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-1.5">
+          <Icon className="w-3.5 h-3.5" style={{ color: danger ? 'var(--status-critical-icon)' : 'var(--text-muted)' }} />
+          <span className="text-label" style={{ color: 'var(--text-muted)' }}>{label}</span>
         </div>
         {trend && trendLabel && (
-          <div
-            className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold"
-            style={{
-              background: trend === 'up' ? '#F0FDF4' : trend === 'down' ? '#FEF2F2' : '#F8FAFC',
-              color: trend === 'up' ? '#15803D' : trend === 'down' ? '#B91C1C' : '#64748B',
-            }}
+          <span
+            className="inline-flex items-center gap-0.5 text-meta font-semibold"
+            style={{ color: trend === 'up' ? 'var(--status-success-text)' : trend === 'down' ? 'var(--status-critical-text)' : 'var(--text-muted)' }}
           >
             {trend === 'up' ? <TrendingUp className="w-3 h-3" /> : trend === 'down' ? <TrendingDown className="w-3 h-3" /> : <Minus className="w-3 h-3" />}
-            <span>{trendLabel}</span>
-          </div>
+            {trendLabel}
+          </span>
         )}
       </div>
       <p
-        className="tabular-nums font-extrabold leading-none tracking-tight"
-        style={{ fontSize: '2.5rem', color: danger ? '#DC2626' : 'var(--text-primary)' }}
+        className="tabular-nums font-bold leading-none tracking-tight mt-2"
+        style={{ fontSize: '1.75rem', color: danger ? 'var(--status-critical-text)' : 'var(--text-primary)' }}
       >
         {value}
       </p>
-      <p className="text-body-sm font-semibold mt-2" style={{ color: 'var(--text-primary)' }}>{label}</p>
-      {sub && <p className="text-caption mt-0.5" style={{ color: 'var(--text-muted)' }}>{sub}</p>}
+      {sub && <p className="text-caption mt-1" style={{ color: 'var(--text-muted)' }}>{sub}</p>}
     </div>
   );
 }
 
 const PIPELINE_STAGES = [
-  { label: 'Ordered',      color: '#3B82F6', bg: 'rgba(59,130,246,0.10)'  },
-  { label: 'Verified',     color: '#7C3AED', bg: 'rgba(124,58,237,0.10)'  },
+  { label: 'Ordered',      color: '#1FA64A', bg: 'rgba(31,166,74,0.10)'  },
+  { label: 'Verified',     color: '#178A3D', bg: 'rgba(23,138,61,0.10)'  },
   { label: 'Dispensed',    color: '#0891B2', bg: 'rgba(8,145,178,0.10)'   },
-  { label: 'Administered', color: '#059669', bg: 'rgba(5,150,105,0.10)'   },
+  { label: 'Administered', color: '#178A3D', bg: 'rgba(23,138,61,0.10)'   },
 ];
 
 function PrescriptionPipeline({ metrics }: { metrics: TATMetrics | null }) {
@@ -156,59 +134,25 @@ function PrescriptionPipeline({ metrics }: { metrics: TATMetrics | null }) {
     <Card>
       <CardHeader
         title="Prescription Flow"
-        subtitle="Average time between each stage"
+        subtitle="avg time between stages"
         icon={Activity}
-        iconBg="rgba(37,99,235,0.08)"
-        iconColor="#2563EB"
       />
-      <div className="p-6">
-        <div className="flex items-start">
-          {PIPELINE_STAGES.map((stage, i) => (
-            <div key={stage.label} className="flex items-start flex-1 min-w-0">
-              <div className="flex flex-col items-center gap-2 flex-shrink-0">
-                <div
-                  className="w-12 h-12 rounded-full flex items-center justify-center font-bold text-base"
-                  style={{
-                    background: stage.bg,
-                    color: stage.color,
-                    border: `2px solid ${stage.color}30`,
-                    boxShadow: `0 0 0 4px ${stage.bg}`,
-                  }}
-                >
-                  {i + 1}
-                </div>
-                <span className="text-caption font-semibold text-center whitespace-nowrap" style={{ color: 'var(--text-secondary)' }}>
-                  {stage.label}
-                </span>
-              </div>
-
-              {i < PIPELINE_STAGES.length - 1 && (
-                <div className="flex-1 flex flex-col items-center pt-3 px-3">
-                  <span
-                    className="text-xs font-bold tabular-nums mb-2 px-2.5 py-1 rounded-full"
-                    style={{
-                      background: 'var(--bg-base)',
-                      color: 'var(--text-primary)',
-                      border: '1px solid var(--border-default)',
-                    }}
-                  >
-                    {formatMin(gaps[i])}
-                  </span>
-                  <div className="w-full flex items-center">
-                    <div
-                      className="flex-1 h-0.5 rounded-full"
-                      style={{ background: `linear-gradient(90deg, ${stage.color}50, ${PIPELINE_STAGES[i + 1].color}50)` }}
-                    />
-                    <svg width="6" height="8" viewBox="0 0 6 8" fill={PIPELINE_STAGES[i + 1].color} style={{ opacity: 0.6 }}>
-                      <polygon points="0,0 6,4 0,8" />
-                    </svg>
-                  </div>
-                  <span className="text-[10px] mt-1.5" style={{ color: 'var(--text-muted)' }}>avg wait</span>
-                </div>
-              )}
+      <div className="flex items-stretch divide-x px-2 py-3" style={{ borderColor: 'var(--border-default)' }}>
+        {PIPELINE_STAGES.map((stage, i) => (
+          <div key={stage.label} className="flex items-center flex-1 min-w-0">
+            <div className="flex-1 text-center px-2">
+              <p className="text-label" style={{ color: 'var(--text-muted)' }}>{stage.label}</p>
             </div>
-          ))}
-        </div>
+            {i < PIPELINE_STAGES.length - 1 && (
+              <div className="flex flex-col items-center flex-shrink-0 px-1">
+                <span className="text-meta tabular-nums font-semibold" style={{ color: 'var(--text-secondary)' }}>
+                  {formatMin(gaps[i])}
+                </span>
+                <span className="text-meta leading-none" style={{ color: 'var(--text-disabled)' }}>→</span>
+              </div>
+            )}
+          </div>
+        ))}
       </div>
     </Card>
   );
@@ -223,15 +167,15 @@ function BedSummaryWidget({ summary }: { summary: BedAvailabilitySummary[] }) {
   const occupancyPct = total > 0 ? Math.round((occupied / total) * 100) : 0;
 
   const segments = [
-    { count: occupied,  color: occupancyPct > 85 ? '#DC2626' : '#2563EB', label: 'Occupied'  },
+    { count: occupied,  color: occupancyPct > 85 ? '#DC2626' : '#178A3D', label: 'Occupied'  },
     { count: cleaning,  color: '#D97706', label: 'Cleaning'  },
-    { count: available, color: '#059669', label: 'Available' },
+    { count: available, color: '#178A3D', label: 'Available' },
     { count: other,     color: '#94A3B8', label: 'Other'     },
   ];
 
   const chips = [
-    { label: 'Available', count: available, color: '#059669', bg: '#F0FDF4', border: '#BBF7D0' },
-    { label: 'Occupied',  count: occupied,  color: occupancyPct > 85 ? '#DC2626' : '#1D4ED8', bg: occupancyPct > 85 ? '#FEF2F2' : '#EFF6FF', border: occupancyPct > 85 ? '#FECACA' : '#BFDBFE' },
+    { label: 'Available', count: available, color: '#178A3D', bg: '#F0FDF4', border: '#BBF7D0' },
+    { label: 'Occupied',  count: occupied,  color: occupancyPct > 85 ? '#DC2626' : '#0F6E2F', bg: occupancyPct > 85 ? '#FEF2F2' : '#EFF6FF', border: occupancyPct > 85 ? '#FECACA' : '#BFDBFE' },
     { label: 'Cleaning',  count: cleaning,  color: '#92400E', bg: '#FFFBEB', border: '#FDE68A' },
     { label: 'Other',     count: other,     color: '#475569', bg: '#F8FAFC', border: '#E2E8F0' },
   ];
@@ -242,8 +186,8 @@ function BedSummaryWidget({ summary }: { summary: BedAvailabilitySummary[] }) {
         title="Bed Availability"
         subtitle={`${total} beds · ${summary.length} department${summary.length !== 1 ? 's' : ''}`}
         icon={BedDouble}
-        iconBg="rgba(37,99,235,0.08)"
-        iconColor="#2563EB"
+        iconBg="rgba(23,138,61,0.08)"
+        iconColor="#178A3D"
         right={
           <div className="text-right">
             <p
@@ -272,14 +216,14 @@ function BedSummaryWidget({ summary }: { summary: BedAvailabilitySummary[] }) {
           {chips.map(chip => (
             <div
               key={chip.label}
-              className="flex items-center justify-between px-3 py-2.5 rounded-lg"
-              style={{ background: chip.bg, border: `1px solid ${chip.border}` }}
+              className="flex items-center justify-between px-3 py-2"
+              style={{ background: 'var(--bg-card)', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-badge)' }}
             >
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full" style={{ background: chip.color }} />
-                <span className="text-caption font-semibold" style={{ color: chip.color }}>{chip.label}</span>
+                <span className="text-caption" style={{ color: 'var(--text-secondary)' }}>{chip.label}</span>
               </div>
-              <span className="text-body font-extrabold tabular-nums" style={{ color: chip.color }}>{chip.count}</span>
+              <span className="text-body font-bold tabular-nums" style={{ color: 'var(--text-primary)' }}>{chip.count}</span>
             </div>
           ))}
         </div>
@@ -298,7 +242,7 @@ function BedSummaryWidget({ summary }: { summary: BedAvailabilitySummary[] }) {
                       className="h-full rounded-full transition-all duration-700"
                       style={{
                         width: `${deptPct}%`,
-                        background: deptPct > 85 ? '#DC2626' : '#2563EB',
+                        background: deptPct > 85 ? '#DC2626' : '#178A3D',
                       }}
                     />
                   </div>
@@ -337,7 +281,7 @@ function ComplianceTrend({ history }: { history: TATHistoryEntry[] }) {
               className="text-caption font-semibold px-2.5 py-1 rounded-full"
               style={{
                 background: isGood ? '#F0FDF4' : '#FFFBEB',
-                color: isGood ? '#15803D' : '#92400E',
+                color: isGood ? '#178A3D' : '#92400E',
                 border: `1px solid ${isGood ? '#BBF7D0' : '#FDE68A'}`,
               }}
             >
@@ -351,8 +295,8 @@ function ComplianceTrend({ history }: { history: TATHistoryEntry[] }) {
           <AreaChart data={history} margin={{ left: 0, right: 8, top: 8, bottom: 0 }}>
             <defs>
               <linearGradient id="compGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%"  stopColor="#059669" stopOpacity={0.18} />
-                <stop offset="95%" stopColor="#059669" stopOpacity={0} />
+                <stop offset="5%"  stopColor="#178A3D" stopOpacity={0.18} />
+                <stop offset="95%" stopColor="#178A3D" stopOpacity={0} />
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--border-default)" vertical={false} />
@@ -387,11 +331,11 @@ function ComplianceTrend({ history }: { history: TATHistoryEntry[] }) {
               type="monotone"
               dataKey="resolution_rate"
               name="Resolution Rate"
-              stroke="#059669"
+              stroke="#178A3D"
               strokeWidth={2}
               fill="url(#compGradient)"
               dot={false}
-              activeDot={{ r: 4, fill: '#059669', stroke: '#fff', strokeWidth: 2 }}
+              activeDot={{ r: 4, fill: '#178A3D', stroke: '#fff', strokeWidth: 2 }}
             />
           </AreaChart>
         </ResponsiveContainer>
@@ -431,7 +375,7 @@ function PerformanceTable({ role, data }: { role: 'doctor' | 'pharmacist'; data:
               ) : (
                 <>
                   <th className="px-5 py-3 text-right text-caption font-semibold" style={{ color: 'var(--text-muted)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>Dispensed</th>
-                  <th className="px-5 py-3 text-right text-caption font-semibold" style={{ color: 'var(--text-muted)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>Avg Verify'Dispense</th>
+                  <th className="px-5 py-3 text-right text-caption font-semibold" style={{ color: 'var(--text-muted)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>Avg Verify to Dispense</th>
                 </>
               )}
             </tr>
@@ -467,7 +411,7 @@ function PerformanceTable({ role, data }: { role: 'doctor' | 'pharmacist'; data:
                           className="inline-flex items-center justify-end tabular-nums font-semibold text-caption px-2 py-0.5 rounded-full"
                           style={{
                             background: isBadFlag ? '#FEF2F2' : '#F0FDF4',
-                            color: isBadFlag ? '#B91C1C' : '#15803D',
+                            color: isBadFlag ? '#B91C1C' : '#178A3D',
                           }}
                         >
                           {flagRate.toFixed(1)}%
@@ -512,7 +456,7 @@ function BottleneckSection({ data }: { data: BottleneckData }) {
 
   return (
     <div
-      className="relative rounded-xl overflow-hidden"
+      className="relative rounded-lg overflow-hidden"
       style={{
         background: 'var(--bg-card)',
         border: '1px solid var(--border-default)',
@@ -569,7 +513,7 @@ function BottleneckSection({ data }: { data: BottleneckData }) {
                   <button
                     onClick={() => setDrillStage(stage.name)}
                     className="flex items-center gap-0.5 text-caption font-semibold transition-colors hover:underline"
-                    style={{ color: '#2563EB' }}
+                    style={{ color: '#178A3D' }}
                   >
                     Detail <ChevronRight className="w-3 h-3" />
                   </button>
@@ -578,7 +522,7 @@ function BottleneckSection({ data }: { data: BottleneckData }) {
               <div className="relative h-3 rounded-full overflow-hidden" style={{ background: 'var(--surface-2)' }}>
                 <div
                   className="absolute inset-y-0 left-0 rounded-full"
-                  style={{ width: `${p95Pct}%`, background: isWorst ? 'rgba(220,38,38,0.12)' : 'rgba(37,99,235,0.10)', transition: 'width 0.5s ease' }}
+                  style={{ width: `${p95Pct}%`, background: isWorst ? 'rgba(220,38,38,0.12)' : 'rgba(23,138,61,0.10)', transition: 'width 0.5s ease' }}
                 />
                 <div
                   className="absolute inset-y-0 left-0 rounded-full"
@@ -586,7 +530,7 @@ function BottleneckSection({ data }: { data: BottleneckData }) {
                     width: `${avgPct}%`,
                     background: isWorst
                       ? 'linear-gradient(90deg, #DC2626, #EF4444)'
-                      : 'linear-gradient(90deg, #1D4ED8, #2563EB)',
+                      : 'linear-gradient(90deg, #0F6E2F, #178A3D)',
                     transition: 'width 0.5s ease',
                     minWidth: stage.avg > 0 ? 8 : 0,
                   }}
@@ -598,8 +542,8 @@ function BottleneckSection({ data }: { data: BottleneckData }) {
 
         <div className="flex items-center gap-4 pt-1" style={{ borderTop: '1px solid var(--border-default)' }}>
           {[
-            { color: '#2563EB', label: 'Average' },
-            { color: 'rgba(37,99,235,0.25)', label: 'P95' },
+            { color: '#178A3D', label: 'Average' },
+            { color: 'rgba(23,138,61,0.25)', label: 'P95' },
           ].map(item => (
             <div key={item.label} className="flex items-center gap-1.5">
               <div className="w-2.5 h-2.5 rounded-sm" style={{ background: item.color }} />
@@ -611,11 +555,11 @@ function BottleneckSection({ data }: { data: BottleneckData }) {
 
       {drillData && (
         <div
-          className="absolute inset-0 flex flex-col animate-fade-in rounded-xl overflow-hidden"
+          className="absolute inset-0 flex flex-col animate-fade-in rounded-lg overflow-hidden"
           style={{ background: 'var(--bg-card)', zIndex: 5 }}
         >
           <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid var(--border-default)' }}>
-            <p className="text-body font-semibold" style={{ color: 'var(--text-primary)' }}>{drillData.name}  -  Detail</p>
+            <p className="text-body font-semibold" style={{ color: 'var(--text-primary)' }}>{drillData.name} Detail</p>
             <button
               onClick={() => setDrillStage(null)}
               className="p-1.5 rounded-lg transition-colors hover:bg-[var(--bg-base)]"
@@ -631,7 +575,7 @@ function BottleneckSection({ data }: { data: BottleneckData }) {
                 { label: 'Average Wait', value: formatMin(drillData.avg), sub: 'per prescription' },
                 { label: 'P95 Wait',     value: formatMin(drillData.p95), sub: '95th percentile' },
               ].map(({ label, value, sub }) => (
-                <div key={label} className="p-4 rounded-xl" style={{ background: 'var(--bg-base)', border: '1px solid var(--border-default)' }}>
+                <div key={label} className="p-4 rounded-lg" style={{ background: 'var(--bg-base)', border: '1px solid var(--border-default)' }}>
                   <p className="text-caption font-semibold uppercase tracking-wider mb-1" style={{ color: 'var(--text-muted)' }}>{label}</p>
                   <p className="text-time-card font-extrabold tabular-nums" style={{ color: 'var(--text-primary)' }}>{value}</p>
                   <p className="text-caption mt-1" style={{ color: 'var(--text-muted)' }}>{sub}</p>
@@ -640,11 +584,11 @@ function BottleneckSection({ data }: { data: BottleneckData }) {
             </div>
             {drillData.avg > 60 && (
               <div
-                className="flex items-start gap-2.5 p-3.5 rounded-xl text-body-sm font-medium"
+                className="flex items-start gap-2.5 p-3.5 rounded-lg text-body-sm font-medium"
                 style={{ background: '#FEF2F2', border: '1px solid #FECACA', color: '#B91C1C' }}
               >
                 <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                Average wait exceeds 1 hour  -  this stage is a bottleneck requiring immediate attention.
+                Average wait exceeds 1 hour. This stage is a bottleneck requiring immediate attention.
               </div>
             )}
           </div>
@@ -697,7 +641,7 @@ export function AdminDashboard() {
   useEffect(() => {
     const events = ['sla.breached', 'prescription.status_changed', 'audit.flag_resolved'];
     const unsubs = events.map(ev =>
-      subscribe(ev, (_: WSEvent) => {
+      subscribe(ev, () => {
         analyticsApi.getLiveTAT().then(r => setLiveMetrics(r.data)).catch(() => null);
         analyticsApi.getLiveBreaches().then(r => setBreaches(r.data)).catch(() => null);
       })
@@ -726,50 +670,30 @@ export function AdminDashboard() {
       <BreachBanner count={breaches.breach_count} oldestElapsedMin={oldestBreachElapsed} />
 
       <div className="flex flex-1 overflow-hidden">
-        <div className="flex-1 overflow-y-auto" style={{ background: '#F1F5F9' }}>
+        <div className="flex-1 overflow-y-auto" style={{ background: 'var(--bg-base)' }}>
           <div
-            className="px-8 pt-7 pb-6"
-            style={{
-              background: 'linear-gradient(135deg, #0F172A 0%, #1E3A8A 60%, #2563EB 100%)',
-              borderBottom: '1px solid rgba(255,255,255,0.06)',
-            }}
+            className="flex items-center justify-between px-6 h-12 flex-shrink-0"
+            style={{ background: 'var(--bg-card)', borderBottom: '1px solid var(--border-default)' }}
           >
-            <div className="flex items-end justify-between">
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <span
-                    className="text-caption font-bold px-2.5 py-1 rounded-full"
-                    style={{ background: 'rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.8)', letterSpacing: '0.08em', textTransform: 'uppercase' }}
-                  >
-                    Admin Dashboard
-                  </span>
-                  {breaches.breach_count > 0 && (
-                    <span
-                      className="text-caption font-bold px-2.5 py-1 rounded-full animate-breach-pulse"
-                      style={{ background: 'rgba(220,38,38,0.3)', color: '#FCA5A5', border: '1px solid rgba(220,38,38,0.5)' }}
-                    >
-                      {breaches.breach_count} SLA Breach{breaches.breach_count > 1 ? 'es' : ''}
-                    </span>
-                  )}
-                </div>
-                <h1 className="text-2xl font-bold text-white tracking-tight">Operations Overview</h1>
-                <p className="text-body-sm mt-1" style={{ color: 'rgba(255,255,255,0.55)' }}>
-                  Real-time prescription turnaround and SLA monitoring
-                </p>
-              </div>
-              <div
-                className="flex items-center gap-2 px-3 py-2 rounded-lg flex-shrink-0"
-                style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)' }}
-              >
-                <div className="w-2 h-2 rounded-full" style={{ background: '#34D399' }} />
-                <span className="text-body-sm font-medium text-white">
-                  {new Date().toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}
+            <div className="flex items-center gap-3">
+              <h1 className="text-base font-semibold tracking-tight" style={{ color: 'var(--text-primary)' }}>
+                Operations Overview
+              </h1>
+              {breaches.breach_count > 0 && (
+                <span
+                  className="text-meta font-semibold px-2 py-0.5"
+                  style={{ background: 'var(--status-critical-bg)', color: 'var(--status-critical-text)', border: '1px solid var(--status-critical-border)', borderRadius: 'var(--radius-badge)' }}
+                >
+                  {breaches.breach_count} SLA breach{breaches.breach_count > 1 ? 'es' : ''}
                 </span>
-              </div>
+              )}
             </div>
+            <span className="text-meta tabular-nums" style={{ color: 'var(--text-muted)' }}>
+              {new Date().toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}
+            </span>
           </div>
 
-          <div className="px-8 py-6 space-y-6">
+          <div className="px-6 py-5 space-y-5">
             {loading ? (
               <div className="space-y-5">
                 <div className="grid grid-cols-4 gap-4">
@@ -802,24 +726,24 @@ export function AdminDashboard() {
                     value={liveMetrics?.total_prescriptions ?? 0}
                     sub="ordered since midnight"
                     icon={Pill}
-                    accentColor="#2563EB"
-                    accentBg="rgba(37,99,235,0.10)"
+                    accentColor="#178A3D"
+                    accentBg="rgba(23,138,61,0.10)"
                   />
                   <KpiCard
                     label="Avg Total TAT"
                     value={formatMin(liveMetrics?.average_total_tat_minutes)}
-                    sub="order ' administered"
+                    sub="order to administered"
                     icon={Timer}
-                    accentColor="#7C3AED"
-                    accentBg="rgba(124,58,237,0.10)"
+                    accentColor="#178A3D"
+                    accentBg="rgba(23,138,61,0.10)"
                   />
                   <KpiCard
                     label="Resolution Rate"
-                    value={liveMetrics ? `${liveMetrics.resolution_rate.toFixed(1)}%` : ' - '}
+                    value={liveMetrics ? `${liveMetrics.resolution_rate.toFixed(1)}%` : '-'}
                     sub="flag resolution today"
                     icon={CheckCircle2}
-                    accentColor="#059669"
-                    accentBg="rgba(5,150,105,0.10)"
+                    accentColor="#178A3D"
+                    accentBg="rgba(23,138,61,0.10)"
                   />
                 </div>
 

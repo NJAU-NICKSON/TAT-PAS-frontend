@@ -18,6 +18,10 @@ import {
 import { billingApi } from '../api/billing';
 import { Bill, Payment, BillLineItem } from '../models/types';
 import { useWebSocket } from '../context/WebSocketContext';
+import { printDocument } from '../lib/print';
+import TablePagination from '../components/TablePagination';
+import { useTableControls } from '../components/useTableControls';
+import { ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
 import { toast } from 'sonner';
 
 function fmtKES(n: number | undefined | null) {
@@ -65,14 +69,14 @@ const STATUS_STYLE: Record<string, {
   label:  string;
 }> = {
   paid: {
-    color:  '#059669',
+    color:  '#178A3D',
     bg:     '#F0FDF4',
     border: '#BBF7D0',
     icon:   CheckCircle2,
     label:  'Paid',
   },
   partially_paid: {
-    color:  '#2563EB',
+    color:  '#178A3D',
     bg:     '#EFF6FF',
     border: '#BFDBFE',
     icon:   Clock,
@@ -86,7 +90,7 @@ const STATUS_STYLE: Record<string, {
     label:  'Open',
   },
   finalized: {
-    color:  '#7C3AED',
+    color:  '#178A3D',
     bg:     '#F5F3FF',
     border: '#DDD6FE',
     icon:   CheckCircle2,
@@ -119,47 +123,27 @@ function printReceipt(bill: Bill) {
       <td style="padding:4px 8px">${fmtDateTime(p.received_at)}</td>
       <td style="padding:4px 8px;text-transform:capitalize">${p.method.replace('_', ' ')}</td>
       <td style="padding:4px 8px">${p.reference_number ?? '-'}</td>
-      <td style="padding:4px 8px;text-align:right;color:#059669;font-weight:600">${p.amount.toLocaleString('en-KE', { minimumFractionDigits: 2 })}</td>
+      <td style="padding:4px 8px;text-align:right;color:#178A3D;font-weight:600">${p.amount.toLocaleString('en-KE', { minimumFractionDigits: 2 })}</td>
     </tr>`).join('');
 
-  const html = `<!DOCTYPE html>
-<html><head><meta charset="utf-8"><title>Receipt - ${bill.bill_number ?? bill._id.slice(0, 8)}</title>
-<style>
-  body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 24px; color: #1e293b; font-size: 13px; }
-  .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 2px solid #0f172a; }
-  .hospital-name { font-size: 20px; font-weight: 800; color: #0f172a; }
-  .hospital-sub { font-size: 11px; color: #64748b; margin-top: 2px; }
-  .receipt-title { font-size: 14px; font-weight: 700; color: #0f172a; text-align: right; }
-  .receipt-id { font-family: monospace; font-size: 11px; color: #64748b; }
-  .section { margin-bottom: 20px; }
-  .section-title { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #64748b; margin-bottom: 8px; }
-  .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-  .info-item label { font-size: 10px; color: #94a3b8; display: block; }
-  .info-item span { font-weight: 600; }
-  table { width: 100%; border-collapse: collapse; font-size: 12px; }
-  thead tr { background: #f8fafc; }
-  thead th { padding: 8px; text-align: left; font-size: 10px; text-transform: uppercase; color: #64748b; border-bottom: 2px solid #e2e8f0; }
-  thead th:last-child, thead th:nth-child(3), thead th:nth-child(4) { text-align: right; }
-  .totals { margin-left: auto; width: 280px; margin-top: 12px; }
-  .total-row { display: flex; justify-content: space-between; padding: 4px 8px; }
-  .total-row.grand { font-weight: 800; font-size: 15px; background: #f1f5f9; padding: 8px; border-radius: 6px; margin-top: 4px; }
-  .total-row.balance { color: ${balance > 0 ? '#dc2626' : '#059669'}; font-weight: 700; }
-  .status-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: capitalize;
-    background: ${STATUS_STYLE[bill.status]?.bg ?? '#f8fafc'}; color: ${STATUS_STYLE[bill.status]?.color ?? '#1e293b'}; border: 1px solid ${STATUS_STYLE[bill.status]?.border ?? '#e2e8f0'}; }
-  .footer { margin-top: 32px; padding-top: 16px; border-top: 1px solid #e2e8f0; text-align: center; font-size: 11px; color: #94a3b8; }
-  @media print { body { padding: 12px; } }
-</style></head><body>
-  <div class="header">
-    <div>
-      <div class="hospital-name">TAT-PAS Hospital</div>
-      <div class="hospital-sub">Patient Administration System</div>
-    </div>
-    <div>
-      <div class="receipt-title">OFFICIAL RECEIPT</div>
-      <div class="receipt-id">Bill #${bill.bill_number ?? bill._id.slice(0, 16)}</div>
-      <div style="margin-top:4px"><span class="status-badge">${STATUS_STYLE[bill.status]?.label ?? bill.status}</span></div>
-    </div>
-  </div>
+  const body = `
+  <style>
+    .section { margin-bottom: 20px; }
+    .section-title { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #64748b; margin-bottom: 8px; }
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .info-item label { font-size: 10px; color: #94a3b8; display: block; }
+    .info-item span { font-weight: 600; }
+    .charges { font-size: 12px; }
+    .charges thead tr { background: #f8fafc; }
+    .charges thead th { padding: 8px; text-align: left; font-size: 10px; text-transform: uppercase; color: #64748b; border-bottom: 2px solid #e2e8f0; }
+    .charges thead th:last-child, .charges thead th:nth-child(3), .charges thead th:nth-child(4) { text-align: right; }
+    .totals { margin-left: auto; width: 280px; margin-top: 12px; }
+    .total-row { display: flex; justify-content: space-between; padding: 4px 8px; }
+    .total-row.grand { font-weight: 800; font-size: 15px; background: #f1f5f9; padding: 8px; border-radius: 6px; margin-top: 4px; }
+    .total-row.balance { color: ${balance > 0 ? '#dc2626' : '#178A3D'}; font-weight: 700; }
+    .status-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: capitalize;
+      background: ${STATUS_STYLE[bill.status]?.bg ?? '#f8fafc'}; color: ${STATUS_STYLE[bill.status]?.color ?? '#1e293b'}; border: 1px solid ${STATUS_STYLE[bill.status]?.border ?? '#e2e8f0'}; }
+  </style>
 
   <div class="section">
     <div class="section-title">Bill Information</div>
@@ -167,13 +151,13 @@ function printReceipt(bill: Bill) {
       <div class="info-item"><label>Patient</label><span>${bill.patient_name ?? bill.patient_id}</span></div>
       <div class="info-item"><label>Visit</label><span>${bill.visit_number ?? bill.visit_id?.slice(0, 16) ?? '-'}</span></div>
       <div class="info-item"><label>Date Issued</label><span>${fmtDate(bill.created_at)}</span></div>
-      <div class="info-item"><label>Last Updated</label><span>${fmtDate(bill.updated_at ?? bill.created_at)}</span></div>
+      <div class="info-item"><label>Status</label><span class="status-badge">${STATUS_STYLE[bill.status]?.label ?? bill.status}</span></div>
     </div>
   </div>
 
   <div class="section">
     <div class="section-title">Charges</div>
-    <table>
+    <table class="charges">
       <thead><tr>
         <th>Category</th><th>Description</th><th>Qty</th><th>Unit Price</th><th>Amount (KES)</th>
       </tr></thead>
@@ -182,7 +166,7 @@ function printReceipt(bill: Bill) {
     <div class="totals">
       ${bill.discount_amount > 0 ? `
         <div class="total-row"><span>Subtotal</span><span>${fmtKES(bill.subtotal)}</span></div>
-        <div class="total-row" style="color:#059669"><span>Discount</span><span>-${fmtKES(bill.discount_amount)}</span></div>
+        <div class="total-row" style="color:#178A3D"><span>Discount</span><span>-${fmtKES(bill.discount_amount)}</span></div>
         ${bill.discount_reason ? `<div style="font-size:10px;color:#94a3b8;text-align:right;padding:0 8px">${bill.discount_reason}</div>` : ''}
       ` : ''}
       ${bill.tax_amount > 0 ? `<div class="total-row"><span>Tax</span><span>${fmtKES(bill.tax_amount)}</span></div>` : ''}
@@ -193,32 +177,23 @@ function printReceipt(bill: Bill) {
   ${bill.payments.length > 0 ? `
   <div class="section">
     <div class="section-title">Payment History</div>
-    <table>
+    <table class="charges">
       <thead><tr><th>Date/Time</th><th>Method</th><th>Reference</th><th>Amount (KES)</th></tr></thead>
       <tbody>${payRows}</tbody>
     </table>
     <div class="totals">
-      <div class="total-row" style="color:#059669;font-weight:700"><span>Total Paid</span><span>${fmtKES(paid)}</span></div>
+      <div class="total-row" style="color:#178A3D;font-weight:700"><span>Total Paid</span><span>${fmtKES(paid)}</span></div>
       <div class="total-row balance"><span>Balance Due</span><span>${fmtKES(balance)}</span></div>
     </div>
-  </div>` : ''}
+  </div>` : ''}`;
 
-  <div class="footer">
-    <p>Thank you for choosing TAT-PAS Hospital.</p>
-    <p>This is a computer-generated receipt and requires no signature.</p>
-    <p>Printed: ${new Date().toLocaleString('en-GB')}</p>
-  </div>
-</body></html>`;
-
-  const win = window.open('', '_blank', 'width=780,height=900');
-  if (!win) {
-    toast.error('Allow popups to print receipts');
-    return;
-  }
-  win.document.write(html);
-  win.document.close();
-  win.focus();
-  setTimeout(() => { win.print(); }, 400);
+  printDocument({
+    title: `Receipt - ${bill.bill_number ?? bill._id.slice(0, 8)}`,
+    documentLabel: 'OFFICIAL RECEIPT',
+    reference: `Bill #${bill.bill_number ?? bill._id.slice(0, 16)}`,
+    body,
+    footerNote: 'Thank you for choosing Scion Hospital, Mwiki Branch.',
+  });
 }
 
 function PaymentModal({ bill, onConfirm, onClose }: {
@@ -239,7 +214,7 @@ function PaymentModal({ bill, onConfirm, onClose }: {
     { value: 'cash',         label: 'Cash'         },
     { value: 'card',         label: 'Card'         },
     { value: 'mpesa',        label: 'M-Pesa'       },
-    { value: 'nhif',         label: 'NHIF'         },
+    { value: 'sha',          label: 'SHA'          },
     { value: 'insurance',    label: 'Insurance'    },
     { value: 'mobile_money', label: 'Mobile Money' },
   ];
@@ -278,31 +253,26 @@ function PaymentModal({ bill, onConfirm, onClose }: {
       style={{ background: 'rgba(0,0,0,0.5)' }}
     >
       <div
-        className="w-full max-w-md rounded-2xl overflow-hidden animate-slide-up"
+        className="w-full max-w-md rounded-lg overflow-hidden animate-slide-up"
         style={{ background: 'var(--bg-card)', boxShadow: 'var(--shadow-modal)' }}
       >
         <div
-          className="flex items-center justify-between px-5 py-4"
+          className="flex items-center justify-between px-5 py-3"
           style={{
-            background:   'linear-gradient(135deg, #0F172A 0%, #1E3A8A 60%, #2563EB 100%)',
-            borderBottom: '1px solid rgba(255,255,255,0.06)',
+            background: 'var(--surface-1)',
+            borderBottom: '1px solid var(--border-default)',
           }}
         >
-          <div className="flex items-center gap-2.5">
-            <div
-              className="w-8 h-8 rounded-lg flex items-center justify-center"
-              style={{ background: 'rgba(255,255,255,0.15)' }}
-            >
-              <Banknote className="w-4 h-4 text-white" />
-            </div>
+          <div className="flex items-center gap-2">
+            <Banknote className="w-4 h-4" style={{ color: 'var(--text-muted)' }} />
             <div>
-              <h2 className="text-body font-bold text-white">Record Payment</h2>
-              <p className="text-caption" style={{ color: 'rgba(255,255,255,0.5)' }}>
+              <h2 className="text-body font-semibold" style={{ color: 'var(--text-primary)' }}>Record Payment</h2>
+              <p className="text-caption" style={{ color: 'var(--text-muted)' }}>
                 {bill.patient_name ?? 'Patient'} · {bill.bill_number ?? 'Bill'}
               </p>
             </div>
           </div>
-          <button onClick={onClose} style={{ color: 'rgba(255,255,255,0.5)' }}>
+          <button onClick={onClose} aria-label="Close" style={{ color: 'var(--text-muted)' }}>
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -311,12 +281,12 @@ function PaymentModal({ bill, onConfirm, onClose }: {
           <div className="grid grid-cols-3 gap-3">
             {[
               { label: 'Total',   value: fmtKES(bill.total_amount), color: 'var(--text-primary)' },
-              { label: 'Paid',    value: fmtKES(bill.paid_amount),  color: '#059669' },
-              { label: 'Balance', value: fmtKES(balance),           color: balance > 0 ? '#DC2626' : '#059669' },
+              { label: 'Paid',    value: fmtKES(bill.paid_amount),  color: '#178A3D' },
+              { label: 'Balance', value: fmtKES(balance),           color: balance > 0 ? '#DC2626' : '#178A3D' },
             ].map(({ label, value, color }) => (
               <div
                 key={label}
-                className="text-center p-3 rounded-xl"
+                className="text-center p-3 rounded-lg"
                 style={{ background: 'var(--surface-1)', border: '1px solid var(--border-default)' }}
               >
                 <p className="text-caption" style={{ color: 'var(--text-muted)' }}>{label}</p>
@@ -340,7 +310,7 @@ function PaymentModal({ bill, onConfirm, onClose }: {
                 step="0.01"
                 value={amount}
                 onChange={e => setAmount(Number(e.target.value))}
-                className="w-full px-3 py-2.5 rounded-xl text-sm focus:outline-none text-right tabular-nums"
+                className="w-full px-3 py-2.5 rounded-lg text-sm focus:outline-none text-right tabular-nums"
                 style={{
                   background: 'var(--surface-1)',
                   border:     '1px solid var(--border-default)',
@@ -358,7 +328,7 @@ function PaymentModal({ bill, onConfirm, onClose }: {
               <select
                 value={method}
                 onChange={e => setMethod(e.target.value as Payment['method'])}
-                className="w-full px-3 py-2.5 rounded-xl text-sm focus:outline-none"
+                className="w-full px-3 py-2.5 rounded-lg text-sm focus:outline-none"
                 style={{
                   background: 'var(--surface-1)',
                   border:     '1px solid var(--border-default)',
@@ -383,7 +353,7 @@ function PaymentModal({ bill, onConfirm, onClose }: {
               value={reference}
               onChange={e => setRef(e.target.value)}
               placeholder="Optional"
-              className="w-full px-3 py-2.5 rounded-xl text-sm focus:outline-none"
+              className="w-full px-3 py-2.5 rounded-lg text-sm focus:outline-none"
               style={{
                 background: 'var(--surface-1)',
                 border:     '1px solid var(--border-default)',
@@ -404,7 +374,7 @@ function PaymentModal({ bill, onConfirm, onClose }: {
               onChange={e => setNotes(e.target.value)}
               rows={2}
               placeholder="Optional"
-              className="w-full px-3 py-2.5 rounded-xl text-sm resize-none focus:outline-none"
+              className="w-full px-3 py-2.5 rounded-lg text-sm resize-none focus:outline-none"
               style={{
                 background: 'var(--surface-1)',
                 border:     '1px solid var(--border-default)',
@@ -415,7 +385,7 @@ function PaymentModal({ bill, onConfirm, onClose }: {
 
           {err && (
             <div
-              className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm"
+              className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm"
               style={{ background: '#FEF2F2', color: '#DC2626', border: '1px solid #FECACA' }}
             >
               <AlertCircle className="w-4 h-4 flex-shrink-0" />
@@ -430,7 +400,7 @@ function PaymentModal({ bill, onConfirm, onClose }: {
         >
           <button
             onClick={onClose}
-            className="px-4 py-2 text-sm rounded-xl border"
+            className="px-4 py-2 text-sm rounded-lg border"
             style={{ color: 'var(--text-secondary)', borderColor: 'var(--border-default)' }}
           >
             Cancel
@@ -438,8 +408,8 @@ function PaymentModal({ bill, onConfirm, onClose }: {
           <button
             onClick={handlePay}
             disabled={!amount || amount <= 0 || submitting}
-            className="flex items-center gap-2 px-5 py-2 text-sm font-semibold text-white rounded-xl disabled:opacity-50"
-            style={{ background: '#059669' }}
+            className="flex items-center gap-2 px-5 py-2 text-sm font-semibold text-white rounded-lg disabled:opacity-50"
+            style={{ background: '#178A3D' }}
           >
             {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
             Record Payment
@@ -504,7 +474,7 @@ function BillDrawer({ bill, onClose, onPaymentAdded }: {
             <button
               onClick={() => printReceipt(bill)}
               title="Print Receipt"
-              className="flex items-center gap-1.5 px-3 py-1.5 text-caption font-bold rounded-xl border"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-caption font-bold rounded-lg border"
               style={{ color: 'var(--text-secondary)', borderColor: 'var(--border-default)' }}
             >
               <Printer className="w-3.5 h-3.5" /> Print
@@ -512,8 +482,8 @@ function BillDrawer({ bill, onClose, onPaymentAdded }: {
             {balance > 0 && (
               <button
                 onClick={() => setShowPayment(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-caption font-bold text-white rounded-xl"
-                style={{ background: '#059669' }}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-caption font-bold text-white rounded-lg"
+                style={{ background: '#178A3D' }}
               >
                 <Banknote className="w-3.5 h-3.5" /> Pay
               </button>
@@ -532,12 +502,12 @@ function BillDrawer({ bill, onClose, onPaymentAdded }: {
           <div className="grid grid-cols-3 gap-3">
             {[
               { label: 'Total',   value: fmtKES(bill.total_amount), color: 'var(--text-primary)' },
-              { label: 'Paid',    value: fmtKES(bill.paid_amount),  color: '#059669' },
-              { label: 'Balance', value: fmtKES(balance),           color: balance > 0 ? '#DC2626' : '#059669' },
+              { label: 'Paid',    value: fmtKES(bill.paid_amount),  color: '#178A3D' },
+              { label: 'Balance', value: fmtKES(balance),           color: balance > 0 ? '#DC2626' : '#178A3D' },
             ].map(({ label, value, color }) => (
               <div
                 key={label}
-                className="text-center p-3 rounded-xl"
+                className="text-center p-3 rounded-lg"
                 style={{ background: 'var(--surface-1)', border: '1px solid var(--border-default)' }}
               >
                 <p className="text-caption" style={{ color: 'var(--text-muted)' }}>{label}</p>
@@ -575,7 +545,7 @@ function BillDrawer({ bill, onClose, onPaymentAdded }: {
 
           {bill.discount_amount > 0 && (
             <div
-              className="px-4 py-3 rounded-xl text-sm"
+              className="px-4 py-3 rounded-lg text-sm"
               style={{ background: '#F0FDF4', border: '1px solid #BBF7D0' }}
             >
               <span className="font-semibold text-green-700">
@@ -588,14 +558,14 @@ function BillDrawer({ bill, onClose, onPaymentAdded }: {
           )}
 
           <div
-            className="rounded-xl overflow-hidden"
+            className="rounded-lg overflow-hidden"
             style={{ border: '1px solid var(--border-default)' }}
           >
             <div
               className="flex items-center gap-2 px-4 py-3"
               style={{ background: 'var(--surface-1)', borderBottom: '1px solid var(--border-default)' }}
             >
-              <CreditCard className="w-3.5 h-3.5" style={{ color: '#2563EB' }} />
+              <CreditCard className="w-3.5 h-3.5" style={{ color: '#178A3D' }} />
               <p
                 className="text-caption font-bold uppercase tracking-wider"
                 style={{ color: 'var(--text-muted)' }}
@@ -675,14 +645,14 @@ function BillDrawer({ bill, onClose, onPaymentAdded }: {
 
           {bill.payments.length > 0 && (
             <div
-              className="rounded-xl overflow-hidden"
+              className="rounded-lg overflow-hidden"
               style={{ border: '1px solid var(--border-default)' }}
             >
               <div
                 className="flex items-center gap-2 px-4 py-3"
                 style={{ background: 'var(--surface-1)', borderBottom: '1px solid var(--border-default)' }}
               >
-                <Banknote className="w-3.5 h-3.5" style={{ color: '#059669' }} />
+                <Banknote className="w-3.5 h-3.5" style={{ color: '#178A3D' }} />
                 <p
                   className="text-caption font-bold uppercase tracking-wider"
                   style={{ color: 'var(--text-muted)' }}
@@ -710,7 +680,7 @@ function BillDrawer({ bill, onClose, onPaymentAdded }: {
                         </p>
                       )}
                     </div>
-                    <span className="font-extrabold tabular-nums" style={{ color: '#059669' }}>
+                    <span className="font-extrabold tabular-nums" style={{ color: '#178A3D' }}>
                       {fmtKES(p.amount)}
                     </span>
                   </div>
@@ -798,6 +768,25 @@ export default function BillingPage() {
     return matchStatus && matchSearch;
   });
 
+  const tc = useTableControls<Bill>({
+    data: filtered,
+    initialSortKey: 'created_at',
+    initialSortDir: 'desc',
+    getSortValue: (b, key) => {
+      switch (key) {
+        case 'bill_id':  return b.bill_number ?? b._id;
+        case 'patient':  return b.patient_name;
+        case 'visit':    return b.visit_number ?? b.visit_id;
+        case 'total':    return b.total_amount;
+        case 'paid':     return b.paid_amount;
+        case 'balance':  return b.balance_due;
+        case 'status':   return b.status;
+        case 'created_at': return b.created_at;
+        default: return (b as unknown as Record<string, unknown>)[key];
+      }
+    },
+  });
+
   const total      = bills.reduce((s, b) => s + (b.total_amount ?? 0), 0);
   const totalPaid  = bills.reduce((s, b) => s + (b.paid_amount  ?? 0), 0);
   const totalBal   = bills.reduce((s, b) => s + (b.balance_due  ?? 0), 0);
@@ -817,7 +806,7 @@ export default function BillingPage() {
         <button
           onClick={loadBills}
           disabled={isLoading}
-          className="flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-xl border transition-colors hover:bg-[var(--bg-base)] disabled:opacity-50"
+          className="flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg border transition-colors hover:bg-[var(--bg-base)] disabled:opacity-50"
           style={{ color: 'var(--text-secondary)', borderColor: 'var(--border-default)' }}
         >
           <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
@@ -827,25 +816,23 @@ export default function BillingPage() {
 
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         {[
-          { label: 'Total Billed',   value: fmtKES(total),     color: '#0F172A',                                   bg: 'var(--bg-card)' },
-          { label: 'Total Received', value: fmtKES(totalPaid), color: '#059669',                                   bg: '#F0FDF4' },
-          { label: 'Outstanding',    value: fmtKES(totalBal),  color: totalBal > 0 ? '#DC2626' : '#059669',        bg: totalBal > 0 ? '#FEF2F2' : '#F0FDF4' },
-          { label: 'Open',           value: openCnt,            color: '#D97706',                                   bg: '#FFFBEB' },
-          { label: 'Partial',        value: partialCnt,         color: '#2563EB',                                   bg: '#EFF6FF' },
-          { label: 'Paid',           value: paidCnt,            color: '#059669',                                   bg: '#F0FDF4' },
-        ].map(({ label, value, color, bg }) => (
+          { label: 'Total Billed',   value: fmtKES(total),     dot: 'var(--text-muted)', valueColor: 'var(--text-primary)' },
+          { label: 'Total Received', value: fmtKES(totalPaid), dot: '#22C55E',           valueColor: '#15803D' },
+          { label: 'Outstanding',    value: fmtKES(totalBal),  dot: totalBal > 0 ? '#EF4444' : '#22C55E', valueColor: totalBal > 0 ? '#B91C1C' : '#15803D' },
+          { label: 'Open',           value: openCnt,           dot: '#F59E0B',           valueColor: 'var(--text-primary)' },
+          { label: 'Partial',        value: partialCnt,        dot: '#1FA64A',           valueColor: 'var(--text-primary)' },
+          { label: 'Paid',           value: paidCnt,           dot: '#22C55E',           valueColor: 'var(--text-primary)' },
+        ].map(({ label, value, dot, valueColor }) => (
           <div
             key={label}
-            className="rounded-xl p-4 text-center"
-            style={{ background: bg, border: '1px solid var(--border-default)', boxShadow: 'var(--shadow-card)' }}
+            className="px-4 py-3"
+            style={{ background: 'var(--bg-card)', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-card)' }}
           >
-            <p
-              className="text-caption font-bold uppercase tracking-wider"
-              style={{ color: 'var(--text-muted)' }}
-            >
-              {label}
-            </p>
-            <p className="text-lg font-extrabold tabular-nums mt-1 leading-none" style={{ color }}>
+            <div className="flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full" style={{ background: dot }} />
+              <p className="text-caption font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{label}</p>
+            </div>
+            <p className="text-lg font-bold tabular-nums mt-1 leading-none" style={{ color: valueColor }}>
               {value}
             </p>
           </div>
@@ -854,7 +841,7 @@ export default function BillingPage() {
 
       {error && (
         <div
-          className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm"
+          className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm"
           style={{
             background: 'var(--status-critical-bg)',
             border:     '1px solid var(--status-critical-border)',
@@ -879,7 +866,7 @@ export default function BillingPage() {
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Search patient, bill ID, visit..."
-            className="w-full pl-9 pr-4 py-2 text-sm rounded-xl focus:outline-none"
+            className="w-full pl-9 pr-4 py-2 text-sm rounded-lg focus:outline-none"
             style={{
               background: 'var(--bg-card)',
               border:     '1px solid var(--border-default)',
@@ -892,7 +879,7 @@ export default function BillingPage() {
           <select
             value={statusFilter}
             onChange={e => setStatusFilter(e.target.value)}
-            className="px-3 py-2 text-sm rounded-xl focus:outline-none"
+            className="px-3 py-2 text-sm rounded-lg focus:outline-none"
             style={{
               background: 'var(--bg-card)',
               border:     '1px solid var(--border-default)',
@@ -910,20 +897,20 @@ export default function BillingPage() {
       </div>
 
       <div
-        className="rounded-xl overflow-hidden"
+        className="rounded-lg overflow-hidden"
         style={{ background: 'var(--bg-card)', border: '1px solid var(--border-default)', boxShadow: 'var(--shadow-card)' }}
       >
         <div
           className="flex items-center gap-2.5 px-5 py-4"
           style={{ borderBottom: '1px solid var(--border-default)' }}
         >
-          <Receipt className="w-4 h-4" style={{ color: '#2563EB' }} />
+          <Receipt className="w-4 h-4" style={{ color: '#178A3D' }} />
           <p className="text-body font-semibold" style={{ color: 'var(--text-primary)' }}>
             All Bills
           </p>
           <span
             className="text-caption font-bold px-2 py-0.5 rounded-full"
-            style={{ background: 'rgba(37,99,235,0.1)', color: '#2563EB' }}
+            style={{ background: 'rgba(23,138,61,0.1)', color: '#178A3D' }}
           >
             {filtered.length}
           </span>
@@ -959,19 +946,34 @@ export default function BillingPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--border-default)', background: 'var(--surface-1)' }}>
-                  {['Bill ID', 'Patient', 'Visit', 'Total', 'Paid', 'Balance', 'Status', 'Date', ''].map(h => (
-                    <th
-                      key={h}
-                      className="px-5 py-3 text-caption font-semibold uppercase tracking-wider text-left"
-                      style={{ color: 'var(--text-muted)' }}
-                    >
-                      {h}
-                    </th>
-                  ))}
+                  {([
+                    ['Bill ID', 'bill_id'], ['Patient', 'patient'], ['Visit', 'visit'],
+                    ['Total', 'total'], ['Paid', 'paid'], ['Balance', 'balance'],
+                    ['Status', 'status'], ['Date', 'created_at'], ['', ''],
+                  ] as [string, string][]).map(([h, sortK]) => {
+                    const active = sortK && tc.sortKey === sortK;
+                    return (
+                      <th
+                        key={h || 'actions'}
+                        onClick={sortK ? () => tc.toggleSort(sortK) : undefined}
+                        className={`px-5 py-3 text-caption font-semibold uppercase tracking-wider text-left ${sortK ? 'cursor-pointer select-none' : ''}`}
+                        style={{ color: 'var(--text-muted)' }}
+                      >
+                        <span className="inline-flex items-center gap-1.5">
+                          {h}
+                          {sortK && (active
+                            ? (tc.sortDir === 'asc'
+                                ? <ChevronUp className="w-3.5 h-3.5" style={{ color: 'var(--clinical-600)' }} />
+                                : <ChevronDown className="w-3.5 h-3.5" style={{ color: 'var(--clinical-600)' }} />)
+                            : <ChevronsUpDown className="w-3.5 h-3.5" style={{ color: 'var(--text-disabled)' }} />)}
+                        </span>
+                      </th>
+                    );
+                  })}
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((bill, i) => {
+                {tc.pageRows.map((bill, i) => {
                   const s       = STATUS_STYLE[bill.status] ?? STATUS_STYLE.open;
                   const Icon    = s.icon;
                   const balance = bill.balance_due ?? 0;
@@ -1017,10 +1019,10 @@ export default function BillingPage() {
                       <td className="px-5 py-3 tabular-nums font-semibold" style={{ color: 'var(--text-primary)' }}>
                         {fmtKES(bill.total_amount)}
                       </td>
-                      <td className="px-5 py-3 tabular-nums" style={{ color: '#059669' }}>
+                      <td className="px-5 py-3 tabular-nums" style={{ color: '#178A3D' }}>
                         {fmtKES(bill.paid_amount)}
                       </td>
-                      <td className="px-5 py-3 tabular-nums font-semibold" style={{ color: balance > 0 ? '#DC2626' : '#059669' }}>
+                      <td className="px-5 py-3 tabular-nums font-semibold" style={{ color: balance > 0 ? '#DC2626' : '#178A3D' }}>
                         {fmtKES(balance)}
                       </td>
                       <td className="px-5 py-3">
@@ -1049,7 +1051,7 @@ export default function BillingPage() {
                             <button
                               onClick={e => { e.stopPropagation(); setSelectedBill(bill); }}
                               className="flex items-center gap-1 text-caption font-bold px-2.5 py-1 rounded-lg text-white"
-                              style={{ background: '#059669' }}
+                              style={{ background: '#178A3D' }}
                             >
                               <Banknote className="w-3 h-3" /> Pay
                             </button>
@@ -1063,6 +1065,14 @@ export default function BillingPage() {
               </tbody>
             </table>
           </div>
+        )}
+
+        {!isLoading && filtered.length > 0 && (
+          <TablePagination
+            page={tc.page} pageCount={tc.pageCount} pageSize={tc.pageSize}
+            total={tc.total} rangeStart={tc.rangeStart} rangeEnd={tc.rangeEnd}
+            setPage={tc.setPage} setPageSize={tc.setPageSize}
+          />
         )}
       </div>
 

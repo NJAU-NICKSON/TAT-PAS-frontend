@@ -13,6 +13,8 @@ import { billingApi } from '../api/billing';
 import { Prescription, Bill } from '../models/types';
 import { useAuth } from '../context/AuthContext';
 
+type ListResult<T> = T[] | { items?: T[] };
+
 function fmt(iso?: string): string {
   if (!iso) return ' - ';
   return new Date(iso).toLocaleString('en-GB', {
@@ -39,6 +41,10 @@ function fmtDuration(min: number): string {
   return m > 0 ? `${h}h ${m}m` : `${h}h`;
 }
 
+function namedValue(value?: string | null, fallback = 'Not available') {
+  return value && value.trim() ? value : fallback;
+}
+
 const FLAG_META: Record<string, { label: string; desc: string; color: string; bg: string; border: string; severity: string }> = {
   high_dose:         { label: 'High Dose',           desc: 'Prescribed dose exceeds safety threshold',              color: '#DC2626', bg: '#FEF2F2', border: '#FECACA', severity: 'HIGH'     },
   extended_duration: { label: 'Extended Duration',   desc: 'Prescription duration exceeds 30 days',                color: '#D97706', bg: '#FFFBEB', border: '#FDE68A', severity: 'MEDIUM'   },
@@ -54,7 +60,7 @@ const SEVERITY_COLOR: Record<string, string> = { CRITICAL: '#991B1B', HIGH: '#DC
 const SEVERITY_BG:    Record<string, string> = { CRITICAL: '#FEE2E2', HIGH: '#FEE2E2', MEDIUM: '#FEF3C7', INFO: '#F1F5F9'  };
 
 const ROLE_STYLES: Record<string, { bg: string; color: string; label: string }> = {
-  receptionist: { bg: '#EFF6FF', color: '#1D4ED8', label: 'Receptionist' },
+  receptionist: { bg: '#EFF6FF', color: '#0F6E2F', label: 'Receptionist' },
   nurse:        { bg: '#FFF7ED', color: '#9A3412', label: 'Nurse'        },
   doctor:       { bg: '#FAF5FF', color: '#6B21A8', label: 'Doctor'       },
   auditor:      { bg: '#F0FDF4', color: '#166534', label: 'Auditor'      },
@@ -64,7 +70,7 @@ const ROLE_STYLES: Record<string, { bg: string; color: string; label: string }> 
 function RoleBadge({ role }: { role: string }) {
   const s = ROLE_STYLES[role] ?? ROLE_STYLES.system;
   return (
-    <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider" style={{ background: s.bg, color: s.color }}>
+    <span className="text-micro font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider" style={{ background: s.bg, color: s.color }}>
       {s.label}
     </span>
   );
@@ -83,35 +89,35 @@ function TATStageCard({
   const barColor = !hasData ? '#E2E8F0'
     : breached     ? '#DC2626'
     : pct > 80     ? '#D97706'
-    :                '#059669';
+    :                '#178A3D';
 
   return (
     <div
-      className="flex-1 min-w-0 rounded-xl p-4"
+      className="flex-1 min-w-0 rounded-lg p-4"
       style={{
-        background: isActive ? 'rgba(37,99,235,0.08)' : breached ? '#FEF2F2' : '#F8FAFC',
+        background: isActive ? 'rgba(23,138,61,0.08)' : breached ? '#FEF2F2' : '#F8FAFC',
         border: `1.5px solid ${isActive ? '#93C5FD' : breached ? '#FCA5A5' : '#E2E8F0'}`,
         minWidth: '140px',
       }}
     >
       <div className="flex items-start justify-between gap-1 mb-2">
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#94A3B8' }}>Stage {num}</p>
+          <p className="text-micro font-bold uppercase tracking-wider" style={{ color: '#94A3B8' }}>Stage {num}</p>
           <p className="text-xs font-semibold mt-0.5 leading-tight" style={{ color: '#1E293B' }}>{name}</p>
         </div>
         {hasData ? (
           <span
             className="text-xs font-extrabold tabular-nums px-1.5 py-0.5 rounded-full flex-shrink-0"
-            style={{ background: breached ? '#FEE2E2' : '#DCFCE7', color: breached ? '#DC2626' : '#059669' }}
+            style={{ background: breached ? '#FEE2E2' : '#DCFCE7', color: breached ? '#DC2626' : '#178A3D' }}
           >
             {fmtDuration(tatMin!)}
           </span>
         ) : isActive ? (
-          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 animate-pulse" style={{ background: '#DBEAFE', color: '#1D4ED8' }}>
+          <span className="text-micro font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 animate-pulse" style={{ background: '#DBEAFE', color: '#0F6E2F' }}>
             Active
           </span>
         ) : (
-          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0" style={{ background: '#F1F5F9', color: '#94A3B8' }}>
+          <span className="text-micro font-bold px-1.5 py-0.5 rounded-full flex-shrink-0" style={{ background: '#F1F5F9', color: '#94A3B8' }}>
             {isPending ? 'Pending' : ' - '}
           </span>
         )}
@@ -125,15 +131,15 @@ function TATStageCard({
       </div>
 
       <div className="flex items-center justify-between mt-1.5">
-        <span className="text-[10px]" style={{ color: '#94A3B8' }}>Target: {fmtDuration(targetMin)}</span>
+        <span className="text-micro" style={{ color: '#94A3B8' }}>Target: {fmtDuration(targetMin)}</span>
         {breached && hasData && (
-          <span className="text-[10px] font-bold flex items-center gap-0.5" style={{ color: '#DC2626' }}>
+          <span className="text-micro font-bold flex items-center gap-0.5" style={{ color: '#DC2626' }}>
             <AlertTriangle className="w-2.5 h-2.5" />
             +{fmtDuration(tatMin! - targetMin)} over
           </span>
         )}
         {!breached && hasData && (
-          <span className="text-[10px] font-semibold" style={{ color: '#059669' }}>On time</span>
+          <span className="text-micro font-semibold" style={{ color: '#178A3D' }}>On time</span>
         )}
       </div>
     </div>
@@ -148,18 +154,17 @@ function TATSummaryStrip({ journey, visit }: { journey: JourneySummary | null; v
     ?? undefined;
   const totalBreached = totalActual !== undefined && totalActual > totalTarget;
 
-  // Determine which stage is active (no tat_min but previous has data, or fallback from timestamps)
   const activeStageNum = stages.length > 0
     ? stages.find(s => s.tat_min === undefined && (s.stage === 1 || stages[s.stage - 2]?.tat_min !== undefined))?.stage
     : undefined;
 
   return (
     <div style={{ background: 'white', borderBottom: '1px solid #E2E8F0' }}>
-      <div className="max-w-4xl mx-auto px-6 py-5">
+      <div className="w-full px-6 py-5">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background: '#EFF6FF' }}>
-              <TrendingUp className="w-3.5 h-3.5" style={{ color: '#2563EB' }} />
+              <TrendingUp className="w-3.5 h-3.5" style={{ color: '#178A3D' }} />
             </div>
             <p className="text-xs font-bold uppercase tracking-wider" style={{ color: '#475569' }}>
               Turnaround Time (TAT)  -  Stage-by-Stage Analysis
@@ -170,7 +175,7 @@ function TATSummaryStrip({ journey, visit }: { journey: JourneySummary | null; v
               <span className="text-xs" style={{ color: '#94A3B8' }}>Total:</span>
               <span
                 className="text-sm font-extrabold tabular-nums px-2 py-0.5 rounded-full"
-                style={{ background: totalBreached ? '#FEE2E2' : '#DCFCE7', color: totalBreached ? '#DC2626' : '#059669' }}
+                style={{ background: totalBreached ? '#FEE2E2' : '#DCFCE7', color: totalBreached ? '#DC2626' : '#178A3D' }}
               >
                 {fmtDuration(totalActual)}
               </span>
@@ -198,7 +203,6 @@ function TATSummaryStrip({ journey, visit }: { journey: JourneySummary | null; v
               />
             ))
           ) : (
-            // Fallback from visit timestamps when journey API has no stages
             <>
               <TATStageCard num={1} name="Registration"          tatMin={elapsedMin(visit.registered_at, visit.triaged_at) ?? undefined}                         targetMin={10}  isActive={!visit.triaged_at} />
               <TATStageCard num={2} name="Triage"                tatMin={elapsedMin(visit.triaged_at, visit.consultation_started_at) ?? undefined}                targetMin={15}  isActive={!!visit.triaged_at && !visit.consultation_started_at} />
@@ -222,7 +226,7 @@ function InfoGrid({ items }: { items: { label: string; value?: string | React.Re
     <div className="grid grid-cols-2 gap-x-6 gap-y-2">
       {rows.map(({ label, value }) => (
         <div key={label}>
-          <p className="text-[10px] font-bold uppercase tracking-wider mb-0.5" style={{ color: '#94A3B8' }}>{label}</p>
+          <p className="text-micro font-bold uppercase tracking-wider mb-0.5" style={{ color: '#94A3B8' }}>{label}</p>
           <p className="text-xs font-semibold text-gray-800">{value}</p>
         </div>
       ))}
@@ -234,9 +238,9 @@ function VitalsGrid({ vitals }: { vitals: NonNullable<Visit['vitals']> }) {
   const items = [
     { icon: Heart,       label: 'BP',     value: vitals.blood_pressure_systolic ? `${vitals.blood_pressure_systolic}/${vitals.blood_pressure_diastolic}` : null, unit: 'mmHg', color: '#DC2626' },
     { icon: Activity,    label: 'Pulse',  value: vitals.pulse_rate?.toString()          ?? null, unit: 'bpm',  color: '#D97706' },
-    { icon: Thermometer, label: 'Temp',   value: vitals.temperature_celsius?.toFixed(1) ?? null, unit: '°C',   color: '#2563EB' },
-    { icon: Wind,        label: 'SpO,,',   value: vitals.oxygen_saturation?.toString()   ?? null, unit: '%',    color: '#7C3AED' },
-    { icon: Activity,    label: 'RR',     value: vitals.respiratory_rate?.toString()    ?? null, unit: '/min', color: '#059669' },
+    { icon: Thermometer, label: 'Temp',   value: vitals.temperature_celsius?.toFixed(1) ?? null, unit: '°C',   color: '#178A3D' },
+    { icon: Wind,        label: 'SpO,,',   value: vitals.oxygen_saturation?.toString()   ?? null, unit: '%',    color: '#178A3D' },
+    { icon: Activity,    label: 'RR',     value: vitals.respiratory_rate?.toString()    ?? null, unit: '/min', color: '#178A3D' },
     { icon: User,        label: 'Weight', value: vitals.weight_kg?.toString()           ?? null, unit: 'kg',   color: '#475569' },
   ].filter(i => i.value);
 
@@ -247,8 +251,8 @@ function VitalsGrid({ vitals }: { vitals: NonNullable<Visit['vitals']> }) {
         <div key={label} className="flex items-center gap-2 p-2 rounded-lg" style={{ background: 'rgba(255,255,255,0.7)', border: '1px solid rgba(255,255,255,0.9)' }}>
           <Icon className="w-3.5 h-3.5 flex-shrink-0" style={{ color }} />
           <div>
-            <p className="text-[10px] text-gray-400">{label}</p>
-            <p className="text-xs font-bold text-gray-800">{value} <span className="font-normal text-gray-500 text-[10px]">{unit}</span></p>
+            <p className="text-micro text-gray-400">{label}</p>
+            <p className="text-xs font-bold text-gray-800">{value} <span className="font-normal text-gray-500 text-micro">{unit}</span></p>
           </div>
         </div>
       ))}
@@ -285,7 +289,7 @@ function JourneyStop({
 
       <div className="flex flex-col items-center flex-shrink-0" style={{ width: '48px' }}>
         <div
-          className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 border-2"
+          className="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 border-2"
           style={{
             background:   isComplete || isActive ? accentBg : '#F8FAFC',
             borderColor:  isComplete || isActive ? accentColor : '#E2E8F0',
@@ -319,14 +323,14 @@ function JourneyStop({
 
           <div className="flex items-center gap-2 flex-shrink-0 flex-wrap justify-end">
             {isActive && (
-              <span className="text-xs font-bold px-2.5 py-1 rounded-full animate-pulse" style={{ background: '#DBEAFE', color: '#1D4ED8' }}>
+              <span className="text-xs font-bold px-2.5 py-1 rounded-full animate-pulse" style={{ background: '#DBEAFE', color: '#0F6E2F' }}>
                 - In Progress
               </span>
             )}
             {duration != null && (
               <span
                 className="text-xs font-bold px-2 py-0.5 rounded-full flex items-center gap-1"
-                style={{ background: breached ? '#FEF2F2' : '#F0FDF4', color: breached ? '#DC2626' : '#059669' }}
+                style={{ background: breached ? '#FEF2F2' : '#F0FDF4', color: breached ? '#DC2626' : '#178A3D' }}
               >
                 <Clock className="w-3 h-3" />
                 {fmtDuration(duration)}
@@ -336,7 +340,7 @@ function JourneyStop({
             {time && (
               <div className="text-right">
                 <p className="text-xs font-semibold tabular-nums" style={{ color: '#475569' }}>{fmtTime(time)}</p>
-                <p className="text-[10px]" style={{ color: '#94A3B8' }}>{fmtDate(time)}</p>
+                <p className="text-micro" style={{ color: '#94A3B8' }}>{fmtDate(time)}</p>
               </div>
             )}
             {isPending && !isActive && (
@@ -357,7 +361,7 @@ function JourneyStop({
 
         {children && (
           <div
-            className="rounded-xl border p-4"
+            className="rounded-lg border p-4"
             style={{
               background:  isComplete ? accentBg : '#F8FAFC',
               borderColor: isComplete ? accentColor : '#E2E8F0',
@@ -372,7 +376,7 @@ function JourneyStop({
   );
 }
 
-function PrescriptionAuditCard({ rx }: { rx: Prescription }) {
+export function PrescriptionAuditCard({ rx }: { rx: Prescription }) {
   const steps = [
     { key: 'ordered',      label: 'Ordered',      time: rx.ordered_at ?? rx.created_at, actor: rx.doctor_name,          role: 'doctor',     done: true },
     { key: 'submitted',    label: 'Submitted',     time: rx.submitted_at,               actor: rx.doctor_name,          role: 'doctor',     done: !!rx.submitted_at },
@@ -382,7 +386,7 @@ function PrescriptionAuditCard({ rx }: { rx: Prescription }) {
   ];
 
   const STEP_COLOR: Record<string, string> = {
-    doctor: '#7C3AED', auditor: '#059669', pharmacist: '#0284C7', nurse: '#9A3412',
+    doctor: '#178A3D', auditor: '#178A3D', pharmacist: '#0284C7', nurse: '#9A3412',
   };
 
   const flags        = rx.flags ?? [];
@@ -393,7 +397,7 @@ function PrescriptionAuditCard({ rx }: { rx: Prescription }) {
 
   return (
     <div
-      className="rounded-xl overflow-hidden"
+      className="rounded-lg overflow-hidden"
       style={{ border: `1.5px solid ${slaBreached ? '#FCA5A5' : '#E2E8F0'}` }}
     >
 
@@ -402,17 +406,17 @@ function PrescriptionAuditCard({ rx }: { rx: Prescription }) {
         style={{ background: slaBreached ? '#7F1D1D' : '#1E293B' }}
       >
         <div className="flex items-center gap-2 flex-wrap">
-          <Pill className="w-3.5 h-3.5 text-blue-300 flex-shrink-0" />
+          <Pill className="w-3.5 h-3.5 text-green-300 flex-shrink-0" />
           <span className="text-xs font-bold text-white font-mono">
             {rx.rx_number ?? `RX-${rx.id.slice(0, 8).toUpperCase()}`}
           </span>
           {rx.priority && (
-            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(255,255,255,0.15)', color: 'white' }}>
+            <span className="text-micro font-bold px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(255,255,255,0.15)', color: 'white' }}>
               {rx.priority.toUpperCase()}
             </span>
           )}
           {flags.length > 0 && (
-            <span className="flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: '#DC2626', color: 'white' }}>
+            <span className="flex items-center gap-1 text-micro font-bold px-1.5 py-0.5 rounded-full" style={{ background: '#DC2626', color: 'white' }}>
               <AlertTriangle className="w-2.5 h-2.5" />
               {flags.length} FLAG{flags.length > 1 ? 'S' : ''}
             </span>
@@ -420,15 +424,15 @@ function PrescriptionAuditCard({ rx }: { rx: Prescription }) {
         </div>
         <div className="flex items-center gap-2">
           {slaBreached ? (
-            <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full" style={{ background: '#DC2626', color: 'white' }}>
+            <span className="text-micro font-extrabold px-2 py-0.5 rounded-full" style={{ background: '#DC2626', color: 'white' }}>
               SLA BREACHED
             </span>
           ) : tatPharmacy !== undefined && slaThreshold ? (
-            <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full" style={{ background: '#059669', color: 'white' }}>
+            <span className="text-micro font-extrabold px-2 py-0.5 rounded-full" style={{ background: '#178A3D', color: 'white' }}>
               SLA COMPLIANT
             </span>
           ) : null}
-          <Link to={`/prescriptions/${rx.id}`} className="inline-flex items-center gap-1 text-[10px] font-semibold text-blue-300 hover:text-white transition-colors">
+          <Link to={`/prescriptions/${rx.id}`} className="inline-flex items-center gap-1 text-micro font-semibold text-green-300 hover:text-white transition-colors">
             View detail <ArrowRight className="w-3 h-3" />
           </Link>
         </div>
@@ -441,7 +445,7 @@ function PrescriptionAuditCard({ rx }: { rx: Prescription }) {
       </div>
 
       <div className="px-4 pt-3 pb-2">
-        <p className="text-[10px] font-bold uppercase tracking-wider mb-2.5" style={{ color: '#64748B' }}>
+        <p className="text-micro font-bold uppercase tracking-wider mb-2.5" style={{ color: '#64748B' }}>
           PAS Audit Pipeline
         </p>
         <div className="flex items-start">
@@ -462,12 +466,12 @@ function PrescriptionAuditCard({ rx }: { rx: Prescription }) {
                         : <div className="w-1.5 h-1.5 rounded-full bg-gray-300" />
                     }
                   </div>
-                  <p className="text-[10px] font-bold" style={{ color: step.done ? '#1E293B' : '#94A3B8' }}>{step.label}</p>
+                  <p className="text-micro font-bold" style={{ color: step.done ? '#1E293B' : '#94A3B8' }}>{step.label}</p>
                   {step.time && step.done && (
-                    <p className="text-[10px] tabular-nums" style={{ color: '#94A3B8' }}>{fmtTime(step.time)}</p>
+                    <p className="text-micro tabular-nums" style={{ color: '#94A3B8' }}>{fmtTime(step.time)}</p>
                   )}
                   {step.actor && step.done && (
-                    <p className="text-[10px] truncate max-w-full px-1 font-semibold" style={{ color }}>{step.actor}</p>
+                    <p className="text-micro truncate max-w-full px-1 font-semibold" style={{ color }}>{step.actor}</p>
                   )}
                 </div>
                 {i < steps.length - 1 && (
@@ -486,7 +490,7 @@ function PrescriptionAuditCard({ rx }: { rx: Prescription }) {
         <div className="px-4 py-3 border-t" style={{ borderColor: '#E2E8F0', background: '#FFF7F7' }}>
           <div className="flex items-center gap-2 mb-2.5">
             <Shield className="w-3.5 h-3.5 flex-shrink-0" style={{ color: '#DC2626' }} />
-            <p className="text-[10px] font-extrabold uppercase tracking-wider" style={{ color: '#DC2626' }}>
+            <p className="text-micro font-extrabold uppercase tracking-wider" style={{ color: '#DC2626' }}>
               PAS  -  Audit Flags Raised by System
             </p>
           </div>
@@ -504,7 +508,7 @@ function PrescriptionAuditCard({ rx }: { rx: Prescription }) {
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-xs font-bold" style={{ color: m.color }}>{m.label}</span>
                       <span
-                        className="text-[10px] font-extrabold px-1.5 py-0.5 rounded-full"
+                        className="text-micro font-extrabold px-1.5 py-0.5 rounded-full"
                         style={{ background: SEVERITY_BG[m.severity], color: SEVERITY_COLOR[m.severity] }}
                       >
                         {m.severity}
@@ -514,8 +518,8 @@ function PrescriptionAuditCard({ rx }: { rx: Prescription }) {
                   </div>
                   {rx.auditor_name && (
                     <div className="text-right flex-shrink-0">
-                      <p className="text-[10px]" style={{ color: '#94A3B8' }}>Reviewed</p>
-                      <p className="text-[10px] font-semibold" style={{ color: '#059669' }}>{rx.auditor_name}</p>
+                      <p className="text-micro" style={{ color: '#94A3B8' }}>Reviewed</p>
+                      <p className="text-micro font-semibold" style={{ color: '#178A3D' }}>{rx.auditor_name}</p>
                     </div>
                   )}
                 </div>
@@ -525,7 +529,7 @@ function PrescriptionAuditCard({ rx }: { rx: Prescription }) {
 
           {rx.return_reason && (
             <div className="mt-2 px-3 py-2 rounded-lg" style={{ background: '#FEF3C7', border: '1px solid #FDE68A' }}>
-              <p className="text-[10px] font-bold uppercase tracking-wider mb-0.5" style={{ color: '#92400E' }}>
+              <p className="text-micro font-bold uppercase tracking-wider mb-0.5" style={{ color: '#92400E' }}>
                 Returned to Doctor
               </p>
               <p className="text-xs" style={{ color: '#78350F' }}>{rx.return_reason}</p>
@@ -538,13 +542,13 @@ function PrescriptionAuditCard({ rx }: { rx: Prescription }) {
         <div className="px-4 py-3 border-t" style={{ borderColor: '#E2E8F0' }}>
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
-              <TrendingUp className="w-3.5 h-3.5" style={{ color: '#2563EB' }} />
-              <p className="text-[10px] font-extrabold uppercase tracking-wider" style={{ color: '#64748B' }}>
+              <TrendingUp className="w-3.5 h-3.5" style={{ color: '#178A3D' }} />
+              <p className="text-micro font-extrabold uppercase tracking-wider" style={{ color: '#64748B' }}>
                 TAT Breakdown
               </p>
             </div>
             {slaThreshold && (
-              <span className="text-[10px]" style={{ color: '#94A3B8' }}>
+              <span className="text-micro" style={{ color: '#94A3B8' }}>
                 Pharmacy SLA target: {fmtDuration(slaThreshold)}
               </span>
             )}
@@ -564,11 +568,11 @@ function PrescriptionAuditCard({ rx }: { rx: Prescription }) {
                 const over = target !== undefined && val! > target;
                 return (
                   <div key={label} className="flex items-center justify-between">
-                    <span className="text-[10px]" style={{ color: '#94A3B8', fontWeight: bold ? 700 : 400 }}>
+                    <span className="text-micro" style={{ color: '#94A3B8', fontWeight: bold ? 700 : 400 }}>
                       {label}
                     </span>
                     <span
-                      className="text-[10px] font-bold tabular-nums"
+                      className="text-micro font-bold tabular-nums"
                       style={{ color: over ? '#DC2626' : warn && val! > 0 ? '#D97706' : bold ? '#1E293B' : '#475569' }}
                     >
                       {fmtDuration(val!)}
@@ -582,15 +586,15 @@ function PrescriptionAuditCard({ rx }: { rx: Prescription }) {
           {tatPharmacy !== undefined && slaThreshold && (
             <div>
               <div className="flex items-center justify-between mb-1">
-                <span className="text-[10px] font-bold" style={{ color: '#475569' }}>
+                <span className="text-micro font-bold" style={{ color: '#475569' }}>
                   Pharmacy SLA: {fmtDuration(tatPharmacy)} / {fmtDuration(slaThreshold)}
                 </span>
                 {slaBreached ? (
-                  <span className="text-[10px] font-bold" style={{ color: '#DC2626' }}>
+                  <span className="text-micro font-bold" style={{ color: '#DC2626' }}>
                     +{fmtDuration(rx.sla_breach_duration_min ?? 0)} over target
                   </span>
                 ) : (
-                  <span className="text-[10px] font-bold" style={{ color: '#059669' }}>Within SLA</span>
+                  <span className="text-micro font-bold" style={{ color: '#178A3D' }}>Within SLA</span>
                 )}
               </div>
               <div className="h-2 rounded-full overflow-hidden" style={{ background: '#E2E8F0' }}>
@@ -598,7 +602,7 @@ function PrescriptionAuditCard({ rx }: { rx: Prescription }) {
                   className="h-full rounded-full transition-all"
                   style={{
                     width: `${Math.min(slaPct, 100)}%`,
-                    background: slaBreached ? '#DC2626' : slaPct > 80 ? '#D97706' : '#059669',
+                    background: slaBreached ? '#DC2626' : slaPct > 80 ? '#D97706' : '#178A3D',
                   }}
                 />
               </div>
@@ -643,18 +647,17 @@ export default function PatientJourneyPage() {
       if (jRes.status === 'fulfilled') setJourney(jRes.value.data);
       if (bRes.status === 'fulfilled') setBills(bRes.value ? [bRes.value] : []);
 
-      // Load prescriptions and filter to this visit
       if (visitData) {
         try {
           const pRes = await prescriptionsApi.list({ patient_id: visitData.patient_id, limit: 100 });
-          const all  = Array.isArray(pRes.data) ? pRes.data : (pRes.data as any).items ?? [];
-          // Prefer visit.prescription_ids if available; otherwise show all for the patient
+          const prescriptionData = pRes.data as ListResult<Prescription>;
+          const all = Array.isArray(prescriptionData) ? prescriptionData : prescriptionData.items ?? [];
           const rxIds = visitData.prescription_ids ?? [];
           const filtered = rxIds.length > 0
             ? (all as Prescription[]).filter(p => rxIds.includes(p.id))
             : (all as Prescription[]);
           setPrescriptions(filtered);
-        } catch { /* silently fail  -  prescriptions are non-critical */ }
+        } catch {}
       }
     } finally {
       setIsLoading(false);
@@ -667,7 +670,7 @@ export default function PatientJourneyPage() {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: '#F1F5F9' }}>
         <div className="flex flex-col items-center gap-3">
-          <Loader2 className="w-8 h-8 animate-spin" style={{ color: '#2563EB' }} />
+          <Loader2 className="w-8 h-8 animate-spin" style={{ color: '#178A3D' }} />
           <p className="text-sm" style={{ color: '#64748B' }}>Loading patient journey</p>
         </div>
       </div>
@@ -683,7 +686,7 @@ export default function PatientJourneyPage() {
           <button
             onClick={load}
             className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white"
-            style={{ background: '#2563EB' }}
+            style={{ background: '#178A3D' }}
           >
             <RefreshCw className="w-4 h-4" /> Retry
           </button>
@@ -710,10 +713,9 @@ export default function PatientJourneyPage() {
   };
 
   const PRIORITY_COLORS: Record<string, string> = {
-    routine: '#059669', urgent: '#D97706', critical: '#DC2626', immediate: '#DC2626',
+    routine: '#178A3D', urgent: '#D97706', critical: '#DC2626', immediate: '#DC2626',
   };
 
-  // Which stop is the patient currently at?
   const activeStop =
     !visit.triaged_at && !visit.consultation_started_at                              ? 'triage'          :
     !!visit.triaged_at && !visit.consultation_started_at                             ? 'waiting'          :
@@ -726,12 +728,10 @@ export default function PatientJourneyPage() {
     !visit.billing_completed_at                                                      ? 'billing'          :
     !visit.discharged_at                                                             ? 'discharge'        : 'done';
 
-  // PAS summary stats
   const totalFlags  = prescriptions.reduce((n, p) => n + (p.flags?.length ?? 0), 0);
   const slaBreaches = prescriptions.filter(p => p.sla_breached).length;
   const auditedRx   = prescriptions.filter(p => !!(p.auditor_name || p.verified_at)).length;
 
-  // Journey stage targets mapped by stage number
   const stageTargets = (journey?.stages ?? []).reduce((acc, s) => {
     acc[s.stage] = s.target_min;
     return acc;
@@ -739,24 +739,25 @@ export default function PatientJourneyPage() {
 
   return (
     <div className="min-h-screen" style={{ background: '#F1F5F9' }}>
-      <div style={{ background: 'linear-gradient(135deg, #0F172A 0%, #1E3A8A 60%, #2563EB 100%)' }}>
-        <div className="max-w-4xl mx-auto px-6 py-6">
+      <div style={{ background: '#FFFFFF', borderBottom: '1px solid var(--border-default)' }}>
+        <div className="w-full px-6 py-4">
           <Link
             to={`/visits/${visit.id}`}
-            className="inline-flex items-center gap-1.5 text-xs text-white/60 hover:text-white/90 mb-4 transition-colors"
+            className="inline-flex items-center gap-1.5 text-xs mb-3 transition-colors"
+            style={{ color: 'var(--text-muted)' }}
           >
             <ChevronLeft className="w-3.5 h-3.5" /> Back to Visit
           </Link>
 
           <div className="flex items-start justify-between gap-4 flex-wrap">
             <div>
-              <div className="flex items-center gap-3 mb-1 flex-wrap">
-                <h1 className="text-2xl font-bold text-white">Patient Journey</h1>
+              <div className="flex items-center gap-2 mb-1 flex-wrap">
+                <h1 className="text-lg font-semibold tracking-tight" style={{ color: 'var(--text-primary)' }}>Patient Journey</h1>
                 <span
                   className="text-xs font-bold px-2.5 py-1 rounded-full"
                   style={{
                     background: isCancelled ? '#FEF2F2' : isComplete ? '#F0FDF4' : '#EFF6FF',
-                    color:      isCancelled ? '#DC2626' : isComplete ? '#059669' : '#2563EB',
+                    color:      isCancelled ? '#DC2626' : isComplete ? '#178A3D' : '#178A3D',
                   }}
                 >
                   {STATUS_LABEL[visit.status] ?? visit.status}
@@ -764,17 +765,17 @@ export default function PatientJourneyPage() {
                 <span
                   className="text-xs font-bold px-2.5 py-1 rounded-full"
                   style={{
-                    background: `${PRIORITY_COLORS[visit.priority] ?? '#059669'}20`,
-                    color:       PRIORITY_COLORS[visit.priority] ?? '#059669',
-                    border:     `1px solid ${PRIORITY_COLORS[visit.priority] ?? '#059669'}40`,
+                    background: `${PRIORITY_COLORS[visit.priority] ?? '#178A3D'}20`,
+                    color:       PRIORITY_COLORS[visit.priority] ?? '#178A3D',
+                    border:     `1px solid ${PRIORITY_COLORS[visit.priority] ?? '#178A3D'}40`,
                   }}
                 >
                   {visit.priority.toUpperCase()}
                 </span>
               </div>
-              <p className="text-sm" style={{ color: 'rgba(255,255,255,0.7)' }}>
-                <span className="font-semibold" style={{ color: 'rgba(255,255,255,0.9)' }}>
-                  {visit.patient_name ?? visit.patient_id}
+              <p className="text-body-sm" style={{ color: 'var(--text-secondary)' }}>
+                <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>
+                  {namedValue(visit.patient_name, 'Unknown Patient')}
                 </span>
                 {' · '}Visit #{visit.visit_number}
                 {' · '}{visit.visit_type.replace(/_/g, ' ').toUpperCase()}
@@ -784,38 +785,35 @@ export default function PatientJourneyPage() {
             <div className="flex items-center gap-3">
               {totalMin !== null && (
                 <div className="text-right">
-                  <p className={`text-3xl font-extrabold tabular-nums ${totalBreached ? 'text-red-300' : 'text-blue-300'}`}>
+                  <p className="text-2xl font-bold tabular-nums" style={{ color: totalBreached ? 'var(--status-critical-text)' : 'var(--text-primary)' }}>
                     {fmtDuration(totalMin)}
                   </p>
-                  <p className="text-xs" style={{ color: 'rgba(255,255,255,0.5)' }}>
-                    {isComplete ? 'Total visit duration' : 'Time in facility'}
-                  </p>
-                  <p className="text-[10px]" style={{ color: totalBreached ? '#FCA5A5' : 'rgba(255,255,255,0.4)' }}>
-                    Target: {fmtDuration(totalTarget)} {totalBreached ? 'EXCEEDED' : 'On track'}
+                  <p className="text-meta" style={{ color: 'var(--text-muted)' }}>
+                    {isComplete ? 'Total duration' : 'Time in facility'} · target {fmtDuration(totalTarget)}
                   </p>
                 </div>
               )}
               <button
                 onClick={load}
-                className="p-2.5 rounded-xl transition-colors"
-                style={{ background: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.7)' }}
+                className="p-2 transition-colors"
+                style={{ background: 'var(--surface-2)', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-button)', color: 'var(--text-secondary)' }}
               >
                 <RefreshCw className="w-4 h-4" />
               </button>
             </div>
           </div>
 
-          <div className="flex gap-6 mt-5 border-t border-white/10 overflow-x-auto -mx-6 px-6 pt-3">
+          <div className="flex gap-6 mt-4 border-t overflow-x-auto -mx-6 px-6 pt-3" style={{ borderColor: 'var(--border-default)' }}>
             {[
-              { label: 'Registered By', name: visit.registered_by_name,    time: visit.registered_at,          color: '#93C5FD' },
-              { label: 'Triage Nurse',  name: visit.triage_nurse_name,     time: visit.triaged_at,             color: '#FCA5A5' },
-              { label: 'Doctor',        name: visit.assigned_doctor_name,  time: visit.consultation_started_at, color: '#C4B5FD' },
-              { label: 'Consult Nurse', name: visit.consultation_nurse_name, time: visit.consultation_started_at, color: '#FCA5A5' },
+              { label: 'Registered By', name: visit.registered_by_name,    time: visit.registered_at },
+              { label: 'Triage Nurse',  name: visit.triage_nurse_name,     time: visit.triaged_at },
+              { label: 'Doctor',        name: visit.assigned_doctor_name,  time: visit.consultation_started_at },
+              { label: 'Consult Nurse', name: visit.consultation_nurse_name, time: visit.consultation_started_at },
             ].filter(a => a.name).map((actor, i) => (
               <div key={i} className="flex-shrink-0">
-                <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.45)' }}>{actor.label}</p>
-                <p className="text-xs font-semibold text-white">{actor.name}</p>
-                {actor.time && <p className="text-[10px]" style={{ color: actor.color }}>{fmt(actor.time)}</p>}
+                <p className="text-label" style={{ color: 'var(--text-muted)' }}>{actor.label}</p>
+                <p className="text-caption font-semibold" style={{ color: 'var(--text-primary)' }}>{actor.name}</p>
+                {actor.time && <p className="text-meta" style={{ color: 'var(--text-muted)' }}>{fmt(actor.time)}</p>}
               </div>
             ))}
           </div>
@@ -823,14 +821,14 @@ export default function PatientJourneyPage() {
       </div>
 
       <TATSummaryStrip journey={journey} visit={visit} />
-      <div className="max-w-4xl mx-auto px-6 py-8">
+      <div className="w-full px-6 py-8">
         <div className="grid grid-cols-12 gap-6">
 
           <div className="col-span-8">
 
             <JourneyStop
-              icon={<UserCheck className="w-5 h-5" style={{ color: '#2563EB' }} />}
-              accentColor="#2563EB" accentBg="rgba(37,99,235,0.06)"
+              icon={<UserCheck className="w-5 h-5" style={{ color: '#178A3D' }} />}
+              accentColor="#178A3D" accentBg="rgba(23,138,61,0.06)"
               title="Arrival & Registration"
               subtitle={`Patient checked in · Visit #${visit.visit_number}`}
               time={visit.registered_at}
@@ -841,7 +839,7 @@ export default function PatientJourneyPage() {
               <InfoGrid items={[
                 { label: 'Visit Type',     value: visit.visit_type.replace(/_/g, ' ') },
                 { label: 'Priority',       value: visit.priority },
-                { label: 'Department',     value: visit.department_id },
+                { label: 'Department',     value: 'Assigned Department' },
                 { label: 'Chief Complaint',value: visit.chief_complaint },
                 { label: 'Registered At',  value: fmt(visit.registered_at) },
                 { label: 'Registered By',  value: visit.registered_by_name },
@@ -867,7 +865,7 @@ export default function PatientJourneyPage() {
                   <VitalsGrid vitals={visit.vitals} />
                   {visit.vitals.triage_notes && (
                     <div className="mt-3 pt-3 border-t border-amber-200">
-                      <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: '#92400E' }}>Triage Notes</p>
+                      <p className="text-micro font-bold uppercase tracking-wider mb-1" style={{ color: '#92400E' }}>Triage Notes</p>
                       <p className="text-xs text-gray-700">{visit.vitals.triage_notes}</p>
                     </div>
                   )}
@@ -897,8 +895,8 @@ export default function PatientJourneyPage() {
             </JourneyStop>
 
             <JourneyStop
-              icon={<Clock className="w-5 h-5" style={{ color: visit.consultation_started_at ? '#2563EB' : visit.triaged_at ? '#2563EB' : '#CBD5E1' }} />}
-              accentColor="#2563EB" accentBg="rgba(37,99,235,0.06)"
+              icon={<Clock className="w-5 h-5" style={{ color: visit.consultation_started_at ? '#178A3D' : visit.triaged_at ? '#178A3D' : '#CBD5E1' }} />}
+              accentColor="#178A3D" accentBg="rgba(23,138,61,0.06)"
               title="Waiting for Doctor"
               subtitle={visit.assigned_doctor_name ? `Assigned to ${visit.assigned_doctor_name}` : 'Awaiting doctor assignment'}
               time={visit.triaged_at}
@@ -914,7 +912,7 @@ export default function PatientJourneyPage() {
                 <button
                   onClick={() => navigate(`/visits/${visit.id}?tab=consultation`)}
                   className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-semibold text-white transition-opacity hover:opacity-90"
-                  style={{ background: '#2563EB' }}
+                  style={{ background: '#178A3D' }}
                 >
                   <span>Open Consultation</span>
                   <ArrowRight className="w-3.5 h-3.5" />
@@ -923,8 +921,8 @@ export default function PatientJourneyPage() {
             </JourneyStop>
 
             <JourneyStop
-              icon={<Stethoscope className="w-5 h-5" style={{ color: visit.consultation_started_at ? '#7C3AED' : '#CBD5E1' }} />}
-              accentColor="#7C3AED" accentBg="rgba(124,58,237,0.06)"
+              icon={<Stethoscope className="w-5 h-5" style={{ color: visit.consultation_started_at ? '#178A3D' : '#CBD5E1' }} />}
+              accentColor="#178A3D" accentBg="rgba(23,138,61,0.06)"
               title="Doctor Consultation"
               subtitle={visit.consultation_room ? `Room ${visit.consultation_room}` : undefined}
               time={visit.consultation_started_at}
@@ -949,25 +947,25 @@ export default function PatientJourneyPage() {
                   <div className="pt-3 border-t border-purple-200 space-y-2">
                     {visit.clinical_findings && (
                       <div>
-                        <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: '#6B21A8' }}>Clinical Findings</p>
+                        <p className="text-micro font-bold uppercase tracking-wider mb-1" style={{ color: '#6B21A8' }}>Clinical Findings</p>
                         <p className="text-xs text-gray-700 leading-relaxed">{visit.clinical_findings}</p>
                       </div>
                     )}
                     {visit.diagnosis && (
                       <div>
-                        <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: '#6B21A8' }}>Diagnosis</p>
+                        <p className="text-micro font-bold uppercase tracking-wider mb-1" style={{ color: '#6B21A8' }}>Diagnosis</p>
                         <p className="text-xs font-semibold text-gray-800">{visit.diagnosis}</p>
                       </div>
                     )}
                     {visit.recommendations && (
                       <div>
-                        <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: '#6B21A8' }}>Recommendations</p>
+                        <p className="text-micro font-bold uppercase tracking-wider mb-1" style={{ color: '#6B21A8' }}>Recommendations</p>
                         <p className="text-xs text-gray-700 leading-relaxed">{visit.recommendations}</p>
                       </div>
                     )}
                     {visit.follow_up_instructions && (
                       <div>
-                        <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: '#6B21A8' }}>Follow-up</p>
+                        <p className="text-micro font-bold uppercase tracking-wider mb-1" style={{ color: '#6B21A8' }}>Follow-up</p>
                         <p className="text-xs text-gray-700">{visit.follow_up_instructions}</p>
                       </div>
                     )}
@@ -978,7 +976,7 @@ export default function PatientJourneyPage() {
                     <button
                       onClick={() => navigate(`/visits/${visit.id}?tab=consultation`)}
                       className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-semibold text-white transition-opacity hover:opacity-90"
-                      style={{ background: '#7C3AED' }}
+                      style={{ background: '#178A3D' }}
                     >
                       <span>Record Consultation Notes</span>
                       <ArrowRight className="w-3.5 h-3.5" />
@@ -988,11 +986,10 @@ export default function PatientJourneyPage() {
               </div>
             </JourneyStop>
 
-            {/* Step 5: Prescription Ordering */}
             {prescriptions.length > 0 ? (
               <JourneyStop
-                icon={<FileText className="w-5 h-5" style={{ color: prescriptions.some(p => p.submitted_at) ? '#7C3AED' : '#CBD5E1' }} />}
-                accentColor="#7C3AED" accentBg="rgba(124,58,237,0.06)"
+                icon={<FileText className="w-5 h-5" style={{ color: prescriptions.some(p => p.submitted_at) ? '#178A3D' : '#CBD5E1' }} />}
+                accentColor="#178A3D" accentBg="rgba(23,138,61,0.06)"
                 title={`Prescription Ordering (${prescriptions.length})`}
                 subtitle="Doctor orders medications following consultation"
                 time={[...prescriptions].map(p => p.submitted_at ?? p.ordered_at ?? p.created_at).filter(Boolean).sort()[0]}
@@ -1010,13 +1007,13 @@ export default function PatientJourneyPage() {
                 <div className="space-y-1.5">
                   {prescriptions.map(rx => (
                     <div key={rx.id} className="flex items-center justify-between gap-2">
-                      <span className="text-xs font-mono font-bold" style={{ color: '#7C3AED' }}>
+                      <span className="text-xs font-mono font-bold" style={{ color: '#178A3D' }}>
                         {rx.rx_number ?? `RX-${rx.id.slice(0, 8).toUpperCase()}`}
                       </span>
                       <span className="text-xs flex-1 truncate" style={{ color: '#475569' }}>
                         {rx.medications.map(m => m.name).join(', ')}
                       </span>
-                      <span className="text-[10px] flex-shrink-0" style={{ color: '#94A3B8' }}>
+                      <span className="text-micro flex-shrink-0" style={{ color: '#94A3B8' }}>
                         {rx.submitted_at ? fmtTime(rx.submitted_at) : 'Pending'}
                       </span>
                     </div>
@@ -1026,7 +1023,7 @@ export default function PatientJourneyPage() {
             ) : (
               <JourneyStop
                 icon={<FileText className="w-5 h-5" style={{ color: '#CBD5E1' }} />}
-                accentColor="#7C3AED" accentBg="rgba(124,58,237,0.06)"
+                accentColor="#178A3D" accentBg="rgba(23,138,61,0.06)"
                 title="Prescription Ordering"
                 subtitle="Doctor orders medications following consultation"
                 isComplete={false}
@@ -1034,11 +1031,10 @@ export default function PatientJourneyPage() {
               />
             )}
 
-            {/* Step 6: Prescription Audit */}
             {prescriptions.length > 0 && (
               <JourneyStop
-                icon={<Shield className="w-5 h-5" style={{ color: prescriptions.some(p => p.verified_at || p.auditor_approved_at) ? '#059669' : '#CBD5E1' }} />}
-                accentColor="#059669" accentBg="rgba(5,150,105,0.06)"
+                icon={<Shield className="w-5 h-5" style={{ color: prescriptions.some(p => p.verified_at || p.auditor_approved_at) ? '#178A3D' : '#CBD5E1' }} />}
+                accentColor="#178A3D" accentBg="rgba(5,150,105,0.06)"
                 title="Prescription Audit"
                 subtitle="PAS automated safety checks and auditor verification"
                 time={[...prescriptions].map(p => p.auditor_approved_at ?? p.verified_at).filter(Boolean).sort()[0]}
@@ -1073,12 +1069,11 @@ export default function PatientJourneyPage() {
                     )}
                   </div>
                 ) : prescriptions.some(p => !!(p.verified_at || p.auditor_approved_at)) ? (
-                  <p className="text-xs font-semibold" style={{ color: '#059669' }}>All prescriptions cleared - no safety flags raised.</p>
+                  <p className="text-xs font-semibold" style={{ color: '#178A3D' }}>All prescriptions cleared - no safety flags raised.</p>
                 ) : undefined}
               </JourneyStop>
             )}
 
-            {/* Step 7: Pharmacy Dispensing */}
             {prescriptions.length > 0 && (
               <JourneyStop
                 icon={<Pill className="w-5 h-5" style={{ color: prescriptions.some(p => p.dispensed_at) ? '#0284C7' : '#CBD5E1' }} />}
@@ -1104,10 +1099,10 @@ export default function PatientJourneyPage() {
                         {rx.rx_number ?? `RX-${rx.id.slice(0, 8).toUpperCase()}`}
                       </span>
                       <span
-                        className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                        className="text-micro font-bold px-2 py-0.5 rounded-full"
                         style={{
                           background: rx.dispensed_at ? '#DBEAFE' : '#F1F5F9',
-                          color:      rx.dispensed_at ? '#1D4ED8' : '#94A3B8',
+                          color:      rx.dispensed_at ? '#0F6E2F' : '#94A3B8',
                         }}
                       >
                         {rx.dispensed_at ? `Dispensed ${fmtTime(rx.dispensed_at)}` : 'Awaiting dispensing'}
@@ -1118,7 +1113,6 @@ export default function PatientJourneyPage() {
               </JourneyStop>
             )}
 
-            {/* Step 8: Drug Administration */}
             {prescriptions.length > 0 && (
               <JourneyStop
                 icon={<Activity className="w-5 h-5" style={{ color: prescriptions.some(p => p.administered_at) ? '#D97706' : '#CBD5E1' }} />}
@@ -1147,7 +1141,7 @@ export default function PatientJourneyPage() {
                         <span className="text-xs" style={{ color: '#64748B' }}>{rx.administered_dose}</span>
                       )}
                       <span
-                        className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                        className="text-micro font-bold px-2 py-0.5 rounded-full"
                         style={{
                           background: rx.administered_at ? '#FEF3C7' : '#F1F5F9',
                           color:      rx.administered_at ? '#92400E' : '#94A3B8',
@@ -1163,8 +1157,8 @@ export default function PatientJourneyPage() {
 
             {(visit.admitted_at || ['admitted', 'in_ward', 'ready_for_discharge'].includes(visit.status)) && (
               <JourneyStop
-                icon={<BedDouble className="w-5 h-5" style={{ color: visit.admitted_at ? '#059669' : '#CBD5E1' }} />}
-                accentColor="#059669" accentBg="rgba(5,150,105,0.06)"
+                icon={<BedDouble className="w-5 h-5" style={{ color: visit.admitted_at ? '#178A3D' : '#CBD5E1' }} />}
+                accentColor="#178A3D" accentBg="rgba(5,150,105,0.06)"
                 title="Ward Admission"
                 time={visit.admitted_at}
                 duration={elapsedMin(visit.consultation_ended_at ?? visit.consultation_started_at, visit.admitted_at)}
@@ -1174,7 +1168,7 @@ export default function PatientJourneyPage() {
               >
                 <InfoGrid items={[
                   { label: 'Ward',            value: visit.ward_name },
-                  { label: 'Bed',             value: visit.bed_label ?? visit.bed_id },
+                  { label: 'Bed',             value: namedValue(visit.bed_label, 'Bed not assigned') },
                   { label: 'Admitted At',     value: fmt(visit.admitted_at) },
                   { label: 'Admission Notes', value: visit.admission_notes },
                 ]} />
@@ -1200,14 +1194,14 @@ export default function PatientJourneyPage() {
                           { label: 'Balance',      value: `KES ${(bill.balance_due  || 0).toLocaleString()}` },
                         ].map(({ label, value }) => (
                           <div key={label}>
-                            <p className="text-[10px] font-bold uppercase" style={{ color: '#D97706' }}>{label}</p>
+                            <p className="text-micro font-bold uppercase" style={{ color: '#D97706' }}>{label}</p>
                             <p className="text-xs font-bold text-gray-800">{value}</p>
                           </div>
                         ))}
                       </div>
                       <div className="flex items-center gap-2">
                         <span
-                          className="text-[10px] font-bold px-2 py-0.5 rounded-full capitalize"
+                          className="text-micro font-bold px-2 py-0.5 rounded-full capitalize"
                           style={{ background: bill.status === 'paid' ? '#F0FDF4' : '#FFFBEB', color: bill.status === 'paid' ? '#166534' : '#92400E' }}
                         >
                           {bill.status}
@@ -1223,8 +1217,8 @@ export default function PatientJourneyPage() {
             )}
 
             <JourneyStop
-              icon={<LogOut className="w-5 h-5" style={{ color: visit.discharged_at ? '#059669' : '#CBD5E1' }} />}
-              accentColor="#059669" accentBg="rgba(5,150,105,0.06)"
+              icon={<LogOut className="w-5 h-5" style={{ color: visit.discharged_at ? '#178A3D' : '#CBD5E1' }} />}
+              accentColor="#178A3D" accentBg="rgba(5,150,105,0.06)"
               title={isCancelled ? 'Visit Cancelled' : 'Discharge'}
               time={visit.discharged_at}
               duration={elapsedMin(
@@ -1245,10 +1239,10 @@ export default function PatientJourneyPage() {
               ) : undefined}
             </JourneyStop>
 
-          </div>{/* end timeline */}
+          </div>
 
           <div className="col-span-4 space-y-4">
-            <div className="rounded-2xl bg-white border border-gray-200 p-5 sticky top-4 space-y-5">
+            <div className="rounded-lg bg-white border border-gray-200 p-5 sticky top-4 space-y-5">
 
               <div>
                 <h3 className="text-sm font-bold text-gray-900 mb-3">Visit Summary</h3>
@@ -1272,15 +1266,15 @@ export default function PatientJourneyPage() {
                 <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Timeline</h4>
                 <div className="space-y-2">
                   {[
-                    { label: 'Arrived',      time: visit.registered_at,           color: '#2563EB' },
+                    { label: 'Arrived',      time: visit.registered_at,           color: '#178A3D' },
                     { label: 'Triaged',        time: visit.triaged_at,                                                                             color: '#D97706' },
-                    { label: 'Seen by Doctor', time: visit.consultation_started_at,                                                                 color: '#7C3AED' },
-                    { label: 'Rx Submitted',   time: [...prescriptions].map(p => p.submitted_at).filter(Boolean).sort()[0],                         color: '#7C3AED' },
-                    { label: 'Rx Audited',     time: [...prescriptions].map(p => p.auditor_approved_at ?? p.verified_at).filter(Boolean).sort()[0], color: '#059669' },
+                    { label: 'Seen by Doctor', time: visit.consultation_started_at,                                                                 color: '#178A3D' },
+                    { label: 'Rx Submitted',   time: [...prescriptions].map(p => p.submitted_at).filter(Boolean).sort()[0],                         color: '#178A3D' },
+                    { label: 'Rx Audited',     time: [...prescriptions].map(p => p.auditor_approved_at ?? p.verified_at).filter(Boolean).sort()[0], color: '#178A3D' },
                     { label: 'Dispensed',      time: [...prescriptions].map(p => p.dispensed_at).filter(Boolean).sort()[0],                         color: '#0284C7' },
                     { label: 'Administered',   time: [...prescriptions].map(p => p.administered_at).filter(Boolean).sort()[0],                      color: '#D97706' },
-                    { label: 'Admitted',       time: visit.admitted_at,                                                                             color: '#059669' },
-                    { label: 'Discharged',     time: visit.discharged_at,                                                                           color: '#059669' },
+                    { label: 'Admitted',       time: visit.admitted_at,                                                                             color: '#178A3D' },
+                    { label: 'Discharged',     time: visit.discharged_at,                                                                           color: '#178A3D' },
                   ].filter(t => t.time).map(({ label, time, color }) => (
                     <div key={label} className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
@@ -1296,7 +1290,7 @@ export default function PatientJourneyPage() {
               {journey && journey.stages.length > 0 && (
                 <div className="pt-4 border-t border-gray-100">
                   <div className="flex items-center gap-2 mb-3">
-                    <TrendingUp className="w-3.5 h-3.5 text-blue-500" />
+                    <TrendingUp className="w-3.5 h-3.5 text-green-600" />
                     <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">TAT vs Target</h4>
                   </div>
                   <div className="space-y-3">
@@ -1310,7 +1304,7 @@ export default function PatientJourneyPage() {
                             <span className="text-xs text-gray-500 truncate mr-2">{stage.name}</span>
                             <span
                               className="text-xs font-bold tabular-nums flex-shrink-0 flex items-center gap-1"
-                              style={{ color: has ? (breached ? '#DC2626' : '#059669') : '#94A3B8' }}
+                              style={{ color: has ? (breached ? '#DC2626' : '#178A3D') : '#94A3B8' }}
                             >
                               {has ? fmtDuration(stage.tat_min!) : ' - '}
                               {breached && <AlertTriangle className="w-3 h-3" />}
@@ -1319,10 +1313,10 @@ export default function PatientJourneyPage() {
                           <div className="h-1.5 rounded-full overflow-hidden" style={{ background: '#F1F5F9' }}>
                             <div
                               className="h-full rounded-full"
-                              style={{ width: `${pct}%`, background: breached ? '#DC2626' : '#059669' }}
+                              style={{ width: `${pct}%`, background: breached ? '#DC2626' : '#178A3D' }}
                             />
                           </div>
-                          <p className="text-[10px] text-right mt-0.5" style={{ color: '#94A3B8' }}>
+                          <p className="text-micro text-right mt-0.5" style={{ color: '#94A3B8' }}>
                             target: {fmtDuration(stage.target_min)}
                           </p>
                         </div>
@@ -1335,15 +1329,15 @@ export default function PatientJourneyPage() {
               {prescriptions.length > 0 && (
                 <div className="pt-4 border-t border-gray-100">
                   <div className="flex items-center gap-2 mb-3">
-                    <Shield className="w-3.5 h-3.5 text-blue-500" />
+                    <Shield className="w-3.5 h-3.5 text-green-600" />
                     <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">PAS Summary</h4>
                   </div>
                   <div className="space-y-1.5">
                     {[
-                      { label: 'Prescriptions', value: prescriptions.length, color: '#2563EB', danger: false },
-                      { label: 'Audit Flags',   value: totalFlags,           color: totalFlags  > 0 ? '#DC2626' : '#059669', danger: totalFlags  > 0 },
-                      { label: 'SLA Breaches',  value: slaBreaches,          color: slaBreaches > 0 ? '#DC2626' : '#059669', danger: slaBreaches > 0 },
-                      { label: 'Audited',       value: auditedRx,            color: '#059669',  danger: false },
+                      { label: 'Prescriptions', value: prescriptions.length, color: '#178A3D', danger: false },
+                      { label: 'Audit Flags',   value: totalFlags,           color: totalFlags  > 0 ? '#DC2626' : '#178A3D', danger: totalFlags  > 0 },
+                      { label: 'SLA Breaches',  value: slaBreaches,          color: slaBreaches > 0 ? '#DC2626' : '#178A3D', danger: slaBreaches > 0 },
+                      { label: 'Audited',       value: auditedRx,            color: '#178A3D',  danger: false },
                     ].map(({ label, value, color, danger }) => (
                       <div
                         key={label}
@@ -1361,14 +1355,14 @@ export default function PatientJourneyPage() {
               {isAdmin && !isComplete && !isCancelled && (
                 <div className="pt-4 border-t border-gray-100">
                   <div className="flex items-center gap-2 mb-3">
-                    <Zap className="w-3.5 h-3.5 text-blue-500" />
+                    <Zap className="w-3.5 h-3.5 text-green-600" />
                     <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Quick Actions</h4>
                   </div>
                   <div className="space-y-2">
                     {visit.status === 'registered' && (
                       <button
                         onClick={() => navigate(`/visits/${visit.id}/triage`)}
-                        className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold text-white transition-opacity hover:opacity-90"
+                        className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-semibold text-white transition-opacity hover:opacity-90"
                         style={{ background: '#D97706' }}
                       >
                         <span>Triage Patient</span>
@@ -1378,8 +1372,8 @@ export default function PatientJourneyPage() {
                     {['waiting_for_doctor', 'triaged'].includes(visit.status) && (
                       <button
                         onClick={() => navigate(`/visits/${visit.id}?tab=consultation`)}
-                        className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold text-white transition-opacity hover:opacity-90"
-                        style={{ background: '#7C3AED' }}
+                        className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-semibold text-white transition-opacity hover:opacity-90"
+                        style={{ background: '#178A3D' }}
                       >
                         <span>Start Consultation</span>
                         <ArrowRight className="w-3.5 h-3.5" />
@@ -1388,8 +1382,8 @@ export default function PatientJourneyPage() {
                     {visit.status === 'in_consultation' && (
                       <button
                         onClick={() => navigate(`/visits/${visit.id}?tab=consultation`)}
-                        className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold text-white transition-opacity hover:opacity-90"
-                        style={{ background: '#7C3AED' }}
+                        className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-semibold text-white transition-opacity hover:opacity-90"
+                        style={{ background: '#178A3D' }}
                       >
                         <span>Record Consultation Notes</span>
                         <ArrowRight className="w-3.5 h-3.5" />
@@ -1398,8 +1392,8 @@ export default function PatientJourneyPage() {
                     {['in_consultation', 'awaiting_results', 'treatment_in_progress'].includes(visit.status) && !visit.admitted_at && (
                       <button
                         onClick={() => navigate(`/visits/${visit.id}?tab=care`)}
-                        className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold text-white transition-opacity hover:opacity-90"
-                        style={{ background: '#059669' }}
+                        className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-semibold text-white transition-opacity hover:opacity-90"
+                        style={{ background: '#178A3D' }}
                       >
                         <span>Admit to Ward</span>
                         <ArrowRight className="w-3.5 h-3.5" />
@@ -1408,7 +1402,7 @@ export default function PatientJourneyPage() {
                     {['admitted', 'in_ward'].includes(visit.status) && (
                       <button
                         onClick={() => navigate(`/visits/${visit.id}?tab=prescriptions`)}
-                        className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold text-white transition-opacity hover:opacity-90"
+                        className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-semibold text-white transition-opacity hover:opacity-90"
                         style={{ background: '#0284C7' }}
                       >
                         <span>Manage Prescriptions</span>
@@ -1418,7 +1412,7 @@ export default function PatientJourneyPage() {
                     {['in_ward', 'ready_for_discharge', 'admitted'].includes(visit.status) && (
                       <button
                         onClick={() => navigate(`/visits/${visit.id}?tab=billing`)}
-                        className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold text-white transition-opacity hover:opacity-90"
+                        className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-semibold text-white transition-opacity hover:opacity-90"
                         style={{ background: '#D97706' }}
                       >
                         <span>Billing / Discharge</span>
@@ -1429,7 +1423,7 @@ export default function PatientJourneyPage() {
                      !['admitted', 'in_ward', 'ready_for_discharge'].includes(visit.status) && (
                       <button
                         onClick={() => navigate(`/visits/${visit.id}?tab=billing`)}
-                        className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold text-white transition-opacity hover:opacity-90"
+                        className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-semibold text-white transition-opacity hover:opacity-90"
                         style={{ background: '#D97706' }}
                       >
                         <span>Process Billing</span>
@@ -1443,7 +1437,7 @@ export default function PatientJourneyPage() {
               <div className="pt-4 border-t border-gray-100">
                 <Link
                   to={`/visits/${visit.id}`}
-                  className="w-full flex items-center justify-center gap-2 py-2.5 text-xs font-semibold rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors"
+                  className="w-full flex items-center justify-center gap-2 py-2.5 text-xs font-semibold rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors"
                 >
                   <FileText className="w-3.5 h-3.5" /> View Full Visit Record
                 </Link>

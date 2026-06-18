@@ -24,7 +24,7 @@ export function BottleneckSpotlight({
   return (
     <div
       className={cn(
-        'relative overflow-hidden rounded-xl p-6 border shadow-elevated bg-gradient-to-br',
+        'relative overflow-hidden rounded-lg p-6 border shadow-elevated bg-gradient-to-br',
         isOverSLA
           ? 'from-status-warning to-status-warning/50 border-status-warning'
           : 'from-status-info to-status-info/50 border-status-info',
@@ -46,7 +46,7 @@ export function BottleneckSpotlight({
         <div className="grid grid-cols-2 gap-6">
           <div>
             <p className="text-caption text-text-muted mb-1">Average</p>
-            <p className="text-display font-black text-text-primary">{Math.round(avgMin)}m</p>
+            <p className="text-display font-bold text-text-primary">{Math.round(avgMin)}m</p>
           </div>
           <div>
             <p className="text-caption text-text-muted mb-1">SLA Target</p>

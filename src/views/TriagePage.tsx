@@ -10,7 +10,12 @@ import { visitsApi, Visit, VitalSigns, TriagePayload } from '../api/visits';
 import { usersApi } from '../api/users';
 import { consultationRoomsApi, ConsultationRoom } from '../api/consultationRooms';
 
-interface Doctor { id: string; full_name?: string; username: string; }
+interface Doctor {
+  id: string;
+  full_name?: string;
+  username: string;
+  role?: string;
+}
 
 const VITAL_FIELDS: {
   label: string;
@@ -37,7 +42,7 @@ const VITAL_FIELDS: {
   },
   {
     label: 'Pulse Rate', key: 'pulse_rate', placeholder: '72',
-    unit: 'bpm', icon: Activity, iconColor: '#7C3AED', iconBg: '#F3E8FF', normal: '60 - 100',
+    unit: 'bpm', icon: Activity, iconColor: '#178A3D', iconBg: '#F3E8FF', normal: '60 - 100',
   },
   {
     label: 'SpO,,', key: 'oxygen_saturation', placeholder: '98',
@@ -45,7 +50,7 @@ const VITAL_FIELDS: {
   },
   {
     label: 'Respiratory Rate', key: 'respiratory_rate', placeholder: '16',
-    unit: '/min', icon: Activity, iconColor: '#059669', iconBg: '#DCFCE7', normal: '12 - 20',
+    unit: '/min', icon: Activity, iconColor: '#178A3D', iconBg: '#DCFCE7', normal: '12 - 20',
   },
   {
     label: 'Weight', key: 'weight_kg', placeholder: '70',
@@ -89,19 +94,19 @@ function VitalCard({
 
   return (
     <div
-      className="rounded-2xl p-4 transition-all"
+      className="rounded-lg p-4 transition-all"
       style={{
         background: hasValue ? iconBg : 'white',
         border: `1.5px solid ${hasValue ? iconColor + '40' : '#E2E8F0'}`,
       }}
     >
       <div className="flex items-center gap-2 mb-3">
-        <div className="w-7 h-7 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: iconBg }}>
+        <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: iconBg }}>
           <Icon className="w-3.5 h-3.5" style={{ color: iconColor }} />
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-xs font-bold text-gray-700 truncate">{label}</p>
-          {normal && <p className="text-[10px] text-gray-400">Normal: {normal}</p>}
+          {normal && <p className="text-micro text-gray-400">Normal: {normal}</p>}
         </div>
       </div>
       <div className="flex items-center gap-2">
@@ -111,7 +116,7 @@ function VitalCard({
           placeholder={placeholder}
           value={value ?? ''}
           onChange={e => onChange(e.target.value !== '' ? Number(e.target.value) : undefined)}
-          className="flex-1 min-w-0 px-3 py-2 rounded-xl text-sm font-semibold text-gray-800 outline-none transition-all"
+          className="flex-1 min-w-0 px-3 py-2 rounded-lg text-sm font-semibold text-gray-800 outline-none transition-all"
           style={{
             background: 'rgba(255,255,255,0.8)',
             border: `1.5px solid ${hasValue ? iconColor + '50' : '#E2E8F0'}`,
@@ -151,20 +156,21 @@ export default function TriagePage() {
       const v = vRes.status === 'fulfilled' ? vRes.value.data : null;
       if (v) {
         setVisit(v);
-        // Pre-fill if already triaged
         if (v.vitals) setVitals(v.vitals);
         if (v.assigned_doctor_id) setDoctorId(v.assigned_doctor_id);
 
-        // Load rooms for this department
         try {
-          const rRes = await consultationRoomsApi.list({ department_id: v.department_id });
-          const r = Array.isArray(rRes.data) ? rRes.data : (rRes.data as { items: ConsultationRoom[] }).items ?? [];
+          const rRes = await consultationRoomsApi.list({});
+          const all = Array.isArray(rRes.data) ? rRes.data : (rRes.data as { items: ConsultationRoom[] }).items ?? [];
+          const isTriageRoom = (x: ConsultationRoom) =>
+            /triage/i.test(x.room_name) || /(^|-)AE-CR/i.test(x.room_number);
+          const r = all.filter(x => x.department_id === v.department_id || isTriageRoom(x));
           setRooms(r);
           if (v.consultation_room) {
             const existing = r.find(x => x.room_name === v.consultation_room);
             if (existing) setRoomId(existing.room_name);
           }
-        } catch { /* rooms are non-critical */ }
+        } catch {}
       }
 
       if (dRes.status === 'fulfilled') {
@@ -172,7 +178,7 @@ export default function TriagePage() {
         const items: Doctor[] = Array.isArray(raw)
           ? (raw as Doctor[])
           : ((raw as { items: Doctor[] }).items ?? []);
-        setDoctors(items.filter((u: Doctor & { role?: string }) => u.role === 'doctor' || true));
+        setDoctors(items.filter((u: Doctor) => u.role === 'doctor'));
       }
     } finally {
       setLoading(false);
@@ -181,7 +187,6 @@ export default function TriagePage() {
 
   useEffect(() => { load(); }, [id]);
 
-  // Auto-derive priority as vitals change
   useEffect(() => {
     setPriority(derivePriority(vitals));
   }, [vitals]);
@@ -207,7 +212,7 @@ export default function TriagePage() {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: '#F1F5F9' }}>
         <div className="flex flex-col items-center gap-3">
-          <Loader2 className="w-7 h-7 animate-spin" style={{ color: '#2563EB' }} />
+          <Loader2 className="w-7 h-7 animate-spin" style={{ color: '#178A3D' }} />
           <p className="text-sm text-gray-500">Loading visit</p>
         </div>
       </div>
@@ -220,7 +225,7 @@ export default function TriagePage() {
         <div className="flex flex-col items-center gap-4 text-center">
           <AlertCircle className="w-10 h-10 text-red-500" />
           <p className="text-base font-semibold text-gray-800">Visit not found</p>
-          <button onClick={load} className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold text-white" style={{ background: '#2563EB' }}>
+          <button onClick={load} className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold text-white" style={{ background: '#178A3D' }}>
             <RefreshCw className="w-3.5 h-3.5" /> Retry
           </button>
         </div>
@@ -233,65 +238,61 @@ export default function TriagePage() {
 
   return (
     <div className="min-h-screen" style={{ background: '#F1F5F9' }}>
-      <div style={{ background: 'linear-gradient(135deg, #0F172A 0%, #1E3A8A 60%, #2563EB 100%)' }}>
-        <div className="max-w-3xl mx-auto px-6 py-5">
+      <div style={{ background: '#FFFFFF', borderBottom: '1px solid var(--border-default)' }}>
+        <div className="w-full px-6 py-4">
           <Link
             to={`/visits/${visit.id}`}
-            className="inline-flex items-center gap-1.5 text-xs text-white/60 hover:text-white/90 mb-4 transition-colors"
+            className="inline-flex items-center gap-1.5 text-xs mb-3 transition-colors"
+            style={{ color: 'var(--text-muted)' }}
           >
             <ChevronLeft className="w-3.5 h-3.5" /> Back to Visit
           </Link>
 
           <div className="flex items-start justify-between gap-4 flex-wrap">
             <div>
-              <div className="flex items-center gap-3 mb-1 flex-wrap">
-                <div className="w-9 h-9 rounded-2xl flex items-center justify-center" style={{ background: 'rgba(217,119,6,0.3)' }}>
-                  <Thermometer className="w-5 h-5 text-amber-300" />
-                </div>
-                <h1 className="text-2xl font-bold text-white">
+              <div className="flex items-center gap-2 mb-1 flex-wrap">
+                <Thermometer className="w-4 h-4" style={{ color: 'var(--text-muted)' }} />
+                <h1 className="text-lg font-semibold tracking-tight" style={{ color: 'var(--text-primary)' }}>
                   {alreadyTriaged ? 'Update Triage' : 'Patient Triage'}
                 </h1>
                 {alreadyTriaged && (
-                  <span className="text-xs font-bold px-2.5 py-1 rounded-full" style={{ background: 'rgba(5,150,105,0.3)', color: '#6EE7B7' }}>
+                  <span className="text-meta font-semibold px-2 py-0.5" style={{ background: 'var(--status-success-bg)', color: 'var(--status-success-text)', border: '1px solid var(--status-success-border)', borderRadius: 'var(--radius-badge)' }}>
                     <CheckCircle2 className="w-3 h-3 inline mr-1" />
                     Already Triaged
                   </span>
                 )}
               </div>
-              <p className="text-sm" style={{ color: 'rgba(255,255,255,0.65)' }}>
-                <span className="font-semibold text-white">{visit.patient_name ?? visit.patient_id}</span>
+              <p className="text-body-sm" style={{ color: 'var(--text-secondary)' }}>
+                <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>{visit.patient_name ?? visit.patient_id}</span>
                 {' · '}Visit #{visit.visit_number}
                 {' · '}{visit.visit_type.replace(/_/g, ' ').toUpperCase()}
               </p>
               {visit.chief_complaint && (
-                <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.5)' }}>
-                  Chief complaint: <span style={{ color: 'rgba(255,255,255,0.75)' }}>{visit.chief_complaint}</span>
+                <p className="text-caption mt-1" style={{ color: 'var(--text-muted)' }}>
+                  Chief complaint: <span style={{ color: 'var(--text-secondary)' }}>{visit.chief_complaint}</span>
                 </p>
               )}
             </div>
 
             <div
-              className="px-4 py-3 rounded-2xl text-center"
-              style={{ background: pStyle.bg, border: `1.5px solid ${pStyle.border}` }}
+              className="px-4 py-2 text-center"
+              style={{ background: pStyle.bg, border: `1px solid ${pStyle.border}`, borderRadius: 'var(--radius-card)' }}
             >
-              <p className="text-[10px] font-bold uppercase tracking-wider mb-0.5" style={{ color: pStyle.color }}>
+              <p className="text-meta font-semibold uppercase tracking-wider" style={{ color: pStyle.color }}>
                 Auto Priority
               </p>
-              <p className="text-lg font-extrabold" style={{ color: pStyle.color }}>
+              <p className="text-base font-bold" style={{ color: pStyle.color }}>
                 {pStyle.label}
-              </p>
-              <p className="text-[10px]" style={{ color: pStyle.color, opacity: 0.7 }}>
-                Based on vitals
               </p>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="max-w-3xl mx-auto px-6 py-8 space-y-6">
+      <div className="w-full px-6 py-8 space-y-6">
         <div>
           <div className="flex items-center gap-2 mb-4">
-            <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: '#FEE2E2' }}>
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: '#FEE2E2' }}>
               <Activity className="w-4 h-4" style={{ color: '#DC2626' }} />
             </div>
             <div>
@@ -311,7 +312,7 @@ export default function TriagePage() {
             ))}
           </div>
 
-          <div className="mt-3 rounded-2xl p-4 bg-white" style={{ border: '1.5px solid #E2E8F0' }}>
+          <div className="mt-3 rounded-lg p-4 bg-white" style={{ border: '1.5px solid #E2E8F0' }}>
             <label className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-2">
               Triage Notes
             </label>
@@ -326,10 +327,10 @@ export default function TriagePage() {
           </div>
         </div>
 
-        <div className="rounded-2xl bg-white p-5" style={{ border: '1.5px solid #E2E8F0' }}>
+        <div className="rounded-lg bg-white p-5" style={{ border: '1.5px solid #E2E8F0' }}>
           <div className="flex items-center gap-2 mb-4">
-            <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: '#EFF6FF' }}>
-              <UserCheck className="w-4 h-4" style={{ color: '#2563EB' }} />
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: '#EFF6FF' }}>
+              <UserCheck className="w-4 h-4" style={{ color: '#178A3D' }} />
             </div>
             <div>
               <h2 className="text-base font-bold text-gray-900">Assign Doctor</h2>
@@ -340,7 +341,7 @@ export default function TriagePage() {
           <select
             value={doctorId}
             onChange={e => setDoctorId(e.target.value)}
-            className="w-full px-4 py-3 rounded-xl text-sm font-medium text-gray-800 outline-none bg-gray-50 transition-colors hover:bg-gray-100"
+            className="w-full px-4 py-3 rounded-lg text-sm font-medium text-gray-800 outline-none bg-gray-50 transition-colors hover:bg-gray-100"
             style={{ border: '1.5px solid #E2E8F0' }}
           >
             <option value=""> -  No doctor assigned yet  - </option>
@@ -350,10 +351,10 @@ export default function TriagePage() {
           </select>
         </div>
 
-        <div className="rounded-2xl bg-white p-5" style={{ border: '1.5px solid #E2E8F0' }}>
+        <div className="rounded-lg bg-white p-5" style={{ border: '1.5px solid #E2E8F0' }}>
           <div className="flex items-center gap-2 mb-4">
-            <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: '#F0FDF4' }}>
-              <MapPin className="w-4 h-4" style={{ color: '#059669' }} />
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: '#F0FDF4' }}>
+              <MapPin className="w-4 h-4" style={{ color: '#178A3D' }} />
             </div>
             <div>
               <h2 className="text-base font-bold text-gray-900">Consultation Room</h2>
@@ -365,7 +366,7 @@ export default function TriagePage() {
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
               <button
                 onClick={() => setRoomId('')}
-                className="px-3 py-2.5 rounded-xl text-xs font-semibold transition-all text-left"
+                className="px-3 py-2.5 rounded-lg text-xs font-semibold transition-all text-left"
                 style={{
                   background: roomId === '' ? '#1E293B' : '#F8FAFC',
                   color: roomId === '' ? 'white' : '#64748B',
@@ -382,16 +383,16 @@ export default function TriagePage() {
                     key={r.id}
                     onClick={() => setRoomId(isSelected ? '' : r.room_name)}
                     disabled={isOccupied && !isSelected}
-                    className="px-3 py-2.5 rounded-xl text-xs font-semibold text-left transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-3 py-2.5 rounded-lg text-xs font-semibold text-left transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                     style={{
-                      background: isSelected ? '#059669' : isOccupied ? '#FEF2F2' : '#F0FDF4',
+                      background: isSelected ? '#178A3D' : isOccupied ? '#FEF2F2' : '#F0FDF4',
                       color: isSelected ? 'white' : isOccupied ? '#DC2626' : '#166534',
-                      border: `1.5px solid ${isSelected ? '#059669' : isOccupied ? '#FCA5A5' : '#86EFAC'}`,
+                      border: `1.5px solid ${isSelected ? '#178A3D' : isOccupied ? '#FCA5A5' : '#86EFAC'}`,
                     }}
                   >
                     <span className="block font-bold">{r.room_name}</span>
-                    <span className="text-[10px] font-normal opacity-80">
-                      {r.room_number} · {isOccupied ? 'Occupied' : r.status}
+                    <span className="text-micro font-normal opacity-80">
+                      {r.department_name ? `${r.department_name} · ` : ''}{isOccupied ? 'Occupied' : r.status}
                     </span>
                   </button>
                 );
@@ -402,9 +403,9 @@ export default function TriagePage() {
           )}
         </div>
 
-        <div className="rounded-2xl bg-white p-5" style={{ border: '1.5px solid #E2E8F0' }}>
+        <div className="rounded-lg bg-white p-5" style={{ border: '1.5px solid #E2E8F0' }}>
           <div className="flex items-center gap-2 mb-4">
-            <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: '#FEF3C7' }}>
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: '#FEF3C7' }}>
               <AlertCircle className="w-4 h-4" style={{ color: '#D97706' }} />
             </div>
             <div>
@@ -420,7 +421,7 @@ export default function TriagePage() {
                 <button
                   key={p}
                   onClick={() => setPriority(p)}
-                  className="px-3 py-2.5 rounded-xl text-xs font-bold capitalize transition-all"
+                  className="px-3 py-2.5 rounded-lg text-xs font-bold capitalize transition-all"
                   style={{
                     background: priority === p ? s.color : s.bg,
                     color: priority === p ? 'white' : s.color,
@@ -446,7 +447,7 @@ export default function TriagePage() {
           <button
             onClick={handleSubmit}
             disabled={saving}
-            className="flex items-center gap-2 px-8 py-3 rounded-2xl text-sm font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+            className="flex items-center gap-2 px-8 py-3 rounded-lg text-sm font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
             style={{ background: 'linear-gradient(135deg, #D97706, #B45309)' }}
           >
             {saving

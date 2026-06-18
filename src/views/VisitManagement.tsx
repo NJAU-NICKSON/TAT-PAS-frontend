@@ -1,11 +1,15 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Plus, ChevronRight, X, Search, RefreshCw } from 'lucide-react';
+import { Plus, ChevronRight, X, Search, RefreshCw, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
+import TablePagination from '../components/TablePagination';
+import { useTableControls } from '../components/useTableControls';
 import { visitsApi, Visit, CreateVisitPayload, VisitType } from '../api/visits';
 import { departmentsApi, Department } from '../api/departments';
 import { patientsApi } from '../api/patients';
 import { Patient } from '../models/types';
 import { toast } from 'sonner';
+
+type ListResult<T> = T[] | { items?: T[] };
 
 const VISIT_TYPES: { value: VisitType; label: string }[] = [
   { value: 'opd',          label: 'OPD  -  Outpatient'       },
@@ -18,21 +22,21 @@ const VISIT_TYPES: { value: VisitType; label: string }[] = [
 ];
 
 const PRIORITIES = [
-  { value: 'routine',   label: 'Routine',   color: '#059669' },
+  { value: 'routine',   label: 'Routine',   color: '#178A3D' },
   { value: 'urgent',    label: 'Urgent',    color: '#D97706' },
   { value: 'critical',  label: 'Critical',  color: '#DC2626' },
-  { value: 'immediate', label: 'Immediate', color: '#7C3AED' },
+  { value: 'immediate', label: 'Immediate', color: '#178A3D' },
 ];
 
 const STATUS_STYLES: Record<string, { bg: string; color: string; border: string }> = {
-  registered:           { bg: '#EFF6FF', color: '#1D4ED8', border: '#BFDBFE' },
+  registered:           { bg: '#EFF6FF', color: '#0F6E2F', border: '#BFDBFE' },
   triaged:              { bg: '#FFFBEB', color: '#92400E', border: '#FDE68A' },
   waiting_for_doctor:   { bg: '#FFFBEB', color: '#92400E', border: '#FDE68A' },
   in_consultation:      { bg: '#FAF5FF', color: '#6B21A8', border: '#E9D5FF' },
   awaiting_results:     { bg: '#FFFBEB', color: '#92400E', border: '#FDE68A' },
-  treatment_in_progress:{ bg: '#EFF6FF', color: '#1D4ED8', border: '#BFDBFE' },
-  admitted:             { bg: '#EFF6FF', color: '#1D4ED8', border: '#BFDBFE' },
-  in_ward:              { bg: '#EFF6FF', color: '#1D4ED8', border: '#BFDBFE' },
+  treatment_in_progress:{ bg: '#EFF6FF', color: '#0F6E2F', border: '#BFDBFE' },
+  admitted:             { bg: '#EFF6FF', color: '#0F6E2F', border: '#BFDBFE' },
+  in_ward:              { bg: '#EFF6FF', color: '#0F6E2F', border: '#BFDBFE' },
   ready_for_discharge:  { bg: '#F0FDF4', color: '#15803D', border: '#BBF7D0' },
   discharged:           { bg: '#F0FDF4', color: '#15803D', border: '#BBF7D0' },
   cancelled:            { bg: '#FEF2F2', color: '#B91C1C', border: '#FECACA' },
@@ -68,14 +72,13 @@ function PatientSearch({
   const [chip, setChip]           = useState<Patient | null>(null);
   const debounce                  = useRef<ReturnType<typeof setTimeout>>();
 
-  // Keep callback refs so search closure is never stale
   const onSelectRef = useRef(onSelect);
   const onClearRef  = useRef(onClear);
   onSelectRef.current = onSelect;
   onClearRef.current  = onClear;
 
   const doSelect = useCallback((p: Patient) => {
-    selectedPatientRef.current = p;  // sync, immediate
+    selectedPatientRef.current = p;
     setChip(p);
     setResults([]);
     setOpen(false);
@@ -89,7 +92,6 @@ function PatientSearch({
       const res = await patientsApi.search(q, 0, 8);
       const items: Patient[] = res.data.patients ?? [];
       if (items.length === 1) {
-        // Single result  -  auto-select immediately (MRN lookups always return 1)
         setQuery(`${items[0].first_name} ${items[0].last_name}`);
         doSelect(items[0]);
       } else if (items.length > 1) {
@@ -99,13 +101,13 @@ function PatientSearch({
         setResults([]);
         setOpen(false);
       }
-    } catch { /* silent */ } finally { setSearching(false); }
+    } catch {} finally { setSearching(false); }
   }, [doSelect]);
 
   const handleChange = (v: string) => {
     setQuery(v);
     setChip(null);
-    selectedPatientRef.current = null;  // clear ref immediately (sync)
+    selectedPatientRef.current = null;
     onClearRef.current();
     clearTimeout(debounce.current);
     debounce.current = setTimeout(() => doSearch(v), 350);
@@ -164,7 +166,7 @@ function PatientSearch({
       {open && results.length > 0 && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-          <div className="absolute top-full left-0 right-0 mt-1 rounded-xl overflow-hidden z-20"
+          <div className="absolute top-full left-0 right-0 mt-1 rounded-lg overflow-hidden z-20"
             style={{ background: 'var(--bg-card)', border: '1px solid var(--border-default)', boxShadow: 'var(--shadow-elevated)' }}>
             {results.map(p => (
               <button key={p.id} type="button"
@@ -198,7 +200,6 @@ function NewVisitModal({ departments, onSave, onClose }: {
     priority: 'routine',
   });
 
-  // Use a ref so handleSubmit always reads the current patient synchronously
   const selectedPatientRef = useRef<Patient | null>(null);
 
   const set = (k: keyof CreateVisitPayload, v: string) =>
@@ -206,7 +207,7 @@ function NewVisitModal({ departments, onSave, onClose }: {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const patient = selectedPatientRef.current;   // always current, no stale closure
+    const patient = selectedPatientRef.current;
     if (!patient) {
       toast.error('Please search for and select a patient first.');
       return;
@@ -224,8 +225,14 @@ function NewVisitModal({ departments, onSave, onClose }: {
       const res = await visitsApi.create(payload);
       toast.success(`Visit ${res.data.visit_number} registered`);
       onSave(res.data);
-    } catch (err: any) {
-      toast.error(err?.response?.data?.detail?.message ?? err?.response?.data?.detail ?? 'Failed to create visit');
+    } catch (err) {
+      const detail =
+        typeof err === 'object' &&
+        err !== null &&
+        'response' in err
+          ? (err as { response?: { data?: { detail?: string | { message?: string } } } }).response?.data?.detail
+          : undefined;
+      toast.error(typeof detail === 'string' ? detail : detail?.message ?? 'Failed to create visit');
     } finally {
       setSaving(false);
     }
@@ -238,7 +245,7 @@ function NewVisitModal({ departments, onSave, onClose }: {
         <form
           onSubmit={handleSubmit}
           onClick={e => e.stopPropagation()}
-          className="w-full max-w-lg rounded-2xl overflow-hidden animate-slide-up"
+          className="w-full max-w-lg rounded-lg overflow-hidden animate-slide-up"
           style={{ background: 'var(--bg-card)', border: '1px solid var(--border-default)', boxShadow: 'var(--shadow-modal)' }}
         >
           <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: '1px solid var(--border-default)' }}>
@@ -337,7 +344,8 @@ export default function VisitManagement() {
         departmentsApi.list({ limit: 100 }),
       ]);
       setVisits(Array.isArray(visRes.data) ? visRes.data : []);
-      const deptList = Array.isArray(deptRes.data) ? deptRes.data : (deptRes.data as any).items ?? [];
+      const deptData = deptRes.data as ListResult<Department>;
+      const deptList = Array.isArray(deptData) ? deptData : deptData.items ?? [];
       setDepts(deptList);
     } catch {
       toast.error('Failed to load visits');
@@ -352,6 +360,23 @@ export default function VisitManagement() {
   const filtered = statusFilter === 'all' ? visits
     : statusFilter === 'active' ? visits.filter(v => activeStatuses.includes(v.status))
     : visits.filter(v => v.status === statusFilter);
+
+  const tc = useTableControls<Visit>({
+    data: filtered,
+    initialSortKey: 'registered_at',
+    initialSortDir: 'desc',
+    getSortValue: (v, key) => {
+      switch (key) {
+        case 'visit_number': return v.visit_number;
+        case 'patient':      return v.patient_name;
+        case 'visit_type':   return v.visit_type;
+        case 'status':       return v.status;
+        case 'priority':     return v.priority;
+        case 'registered_at': return v.registered_at;
+        default: return (v as unknown as Record<string, unknown>)[key];
+      }
+    },
+  });
 
   const priorityStyle = (p: string) => {
     const found = PRIORITIES.find(pr => pr.value === p);
@@ -387,7 +412,7 @@ export default function VisitManagement() {
         </div>
       </div>
 
-      <div className="flex items-center gap-1 p-1 rounded-xl" style={{ background: 'var(--bg-base)', border: '1px solid var(--border-default)' }}>
+      <div className="flex items-center gap-1 p-1 rounded-lg" style={{ background: 'var(--bg-base)', border: '1px solid var(--border-default)' }}>
         {[
           { key: 'all',        label: 'All',        count: visits.length },
           { key: 'active',     label: 'Active',     count: visits.filter(v => activeStatuses.includes(v.status)).length },
@@ -412,13 +437,33 @@ export default function VisitManagement() {
         ))}
       </div>
 
-      <div className="rounded-xl overflow-hidden" style={{ border: '1px solid var(--border-default)', boxShadow: 'var(--shadow-card)' }}>
+      <div className="rounded-lg overflow-hidden" style={{ border: '1px solid var(--border-default)', boxShadow: 'var(--shadow-card)' }}>
         <table className="w-full text-body-sm">
           <thead>
             <tr style={{ background: 'var(--bg-base)', borderBottom: '1px solid var(--border-default)' }}>
-              {['Visit #', 'Patient', 'Type', 'Status', 'Priority', 'Registered', ''].map(h => (
-                <th key={h} className="px-4 py-3 text-left text-caption font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{h}</th>
-              ))}
+              {([
+                ['Visit #', 'visit_number'], ['Patient', 'patient'], ['Type', 'visit_type'],
+                ['Status', 'status'], ['Priority', 'priority'], ['Registered', 'registered_at'], ['', ''],
+              ] as [string, string][]).map(([h, sortK]) => {
+                const active = sortK && tc.sortKey === sortK;
+                return (
+                  <th
+                    key={h || 'actions'}
+                    onClick={sortK ? () => tc.toggleSort(sortK) : undefined}
+                    className={`px-4 py-3 text-left text-caption font-semibold uppercase tracking-wider ${sortK ? 'cursor-pointer select-none' : ''}`}
+                    style={{ color: 'var(--text-muted)' }}
+                  >
+                    <span className="inline-flex items-center gap-1.5">
+                      {h}
+                      {sortK && (active
+                        ? (tc.sortDir === 'asc'
+                            ? <ChevronUp className="w-3.5 h-3.5" style={{ color: 'var(--clinical-600)' }} />
+                            : <ChevronDown className="w-3.5 h-3.5" style={{ color: 'var(--clinical-600)' }} />)
+                        : <ChevronsUpDown className="w-3.5 h-3.5" style={{ color: 'var(--text-disabled)' }} />)}
+                    </span>
+                  </th>
+                );
+              })}
             </tr>
           </thead>
           <tbody>
@@ -434,14 +479,21 @@ export default function VisitManagement() {
               <tr>
                 <td colSpan={7} className="px-4 py-12 text-center text-body-sm" style={{ color: 'var(--text-muted)' }}>No visits found.</td>
               </tr>
-            ) : filtered.map((v, i) => {
+            ) : tc.pageRows.map((v, i) => {
               const st = STATUS_STYLES[v.status] ?? STATUS_STYLES.registered;
               const pr = priorityStyle(v.priority);
               return (
                 <tr key={v.id} style={{ borderTop: '1px solid var(--border-default)', background: i % 2 === 1 ? 'var(--bg-base)' : 'var(--bg-card)' }}>
                   <td className="px-4 py-3 font-bold font-mono text-body-sm" style={{ color: 'var(--text-primary)' }}>{v.visit_number}</td>
                   <td className="px-4 py-3 font-semibold" style={{ color: 'var(--text-primary)' }}>
-                    {v.patient_name ?? 'Unknown Patient'}
+                    <div>
+                      <div>{v.patient_name ?? 'Unknown Patient'}</div>
+                      {(v.ward_name || v.bed_label) && (
+                        <div className="text-caption font-normal mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                          {[v.ward_name, v.bed_label].filter(Boolean).join(' · ')}
+                        </div>
+                      )}
+                    </div>
                   </td>
                   <td className="px-4 py-3 capitalize" style={{ color: 'var(--text-secondary)' }}>{v.visit_type.replace('_', ' ')}</td>
                   <td className="px-4 py-3">
@@ -472,6 +524,13 @@ export default function VisitManagement() {
             })}
           </tbody>
         </table>
+        {!isLoading && filtered.length > 0 && (
+          <TablePagination
+            page={tc.page} pageCount={tc.pageCount} pageSize={tc.pageSize}
+            total={tc.total} rangeStart={tc.rangeStart} rangeEnd={tc.rangeEnd}
+            setPage={tc.setPage} setPageSize={tc.setPageSize}
+          />
+        )}
       </div>
 
       {showNew && (

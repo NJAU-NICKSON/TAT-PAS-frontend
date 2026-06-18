@@ -22,7 +22,7 @@ const STAGE_LABELS = [
   { label: 'Admin', short: 'Admin' },
 ] as const;
 
-const STAGE_SLA = [5, 10, 30, 20, 15]; // minutes per stage
+const STAGE_SLA = [5, 10, 30, 20, 15];
 
 function calculateStageDuration(timestamps: PrescriptionTimestamps) {
   const times = [
@@ -92,7 +92,7 @@ export function TATProgressBar({ timestamps, className }: TATProgressBarProps) {
             <div key={idx} className="flex flex-col items-center gap-0.5 min-w-[4rem]">
               <span className="font-semibold">{stage.short}</span>
               <span>{Math.round(durations[idx])}m</span>
-              <span className="text-[10px] opacity-75">{STAGE_SLA[idx]}m SLA</span>
+              <span className="text-micro opacity-75">{STAGE_SLA[idx]}m SLA</span>
             </div>
           ))}
         </div>

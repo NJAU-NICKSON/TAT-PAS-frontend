@@ -91,7 +91,6 @@ export default function PrescriptionFormPage() {
     setMedications((prev) =>
       prev.map((med, i) => (i === index ? { ...med, [field]: value } : med))
     );
-    // Clear specific field error
     if (errors.meds?.[index]) {
       setErrors((prev) => {
         const newMeds = [...(prev.meds ?? [])];
@@ -167,7 +166,7 @@ export default function PrescriptionFormPage() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
+    <div className="w-full max-w-4xl space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">New Prescription</h1>
         <p className="text-gray-500 text-sm mt-1">Create a new prescription order for a patient</p>
@@ -180,7 +179,7 @@ export default function PrescriptionFormPage() {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+        <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
           <h2 className="text-base font-semibold text-gray-800 mb-4">Patient</h2>
           <div className="relative">
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -215,7 +214,7 @@ export default function PrescriptionFormPage() {
                       key={p.id}
                       type="button"
                       onClick={() => selectPatient(p.id, `${p.first_name} ${p.last_name}`)}
-                      className="w-full text-left px-4 py-2.5 hover:bg-blue-50 text-sm"
+                      className="w-full text-left px-4 py-2.5 hover:bg-green-50 text-sm"
                     >
                       <span className="font-medium text-gray-800">
                         {p.first_name} {p.last_name}
@@ -235,13 +234,13 @@ export default function PrescriptionFormPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+        <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-base font-semibold text-gray-800">Medications</h2>
             <button
               type="button"
               onClick={addMedication}
-              className="flex items-center gap-1.5 text-sm text-[#1e3a5f] hover:text-blue-700 font-medium"
+              className="flex items-center gap-1.5 text-sm text-[#1e3a5f] hover:text-green-700 font-medium"
             >
               <Plus className="h-4 w-4" />
               Add Medication
@@ -349,7 +348,7 @@ export default function PrescriptionFormPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+        <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
           <h2 className="text-base font-semibold text-gray-800 mb-4">Notes</h2>
           <FormField
             label="Clinical Notes"

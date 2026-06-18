@@ -12,7 +12,24 @@ import { visitsApi, Visit, VitalSigns } from '../api/visits';
 import { auditsApi } from '../api/audits';
 import { Prescription, Patient, AuditRecord } from '../models/types';
 import { useAuth } from '../context/AuthContext';
+import { printDispensingReceipt } from '../lib/printDocs';
+import { withDoctorTitle } from '../lib/utils';
 import { toast } from 'sonner';
+
+type ListResult<T> = T[] | { items?: T[] };
+
+async function printReceiptWithFollowUp(rx: Prescription): Promise<void> {
+  let followUp;
+  if (rx.visit_id) {
+    try {
+      const v = (await visitsApi.getById(rx.visit_id)).data;
+      if (v.follow_up_date || v.follow_up_instructions) {
+        followUp = { follow_up_date: v.follow_up_date, follow_up_instructions: v.follow_up_instructions };
+      }
+    } catch {}
+  }
+  printDispensingReceipt(rx, followUp);
+}
 
 const PRIORITY_STYLE: Record<string, { bg: string; color: string; border: string }> = {
   routine:   { bg: '#F0FDF4', color: '#166534', border: '#86EFAC' },
@@ -71,11 +88,11 @@ function VitalCell({ icon, label, value, unit, warn }: {
 }) {
   if (value === undefined || value === null) return null;
   return (
-    <div className="flex items-center gap-2 px-3 py-2 rounded-xl"
+    <div className="flex items-center gap-2 px-3 py-2 rounded-lg"
       style={{ background: warn ? '#FEF2F2' : '#F8FAFC', border: `1px solid ${warn ? '#FCA5A5' : '#E2E8F0'}` }}>
       <span style={{ color: warn ? '#DC2626' : '#64748B' }}>{icon}</span>
       <div>
-        <p className="text-[10px] text-gray-400 uppercase tracking-wide">{label}</p>
+        <p className="text-micro text-gray-400 uppercase tracking-wide">{label}</p>
         <p className={`text-sm font-bold ${warn ? 'text-red-600' : 'text-gray-800'}`}>
           {value}{unit && <span className="text-xs font-normal text-gray-400 ml-0.5">{unit}</span>}
         </p>
@@ -94,7 +111,7 @@ const SEV: Record<string, { bg: string; color: string }> = {
 function SevBadge({ sev }: { sev: string }) {
   const s = SEV[sev] ?? SEV.low;
   return (
-    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full uppercase"
+    <span className="text-micro font-bold px-1.5 py-0.5 rounded-full uppercase"
       style={{ background: s.bg, color: s.color }}>
       {sev}
     </span>
@@ -122,13 +139,13 @@ function DispensePanel({ rx, onSuccess, onCancel }: {
   };
 
   return (
-    <div className="border-t border-emerald-200 bg-emerald-50 p-4 space-y-3">
-      <p className="text-xs font-bold text-emerald-800 uppercase tracking-wide">Confirm Dispense</p>
+    <div className="border-t border-green-200 bg-green-50 p-4 space-y-3">
+      <p className="text-xs font-bold text-green-800 uppercase tracking-wide">Confirm Dispense</p>
 
-      <div className="rounded-xl border border-emerald-200 bg-white overflow-hidden">
-        <div className="bg-emerald-600 px-4 py-2 flex items-center justify-between">
+      <div className="rounded-lg border border-green-200 bg-white overflow-hidden">
+        <div className="bg-green-700 px-4 py-2 flex items-center justify-between">
           <span className="text-xs font-bold text-white">Dispensing Receipt</span>
-          <button onClick={() => window.print()} className="flex items-center gap-1 text-xs text-white/70 hover:text-white">
+          <button onClick={() => printReceiptWithFollowUp(rx)} className="flex items-center gap-1 text-xs text-white/70 hover:text-white">
             <Printer className="w-3 h-3" /> Print
           </button>
         </div>
@@ -148,7 +165,7 @@ function DispensePanel({ rx, onSuccess, onCancel }: {
           {rx.auditor_name && (
             <div className="flex justify-between text-xs">
               <span className="text-gray-400">Approved by</span>
-              <span className="font-semibold text-emerald-700">{rx.auditor_name}</span>
+              <span className="font-semibold text-green-800">{rx.auditor_name}</span>
             </div>
           )}
           <div className="border-t border-dashed border-gray-200 my-1" />
@@ -171,23 +188,23 @@ function DispensePanel({ rx, onSuccess, onCancel }: {
           <label className="block text-xs font-medium text-gray-600 mb-1">Receipt No. (optional)</label>
           <input value={receipt} onChange={e => setReceipt(e.target.value)}
             placeholder="RCP-20250321-001"
-            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500" />
         </div>
         <div>
           <label className="block text-xs font-medium text-gray-600 mb-1">Pharmacist Notes (optional)</label>
           <input value={comment} onChange={e => setComment(e.target.value)}
             placeholder="Counselling given, substitutions"
-            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500" />
         </div>
       </div>
 
       <div className="flex justify-end gap-2">
-        <button onClick={onCancel}
-          className="px-4 py-2 text-sm font-medium text-gray-600 border border-gray-300 rounded-xl bg-white hover:bg-gray-50">
+        <button onClick={onCancel} aria-label="Close"
+          className="px-4 py-2 text-sm font-medium text-gray-600 border border-gray-300 rounded-lg bg-white hover:bg-gray-50">
           Cancel
         </button>
         <button onClick={go} disabled={busy}
-          className="flex items-center gap-2 px-5 py-2 text-sm font-semibold text-white rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40">
+          className="flex items-center gap-2 px-5 py-2 text-sm font-semibold text-white rounded-lg bg-green-700 hover:bg-green-800 disabled:opacity-40">
           {busy && <Loader2 className="w-4 h-4 animate-spin" />}
           Confirm Dispense
         </button>
@@ -202,8 +219,8 @@ interface DetailData {
   flags?: AuditRecord[];
 }
 
-function DetailPanel({ rx, onClose, onDispensed }: {
-  rx: Prescription; onClose: () => void; onDispensed: () => void;
+function DetailPanel({ rx, onDispensed }: {
+  rx: Prescription; onDispensed: () => void;
 }) {
   const navigate = useNavigate();
   const [data, setData] = useState<DetailData>({});
@@ -223,7 +240,10 @@ function DetailPanel({ rx, onClose, onDispensed }: {
         ]);
         const patient = patRes.status === 'fulfilled' ? patRes.value.data : undefined;
         const flags = flagRes.status === 'fulfilled'
-          ? (Array.isArray(flagRes.value.data) ? flagRes.value.data : (flagRes.value.data as any).items ?? [])
+          ? (() => {
+              const auditData = flagRes.value.data as ListResult<AuditRecord>;
+              return Array.isArray(auditData) ? auditData : auditData.items ?? [];
+            })()
           : [];
 
         let visit: Visit | undefined;
@@ -231,7 +251,7 @@ function DetailPanel({ rx, onClose, onDispensed }: {
           try {
             const vRes = await visitsApi.getById(patient.current_visit_id);
             visit = vRes.data;
-          } catch { /* no visit */ }
+          } catch {}
         }
 
         if (!cancelled) setData({ patient, visit, flags });
@@ -270,14 +290,14 @@ function DetailPanel({ rx, onClose, onDispensed }: {
       ) : (
         <div className="p-4 space-y-4">
 
-          <div className="rounded-xl border border-gray-200 overflow-hidden">
+          <div className="rounded-lg border border-gray-200 overflow-hidden">
             <div className="flex items-center justify-between px-4 py-2.5 bg-gray-50 border-b border-gray-200">
               <span className="text-xs font-bold text-gray-600 uppercase tracking-wide flex items-center gap-1.5">
                 <User className="w-3.5 h-3.5" /> Patient
               </span>
               {patient && (
                 <button onClick={() => navigate(`/patients/${patient.id}`)}
-                  className="flex items-center gap-1 text-xs text-blue-600 hover:underline">
+                  className="flex items-center gap-1 text-xs text-green-700 hover:underline">
                   View record <ExternalLink className="w-3 h-3" />
                 </button>
               )}
@@ -306,11 +326,13 @@ function DetailPanel({ rx, onClose, onDispensed }: {
                 </div>
                 {patient.allergies && patient.allergies.length > 0 && (
                   <div className="col-span-2 mt-1 p-2 rounded-lg bg-red-50 border border-red-200">
-                    <p className="text-[10px] font-bold text-red-700 uppercase tracking-wide mb-1">s  Allergies</p>
+                    <p className="text-micro font-bold text-red-700 uppercase tracking-wide mb-1">s  Allergies</p>
                     <div className="flex flex-wrap gap-1">
                       {patient.allergies.map((a, i) => (
                         <span key={i} className="px-2 py-0.5 text-xs font-semibold rounded-full bg-red-100 text-red-800 border border-red-300">
-                          {typeof a === 'object' ? (a as any).substance ?? JSON.stringify(a) : a}
+                          {typeof a === 'object'
+                            ? String((a as Record<string, unknown>).substance ?? JSON.stringify(a))
+                            : a}
                         </span>
                       ))}
                     </div>
@@ -318,7 +340,7 @@ function DetailPanel({ rx, onClose, onDispensed }: {
                 )}
                 {patient.chronic_conditions && patient.chronic_conditions.length > 0 && (
                   <div className="col-span-2 mt-1">
-                    <p className="text-[10px] font-bold text-amber-700 uppercase tracking-wide mb-1">Chronic Conditions</p>
+                    <p className="text-micro font-bold text-amber-700 uppercase tracking-wide mb-1">Chronic Conditions</p>
                     <div className="flex flex-wrap gap-1">
                       {patient.chronic_conditions.map((c, i) => (
                         <span key={i} className="px-2 py-0.5 text-xs rounded-full bg-amber-50 text-amber-800 border border-amber-200">{c}</span>
@@ -333,32 +355,32 @@ function DetailPanel({ rx, onClose, onDispensed }: {
           </div>
 
           {visit && (
-            <div className="rounded-xl border border-blue-200 overflow-hidden">
-              <div className="flex items-center justify-between px-4 py-2.5 bg-blue-50 border-b border-blue-200">
-                <span className="text-xs font-bold text-blue-700 uppercase tracking-wide flex items-center gap-1.5">
+            <div className="rounded-lg border border-green-200 overflow-hidden">
+              <div className="flex items-center justify-between px-4 py-2.5 bg-green-50 border-b border-green-200">
+                <span className="text-xs font-bold text-green-700 uppercase tracking-wide flex items-center gap-1.5">
                   <Activity className="w-3.5 h-3.5" /> Triage &amp; Visit
                 </span>
                 <button onClick={() => navigate(`/visits/${visit.id}`)}
-                  className="flex items-center gap-1 text-xs text-blue-600 hover:underline">
+                  className="flex items-center gap-1 text-xs text-green-700 hover:underline">
                   {visit.visit_number} <ExternalLink className="w-3 h-3" />
                 </button>
               </div>
               <div className="px-4 py-3 space-y-3">
                 {visit.chief_complaint && (
                   <div>
-                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Chief Complaint</p>
+                    <p className="text-micro font-bold text-gray-400 uppercase tracking-wide">Chief Complaint</p>
                     <p className="text-sm text-gray-800 mt-0.5">{visit.chief_complaint}</p>
                   </div>
                 )}
                 {visit.diagnosis && (
                   <div>
-                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Diagnosis</p>
+                    <p className="text-micro font-bold text-gray-400 uppercase tracking-wide">Diagnosis</p>
                     <p className="text-sm text-gray-800 mt-0.5">{visit.diagnosis}</p>
                   </div>
                 )}
                 {v && (
                   <div>
-                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-2">Vital Signs</p>
+                    <p className="text-micro font-bold text-gray-400 uppercase tracking-wide mb-2">Vital Signs</p>
                     <div className="grid grid-cols-3 gap-2">
                       {v.blood_pressure_systolic !== undefined && v.blood_pressure_diastolic !== undefined && (
                         <VitalCell icon={<Heart className="w-3.5 h-3.5" />} label="BP"
@@ -385,25 +407,25 @@ function DetailPanel({ rx, onClose, onDispensed }: {
                   </div>
                 )}
                 {visit.assigned_doctor_name && (
-                  <p className="text-xs text-gray-500">Assigned to: <span className="font-semibold text-gray-700">Dr. {visit.assigned_doctor_name}</span></p>
+                  <p className="text-xs text-gray-500">Assigned to: <span className="font-semibold text-gray-700">{withDoctorTitle(visit.assigned_doctor_name)}</span></p>
                 )}
               </div>
             </div>
           )}
 
-          <div className="rounded-xl border border-gray-200 overflow-hidden">
+          <div className="rounded-lg border border-gray-200 overflow-hidden">
             <div className="flex items-center justify-between px-4 py-2.5 bg-gray-50 border-b border-gray-200">
               <span className="text-xs font-bold text-gray-600 uppercase tracking-wide flex items-center gap-1.5">
                 <FlaskConical className="w-3.5 h-3.5" /> Prescription
               </span>
               <div className="flex items-center gap-3 text-xs text-gray-400">
-                <span>Dr. {rx.doctor_name ?? rx.doctor_id}</span>
+                <span>{withDoctorTitle(rx.doctor_name) || rx.doctor_id}</span>
                 <span>{fmtTime(rx.ordered_at ?? rx.created_at)}</span>
               </div>
             </div>
             <div className="px-4 py-3 space-y-3">
               {rx.medications.map((m, i) => (
-                <div key={i} className="p-3 rounded-xl bg-gray-50 border border-gray-200">
+                <div key={i} className="p-3 rounded-lg bg-gray-50 border border-gray-200">
                   <p className="font-bold text-gray-800 text-sm">{m.name}</p>
                   <div className="mt-1.5 flex flex-wrap gap-2">
                     {[
@@ -427,7 +449,7 @@ function DetailPanel({ rx, onClose, onDispensed }: {
           </div>
 
           {flags && flags.length > 0 && (
-            <div className="rounded-xl border border-amber-200 overflow-hidden">
+            <div className="rounded-lg border border-amber-200 overflow-hidden">
               <div className="px-4 py-2.5 bg-amber-50 border-b border-amber-200">
                 <span className="text-xs font-bold text-amber-700 uppercase tracking-wide flex items-center gap-1.5">
                   <Flag className="w-3.5 h-3.5" /> Audit Flags ({flags.length})
@@ -444,7 +466,7 @@ function DetailPanel({ rx, onClose, onDispensed }: {
                       <p className="text-xs text-gray-500 mt-0.5">' {f.recommendation}</p>
                     )}
                     {f.resolved && (
-                      <p className="text-xs text-emerald-600 mt-0.5">oe" Resolved · {f.resolution_note}</p>
+                      <p className="text-xs text-green-700 mt-0.5">✓ Resolved · {f.resolution_note}</p>
                     )}
                   </div>
                 ))}
@@ -454,7 +476,7 @@ function DetailPanel({ rx, onClose, onDispensed }: {
 
           <div className="flex items-center justify-between pt-1 flex-wrap gap-2">
             <button onClick={() => navigate(`/prescriptions/${rx.id}`)}
-              className="flex items-center gap-1.5 text-xs text-blue-600 hover:underline font-medium">
+              className="flex items-center gap-1.5 text-xs text-green-700 hover:underline font-medium">
               Full prescription record <ExternalLink className="w-3 h-3" />
             </button>
 
@@ -466,13 +488,22 @@ function DetailPanel({ rx, onClose, onDispensed }: {
                       await prescriptionsApi.approveForPharmacy(rx.id);
                       toast.success('Prescription approved  -  ready to dispense');
                       onDispensed();
-                    } catch (e: any) {
-                      const msg = e?.response?.data?.detail?.message ?? 'Could not approve  -  check for unresolved flags';
+                    } catch (e) {
+                      const detail =
+                        typeof e === 'object' &&
+                        e !== null &&
+                        'response' in e
+                          ? (e as { response?: { data?: { detail?: string | { message?: string } } } }).response?.data?.detail
+                          : undefined;
+                      const msg =
+                        typeof detail === 'string'
+                          ? detail
+                          : detail?.message ?? 'Could not approve - check for unresolved flags';
                       toast.error(msg);
                     }
                   }}
-                  className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white rounded-xl transition-colors"
-                  style={{ background: rx.status === 'flagged' ? '#EA580C' : '#7C3AED' }}
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white rounded-lg transition-colors"
+                  style={{ background: rx.status === 'flagged' ? '#EA580C' : '#178A3D' }}
                 >
                   <CheckCircle2 className="w-4 h-4" />
                   Approve for Pharmacy
@@ -481,7 +512,7 @@ function DetailPanel({ rx, onClose, onDispensed }: {
 
               {rx.status === 'verified' && !showDispense && (
                 <button onClick={() => setShowDispense(true)}
-                  className="flex items-center gap-2 px-5 py-2 text-sm font-semibold text-white rounded-xl bg-emerald-600 hover:bg-emerald-700 transition-colors">
+                  className="flex items-center gap-2 px-5 py-2 text-sm font-semibold text-white rounded-lg bg-green-700 hover:bg-green-800 transition-colors">
                   <FlaskConical className="w-4 h-4" />
                   Dispense
                 </button>
@@ -515,7 +546,7 @@ function RxRow({ rx, accentBorder, onRefresh }: {
   const breached = waitMin !== null && waitMin >= DISPENSE_SLA_MIN;
 
   return (
-    <div className="rounded-2xl overflow-hidden bg-white"
+    <div className="rounded-lg overflow-hidden bg-white"
       style={{ border: `1.5px solid ${open ? accentBorder : breached ? '#FCA5A5' : '#E2E8F0'}` }}>
 
       <button onClick={() => setOpen(o => !o)}
@@ -528,12 +559,12 @@ function RxRow({ rx, accentBorder, onRefresh }: {
             <span className="font-bold text-sm text-gray-900 font-mono">
               {rx.rx_number ?? `RX-${rx.id.slice(0, 8).toUpperCase()}`}
             </span>
-            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full border"
+            <span className="text-micro font-bold px-1.5 py-0.5 rounded-full border"
               style={{ background: p.bg, color: p.color, borderColor: p.border }}>
               {(rx.priority ?? 'routine').toUpperCase()}
             </span>
             {breached && (
-              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-red-100 text-red-700 border border-red-300 flex items-center gap-1">
+              <span className="text-micro font-bold px-1.5 py-0.5 rounded-full bg-red-100 text-red-700 border border-red-300 flex items-center gap-1">
                 <AlertTriangle className="w-2.5 h-2.5" /> SLA BREACH
               </span>
             )}
@@ -543,7 +574,7 @@ function RxRow({ rx, accentBorder, onRefresh }: {
             {rx.medications.map(m => `${m.name} ${m.dose}`).join(' · ')}
           </p>
           {rx.auditor_name && (
-            <p className="text-xs text-emerald-600 mt-1">oe" Approved by {rx.auditor_name}</p>
+            <p className="text-xs text-green-700 mt-1">✓ Approved by {rx.auditor_name}</p>
           )}
         </div>
 
@@ -554,7 +585,7 @@ function RxRow({ rx, accentBorder, onRefresh }: {
       </button>
 
       {open && (
-        <DetailPanel rx={rx} onClose={() => setOpen(false)} onDispensed={() => { setOpen(false); onRefresh(); }} />
+        <DetailPanel rx={rx} onDispensed={() => { setOpen(false); onRefresh(); }} />
       )}
     </div>
   );
@@ -564,9 +595,9 @@ function DispensedRow({ rx }: { rx: Prescription }) {
   const navigate = useNavigate();
   return (
     <button onClick={() => navigate(`/prescriptions/${rx.id}`)}
-      className="w-full text-left rounded-2xl p-4 flex items-center gap-3 opacity-60 hover:opacity-80 transition-all hover:shadow-sm"
+      className="w-full text-left rounded-lg p-4 flex items-center gap-3 opacity-60 hover:opacity-80 transition-all hover:shadow-sm"
       style={{ background: '#F8FAFC', border: '1.5px solid #E2E8F0' }}>
-      <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+      <CheckCircle2 className="w-4 h-4 text-green-700 flex-shrink-0" />
       <div className="flex-1 min-w-0">
         <p className="text-sm font-semibold text-gray-700 font-mono truncate">
           {rx.rx_number ?? `RX-${rx.id.slice(0, 8).toUpperCase()}`}
@@ -576,9 +607,9 @@ function DispensedRow({ rx }: { rx: Prescription }) {
         </p>
       </div>
       <div className="text-right flex-shrink-0">
-        <p className="text-xs font-semibold text-emerald-700">Dispensed</p>
+        <p className="text-xs font-semibold text-green-800">Dispensed</p>
         {rx.dispensed_at && (
-          <p className="text-[10px] text-gray-400">{fmtTime(rx.dispensed_at)}</p>
+          <p className="text-micro text-gray-400">{fmtTime(rx.dispensed_at)}</p>
         )}
       </div>
       <ChevronRight className="w-4 h-4 text-gray-400" />
@@ -601,13 +632,13 @@ function Section({ icon, title, count, iconColor, badgeBg, badgeColor, children,
             style={{ background: badgeBg, color: badgeColor }}>{count}</span>
         </h2>
         {lastRefresh !== undefined && (
-          <p className="text-[10px] text-gray-400 tabular-nums">
+          <p className="text-micro text-gray-400 tabular-nums">
             {new Date(lastRefresh).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
           </p>
         )}
       </div>
       {count === 0 ? (
-        <div className="rounded-2xl bg-white border border-gray-200 p-6 text-center">
+        <div className="rounded-lg bg-white border border-gray-200 p-6 text-center">
           <p className="text-sm text-gray-400">{emptyText}</p>
         </div>
       ) : (
@@ -699,38 +730,31 @@ export default function PharmacyQueuePage() {
 
   return (
     <div className="min-h-screen" style={{ background: '#F1F5F9' }}>
-      <div style={{ background: 'linear-gradient(135deg, #0F172A 0%, #1E3A8A 60%, #2563EB 100%)' }}>
-        <div className="px-6 py-5">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center">
-                <FlaskConical className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-white">Pharmacy Queue</h1>
-                <p className="text-xs text-emerald-200 mt-0.5">Click any prescription to see full patient & triage details</p>
-              </div>
-            </div>
-            <button onClick={load} disabled={isLoading}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-white/15 text-white hover:bg-white/25 disabled:opacity-50">
-              <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
-              Refresh
-            </button>
-          </div>
-          <div className="grid grid-cols-4 gap-3">
-            {[
-              { label: 'In Pipeline', value: totalPending,    color: 'text-white' },
-              { label: 'Ready',       value: verified.length, color: verified.length > 0 ? 'text-emerald-300' : 'text-white' },
-              { label: 'SLA Breach',  value: slaBreached,     color: slaBreached > 0 ? 'text-red-300' : 'text-white' },
-              { label: 'STAT',        value: statCount,       color: statCount > 0 ? 'text-rose-300' : 'text-white' },
-            ].map(s => (
-              <div key={s.label} className="bg-white/10 rounded-xl p-3 text-center">
-                <p className={`text-2xl font-extrabold tabular-nums ${s.color}`}>{s.value}</p>
-                <p className="text-[10px] font-semibold text-white/60 uppercase tracking-wide mt-0.5">{s.label}</p>
-              </div>
-            ))}
-          </div>
+      <div className="flex items-center justify-between px-6 h-12" style={{ background: '#FFFFFF', borderBottom: '1px solid var(--border-default)' }}>
+        <div className="flex items-center gap-2">
+          <FlaskConical className="w-4 h-4" style={{ color: 'var(--text-muted)' }} />
+          <h1 className="text-base font-semibold tracking-tight" style={{ color: 'var(--text-primary)' }}>Pharmacy Queue</h1>
         </div>
+        <button onClick={load} disabled={isLoading}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold disabled:opacity-50"
+          style={{ background: 'var(--surface-2)', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-button)', color: 'var(--text-secondary)' }}>
+          <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+          Refresh
+        </button>
+      </div>
+      <div className="grid grid-cols-4 gap-3 px-6 py-4" style={{ borderBottom: '1px solid var(--border-default)' }}>
+        {[
+          { label: 'In Pipeline', value: totalPending,    danger: false },
+          { label: 'Ready',       value: verified.length, danger: false },
+          { label: 'SLA Breach',  value: slaBreached,     danger: slaBreached > 0 },
+          { label: 'STAT',        value: statCount,       danger: statCount > 0 },
+        ].map(s => (
+          <div key={s.label} className="px-4 py-3"
+            style={{ background: s.danger ? 'var(--status-critical-bg)' : 'var(--bg-card)', border: `1px solid ${s.danger ? 'var(--status-critical-border)' : 'var(--border-default)'}`, borderRadius: 'var(--radius-card)' }}>
+            <p className="text-label" style={{ color: 'var(--text-muted)' }}>{s.label}</p>
+            <p className="font-bold tabular-nums leading-none mt-1.5" style={{ fontSize: '1.75rem', color: s.danger ? 'var(--status-critical-text)' : 'var(--text-primary)' }}>{s.value}</p>
+          </div>
+        ))}
       </div>
 
       <div className="px-6 py-4">
@@ -738,21 +762,21 @@ export default function PharmacyQueuePage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input type="text" value={search} onChange={e => setSearch(e.target.value)}
             placeholder="Search by patient, Rx number, or drug name"
-            className="w-full pl-9 pr-4 py-2.5 text-sm border border-gray-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+            className="w-full pl-9 pr-4 py-2.5 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-green-500" />
         </div>
       </div>
 
       {isLoading ? (
         <div className="flex items-center justify-center py-16">
-          <Loader2 className="w-6 h-6 animate-spin text-emerald-600" />
+          <Loader2 className="w-6 h-6 animate-spin text-green-700" />
         </div>
       ) : (
         <div className="px-6 pb-8 space-y-6">
           <Section icon={<Package className="w-4 h-4" />} title="Ready to Dispense"
-            count={fVerified.length} iconColor="#059669" badgeBg="#D1FAE5" badgeColor="#065F46"
+            count={fVerified.length} iconColor="#178A3D" badgeBg="#C8EED6" badgeColor="#0F6E2F"
             emptyText="No approved prescriptions waiting." lastRefresh={lastRefresh}>
             {fVerified.map(rx => (
-              <RxRow key={rx.id} rx={rx} accentBorder="#6EE7B7" onRefresh={load} />
+              <RxRow key={rx.id} rx={rx} accentBorder="#A7E4BD" onRefresh={load} />
             ))}
           </Section>
 
@@ -768,10 +792,10 @@ export default function PharmacyQueuePage() {
 
           {fSubmitted.length > 0 && (
             <Section icon={<ShieldCheck className="w-4 h-4" />} title="Submitted  -  Awaiting Audit"
-              count={fSubmitted.length} iconColor="#6366F1" badgeBg="#EEF2FF" badgeColor="#4338CA"
+              count={fSubmitted.length} iconColor="#B45309" badgeBg="#FEF3C7" badgeColor="#92400E"
               emptyText="No prescriptions awaiting audit.">
               {fSubmitted.map(rx => (
-                <RxRow key={rx.id} rx={rx} accentBorder="#C7D2FE" onRefresh={load} />
+                <RxRow key={rx.id} rx={rx} accentBorder="#FCD34D" onRefresh={load} />
               ))}
             </Section>
           )}
@@ -787,8 +811,8 @@ export default function PharmacyQueuePage() {
           )}
 
           {totalPending === 0 && dispensed.length === 0 && (
-            <div className="rounded-2xl bg-white border border-gray-200 p-10 text-center">
-              <CheckCircle2 className="w-10 h-10 text-emerald-400 mx-auto mb-3" />
+            <div className="rounded-lg bg-white border border-gray-200 p-10 text-center">
+              <CheckCircle2 className="w-10 h-10 text-green-400 mx-auto mb-3" />
               <p className="text-sm font-semibold text-gray-600">All clear</p>
               <p className="text-xs text-gray-400 mt-1">No prescriptions in the pipeline.</p>
             </div>

@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { User, Lock, Bell, Shield, Info, Check, X, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { usersApi } from '../api/users';
+import { authApi } from '../api/auth';
 
 function Section({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) {
   return (
-    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+    <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
       <div className="flex items-center gap-3 px-6 py-4 border-b border-gray-100 bg-gray-50">
         <span className="text-[#1e3a5f]">{icon}</span>
         <h2 className="font-semibold text-gray-900">{title}</h2>
@@ -42,6 +42,8 @@ export default function SettingsPage() {
     prescription_updates: false,
   });
 
+  const isAdmin = user?.role === 'admin';
+
   const handleChangePassword = async () => {
     setPwError('');
     if (!currentPassword || !newPassword || !confirmPassword) {
@@ -60,14 +62,21 @@ export default function SettingsPage() {
 
     setPwLoading(true);
     try {
-      await usersApi.update(user.id, { password: newPassword });
+      await authApi.changePassword(currentPassword, newPassword);
       setPwSuccess(true);
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
       setTimeout(() => setPwSuccess(false), 3000);
-    } catch (err: any) {
-      setPwError(err?.response?.data?.detail || 'Password change failed.');
+    } catch (err) {
+      const detail =
+        typeof err === 'object' &&
+        err !== null &&
+        'detail' in err &&
+        typeof (err as { detail?: unknown }).detail === 'string'
+          ? (err as { detail: string }).detail
+          : 'Password change failed.';
+      setPwError(detail);
     } finally {
       setPwLoading(false);
     }
@@ -232,12 +241,14 @@ export default function SettingsPage() {
         </div>
       </Section>
 
-      <Section title="About" icon={<Info className="w-4 h-4" />}>
-        <Field label="System" value="TAT-PAS" />
-        <Field label="Version" value="1.0.0" />
-        <Field label="Description" value="Turnaround Time Pharmacy Automation System" />
-        <Field label="Stack" value="FastAPI + React + MongoDB" />
-      </Section>
+      {isAdmin && (
+        <Section title="About" icon={<Info className="w-4 h-4" />}>
+          <Field label="System" value="TAT-PAS" />
+          <Field label="Version" value="1.0.0" />
+          <Field label="Description" value="Turnaround Time Pharmacy Automation System" />
+          <Field label="Stack" value="FastAPI + React + MongoDB" />
+        </Section>
+      )}
     </div>
   );
 }

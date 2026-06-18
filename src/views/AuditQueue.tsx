@@ -1,12 +1,15 @@
 import { useState, useEffect } from 'react';
 import { X, CheckCircle, AlertTriangle, Loader2, ShieldCheck, RefreshCw } from 'lucide-react';
 import Table, { Column } from '../components/Table';
+import TablePagination from '../components/TablePagination';
+import { useTableControls } from '../components/useTableControls';
 import { SeverityBadge, TypeBadge } from '../components/StatusBadge';
 import FormField from '../components/FormField';
 import { useAuditViewModel } from '../viewModels/useAuditViewModel';
 import { AuditRecord } from '../models/types';
 
 type TabValue = 'unresolved' | 'resolved' | 'all';
+type AuditFilters = { resolved?: boolean };
 
 function formatDate(iso?: string): string {
   if (!iso) return 'N/A';
@@ -22,15 +25,13 @@ export default function AuditQueue() {
   const [noteError, setNoteError] = useState('');
   const [typeError, setTypeError] = useState('');
 
-  // Load audits based on active tab
   useEffect(() => {
-    const filters: any = {};
+    const filters: AuditFilters = {};
     if (activeTab === 'unresolved') {
       filters.resolved = false;
     } else if (activeTab === 'resolved') {
       filters.resolved = true;
     }
-    // for 'all', no resolved filter
     vm.loadAudits(filters);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab]);
@@ -64,8 +65,7 @@ export default function AuditQueue() {
     );
     if (ok) {
       setResolveModal(null);
-      // Reload the current tab's audits
-      const filters: any = {};
+      const filters: AuditFilters = {};
       if (activeTab === 'unresolved') filters.resolved = false;
       else if (activeTab === 'resolved') filters.resolved = true;
       vm.loadAudits(filters);
@@ -73,16 +73,34 @@ export default function AuditQueue() {
   };
 
   const handleRefresh = () => {
-    const filters: any = {};
+    const filters: AuditFilters = {};
     if (activeTab === 'unresolved') filters.resolved = false;
     else if (activeTab === 'resolved') filters.resolved = true;
     vm.loadAudits(filters);
   };
 
+  const SEVERITY_RANK: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 };
+  const tc = useTableControls<AuditRecord>({
+    data: vm.audits,
+    initialSortKey: 'created_at',
+    initialSortDir: 'desc',
+    getSortValue: (row, key) => {
+      switch (key) {
+        case 'prescription_id': return row.rx_number ?? '';
+        case 'severity': return SEVERITY_RANK[row.severity] ?? 99;
+        case 'created_by_role': return row.created_by_role;
+        case 'created_at': return row.created_at;
+        case 'resolved_at': return row.resolved_at;
+        default: return (row as unknown as Record<string, unknown>)[key];
+      }
+    },
+  });
+
   const columns: Column<AuditRecord>[] = [
     {
       key: 'prescription_id',
       label: 'Prescription',
+      sortable: true,
       render: (row) => (
         <div className="flex flex-col">
           {row.rx_number
@@ -97,6 +115,7 @@ export default function AuditQueue() {
     {
       key: 'issue',
       label: 'Issue',
+      sortable: true,
       render: (row) => (
         <span className="text-gray-800 max-w-xs block truncate" title={row.issue}>
           {row.issue}
@@ -106,16 +125,19 @@ export default function AuditQueue() {
     {
       key: 'severity',
       label: 'Severity',
+      sortable: true,
       render: (row) => <SeverityBadge severity={row.severity} />,
     },
     {
       key: 'type',
       label: 'Type',
+      sortable: true,
       render: (row) => <TypeBadge type={row.type} />,
     },
     {
       key: 'created_by_role',
       label: 'Raised By',
+      sortable: true,
       render: (row) => (
         <span className="capitalize text-gray-600">{row.created_by_role}</span>
       ),
@@ -123,6 +145,7 @@ export default function AuditQueue() {
     {
       key: 'created_at',
       label: 'Created',
+      sortable: true,
       render: (row) => (
         <span className="text-xs text-gray-500">{formatDate(row.created_at)}</span>
       ),
@@ -222,18 +245,30 @@ export default function AuditQueue() {
         </div>
       )}
 
-      <Table
-        columns={columns}
-        data={vm.audits}
-        isLoading={vm.isLoading}
-        emptyMessage={
-          activeTab === 'unresolved'
-            ? 'No unresolved audit records. All flags have been addressed.'
-            : activeTab === 'resolved'
-            ? 'No resolved audit records yet.'
-            : 'No audit records found.'
-        }
-      />
+      <div>
+        <Table
+          columns={columns}
+          data={tc.pageRows}
+          isLoading={vm.isLoading}
+          sortKey={tc.sortKey}
+          sortDir={tc.sortDir}
+          onSort={tc.toggleSort}
+          emptyMessage={
+            activeTab === 'unresolved'
+              ? 'No unresolved audit records. All flags have been addressed.'
+              : activeTab === 'resolved'
+              ? 'No resolved audit records yet.'
+              : 'No audit records found.'
+          }
+        />
+        {!vm.isLoading && vm.audits.length > 0 && (
+          <TablePagination
+            page={tc.page} pageCount={tc.pageCount} pageSize={tc.pageSize}
+            total={tc.total} rangeStart={tc.rangeStart} rangeEnd={tc.rangeEnd}
+            setPage={tc.setPage} setPageSize={tc.setPageSize}
+          />
+        )}
+      </div>
 
       {resolveModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -241,7 +276,7 @@ export default function AuditQueue() {
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
             onClick={() => setResolveModal(null)}
           />
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+          <div role="dialog" aria-modal="true" className="relative bg-white rounded-lg shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
               <div className="flex items-center gap-2">
                 <ShieldCheck className="h-5 w-5 text-[#1e3a5f]" />

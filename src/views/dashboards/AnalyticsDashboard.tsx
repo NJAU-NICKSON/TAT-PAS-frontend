@@ -5,7 +5,6 @@ import { Skeleton } from '../../components/ui/Skeleton';
 import apiClient from '../../api/apiClient';
 
 export function AnalyticsDashboard() {
-  const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -15,8 +14,7 @@ export function AnalyticsDashboard() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const response = await apiClient.get('/analytics/tat');
-      setData(response.data);
+      await apiClient.get('/analytics/tat');
     } catch (error) {
       console.error('Analytics error:', error);
     } finally {
@@ -41,7 +39,7 @@ export function AnalyticsDashboard() {
     <div className="p-8 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-black">Analytics Dashboard</h1>
+          <h1 className="text-3xl font-bold">Analytics Dashboard</h1>
           <p className="text-text-muted">Real-time system performance</p>
         </div>
         <Button onClick={loadData}>Refresh Data</Button>

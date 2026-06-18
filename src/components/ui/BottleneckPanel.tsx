@@ -43,7 +43,7 @@ function DrillDown({ stageName, count, avg, p95, onClose }: DrillDownProps) {
         <h4 className="text-body-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
           {stageName}  -  Stage Detail
         </h4>
-        <button onClick={onClose} className="p-1 rounded hover:bg-[var(--bg-base)]" style={{ color: 'var(--text-muted)' }}>
+        <button onClick={onClose} aria-label="Close" className="p-1 rounded hover:bg-[var(--bg-base)]" style={{ color: 'var(--text-muted)' }}>
           <X className="w-4 h-4" />
         </button>
       </div>
@@ -56,7 +56,7 @@ function DrillDown({ stageName, count, avg, p95, onClose }: DrillDownProps) {
           ].map(({ label, value, sub }) => (
             <div
               key={label}
-              className="p-3 rounded-xl border"
+              className="p-3 rounded-lg border"
               style={{ background: 'var(--bg-base)', borderColor: 'var(--border-default)' }}
             >
               <p className="text-label" style={{ color: 'var(--text-secondary)' }}>{label}</p>
@@ -148,7 +148,7 @@ export function BottleneckPanel({ data }: BottleneckPanelProps) {
                   className="absolute inset-y-0 left-0 rounded-lg"
                   style={{
                     width: `${p95Pct}%`,
-                    background: isWorst ? 'rgba(220,38,38,0.15)' : 'rgba(37,99,235,0.12)',
+                    background: isWorst ? 'rgba(220,38,38,0.15)' : 'rgba(23,138,61,0.12)',
                     transition: 'width 0.5s ease',
                   }}
                 />

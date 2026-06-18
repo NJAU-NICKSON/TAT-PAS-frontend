@@ -42,7 +42,10 @@ apiClient.interceptors.response.use(
   async (error: AxiosError<{ detail?: string; code?: string }>) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    const reqUrl = originalRequest?.url ?? '';
+    const isAuthEndpoint = reqUrl.includes('/auth/login') || reqUrl.includes('/auth/refresh');
+
+    if (error.response?.status === 401 && !originalRequest._retry && !isAuthEndpoint) {
       const refreshToken = localStorage.getItem('refresh_token');
 
       if (!refreshToken) {
@@ -51,7 +54,6 @@ apiClient.interceptors.response.use(
       }
 
       if (_isRefreshing) {
-        // Queue this request until the refresh completes
         return new Promise((resolve) => {
           _refreshSubscribers.push((newToken: string) => {
             if (originalRequest.headers) {
@@ -94,14 +96,17 @@ apiClient.interceptors.response.use(
     let detail: string;
     if (Array.isArray(rawDetail)) {
       detail = rawDetail.map((e: { msg?: string }) => e.msg || JSON.stringify(e)).join('; ');
+    } else if (rawDetail && typeof rawDetail === 'object') {
+      detail = (rawDetail as { message?: string }).message || 'An unexpected error occurred';
     } else {
       detail = rawDetail || error.message || 'An unexpected error occurred';
     }
 
     const apiError: ApiError = {
       detail,
-      code: error.response?.data?.code,
+      code: error.response?.data?.code ?? (rawDetail && typeof rawDetail === 'object' ? (rawDetail as { code?: string }).code : undefined),
       status: error.response?.status,
+      data: rawDetail && typeof rawDetail === 'object' ? rawDetail : undefined,
     };
 
     return Promise.reject(apiError);

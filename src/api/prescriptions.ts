@@ -53,7 +53,7 @@ export interface PrescriptionHistoryEntry {
 
 export const prescriptionsApi = {
   list: (filters: PrescriptionFilters = {}) =>
-    apiClient.get<Prescription[]>('/prescriptions', { params: filters }),
+    apiClient.get<Prescription[]>('/prescriptions/', { params: filters }),
 
   queue: (params: { skip?: number; limit?: number } = {}) =>
     apiClient.get<Prescription[]>('/prescriptions/queue', { params }),
@@ -65,7 +65,7 @@ export const prescriptionsApi = {
     apiClient.get<PrescriptionHistoryEntry[]>(`/prescriptions/${id}/history`),
 
   create: (data: CreatePrescriptionPayload) =>
-    apiClient.post<Prescription>('/prescriptions', data),
+    apiClient.post<Prescription>('/prescriptions/', data),
 
   updateStatus: (
     id: string,

@@ -23,10 +23,11 @@ export function SLAComplianceGauge({
   className,
 }: SLAComplianceGaugeProps) {
   const data = [{ name: 'SLA', value: compliance, fill: getGaugeColor(compliance) }];
-  const trendIcon = trend && trend > 0 ? ''' : '"';
+  const trendPrefix =
+    trend === undefined ? '' : trend > 0 ? 'Up ' : trend < 0 ? 'Down ' : 'No change ';
 
   return (
-    <div className={cn('space-y-4 p-6 bg-surface-0 rounded-xl border shadow-card', className)}>
+    <div className={cn('space-y-4 p-6 bg-surface-0 rounded-lg border shadow-card', className)}>
       <div className="flex items-center justify-center h-48">
         <ResponsiveContainer width="100%" height="100%">
           <RadialBarChart data={data} innerRadius="60%" outerRadius="90%" barSize={30}>
@@ -38,7 +39,7 @@ export function SLAComplianceGauge({
           </RadialBarChart>
         </ResponsiveContainer>
         <div className="absolute text-center">
-          <div className="text-display font-black text-text-primary">
+          <div className="text-display font-bold text-text-primary">
             {Math.round(compliance)}%
           </div>
           <p className="text-caption text-text-muted uppercase tracking-wide">
@@ -53,7 +54,7 @@ export function SLAComplianceGauge({
         </p>
         {trend !== undefined && (
           <p className="text-caption text-text-muted">
-            {trendIcon} {Math.abs(trend)}% {trend > 0 ? 'vs yesterday' : 'improvement'}
+            {trendPrefix}{Math.abs(trend)}% {trend > 0 ? 'vs yesterday' : trend < 0 ? 'improvement' : 'vs yesterday'}
           </p>
         )}
       </div>

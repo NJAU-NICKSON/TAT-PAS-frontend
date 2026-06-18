@@ -40,6 +40,7 @@ const PRIORITY_BORDER_COLORS: Record<Priority, string> = {
   routine: 'border-status-info',
   discharge: 'border-status-neutral',
   nicu: 'border-status-flagged',
+  chemo: 'border-status-critical',
 };
 
 export function PrescriptionCard({
@@ -64,7 +65,7 @@ export function PrescriptionCard({
   const nextAction = getNextAction();
 
   const baseClasses = cn(
-    'group relative bg-surface-0 border rounded-xl shadow-card hover:shadow-elevated transition-all duration-200 overflow-hidden',
+    'group relative bg-surface-0 border rounded-lg shadow-card hover:shadow-elevated transition-all duration-200 overflow-hidden',
     PRIORITY_BORDER_COLORS[prescription.priority],
     isSelected && 'ring-2 ring-clinical-600 ring-offset-2 ring-offset-surface-0',
     slaBreached && 'bg-status-critical-bg border-status-critical-border',
@@ -105,7 +106,7 @@ export function PrescriptionCard({
             <StatusBadge status={prescription.status} size={variant === 'compact' ? 'sm' : 'md'} />
             {prescription.flags.length > 0 && (
               <div className="flex gap-1">
-                {prescription.flags.slice(0, 2).map((flag, idx) => (
+                {prescription.flags.slice(0, 2).map((flag) => (
                   <StatusBadge key={flag} status="flagged" severity="high" size="sm" />
                 ))}
                 {prescription.flags.length > 2 && (

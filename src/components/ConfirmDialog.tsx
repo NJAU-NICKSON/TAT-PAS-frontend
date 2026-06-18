@@ -67,7 +67,7 @@ export default function ConfirmDialog({
         aria-hidden="true"
       />
 
-      <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+      <div className="relative bg-white rounded-lg shadow-2xl w-full max-w-md mx-4 overflow-hidden">
         <div className="flex items-start gap-4 p-6">
           <div className="flex-shrink-0 mt-0.5">{iconMap[variant]}</div>
           <div className="flex-1 min-w-0">

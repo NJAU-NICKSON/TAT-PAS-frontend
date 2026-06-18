@@ -11,7 +11,7 @@ export interface BillUpdatePayload {
 
 export const billingApi = {
   createBill: async (visitId: string, lineItems: BillLineItem[]): Promise<Bill> => {
-    const response = await apiClient.post('/bills', {
+    const response = await apiClient.post('/bills/', {
       visit_id: visitId,
       line_items: lineItems,
     });

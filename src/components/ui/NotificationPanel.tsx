@@ -1,108 +1,16 @@
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { X, Zap, AlertTriangle, CheckCircle, Package, Bell } from 'lucide-react';
 import { formatRelativeTime } from '../../lib/utils';
 import { cn } from '../../lib/utils';
-import { useWebSocket, WSEvent } from '../../context/WebSocketContext';
-
-export type NotifType = 'sla_breach' | 'flag_created' | 'rx_verified' | 'rx_dispensed';
-
-export interface Notification {
-  id: string;
-  type: NotifType;
-  title: string;
-  subtitle: string;
-  timestamp: Date;
-  read: boolean;
-}
+import { Notification, NotifType } from './useNotifications';
 
 function getNotifMeta(type: NotifType): { icon: typeof Zap; color: string; bg: string } {
   switch (type) {
     case 'sla_breach':   return { icon: Zap,           color: '#DC2626', bg: '#FEF2F2' };
     case 'flag_created': return { icon: AlertTriangle,  color: '#7C3AED', bg: '#FAF5FF' };
-    case 'rx_verified':  return { icon: CheckCircle,    color: '#059669', bg: '#F0FDF4' };
+    case 'rx_verified':  return { icon: CheckCircle,    color: '#178A3D', bg: '#F0FDF4' };
     case 'rx_dispensed': return { icon: Package,        color: '#D97706', bg: '#FFFBEB' };
   }
-}
-
-export function useNotifications() {
-  const { subscribe } = useWebSocket();
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-
-  const addNotif = useCallback((n: Notification) => {
-    setNotifications(prev => [n, ...prev].slice(0, 50));
-  }, []);
-
-  useEffect(() => {
-    const unsubs = [
-      subscribe('sla.breached', (ev: WSEvent) => {
-        const d = ev.data as { prescription_id?: string; rx_number?: string; patient_name?: string; elapsed_min?: number };
-        addNotif({
-          id: ev.entity_id ? `sla-${ev.entity_id}` : `sla-${Date.now()}-${Math.random().toString(36).slice(2)}`,
-          type: 'sla_breach',
-          title: 'SLA Breach',
-          subtitle: [
-            d.rx_number && `Rx ${d.rx_number}`,
-            d.patient_name,
-            d.elapsed_min != null && `${Math.round(d.elapsed_min)}m over threshold`,
-          ].filter(Boolean).join('  ') || 'Prescription exceeded SLA threshold',
-          timestamp: new Date(),
-          read: false,
-        });
-      }),
-
-      subscribe('audit.flag_created', (ev: WSEvent) => {
-        const d = ev.data as { rx_number?: string; reason?: string; patient_name?: string };
-        addNotif({
-          id: ev.entity_id ? `flag-${ev.entity_id}` : `flag-${Date.now()}-${Math.random().toString(36).slice(2)}`,
-          type: 'flag_created',
-          title: 'Prescription Flagged',
-          subtitle: [
-            d.rx_number && `Rx ${d.rx_number}`,
-            d.patient_name,
-            d.reason,
-          ].filter(Boolean).join('  ') || 'A prescription was flagged for audit',
-          timestamp: new Date(),
-          read: false,
-        });
-      }),
-
-      subscribe('prescription.status_changed', (ev: WSEvent) => {
-        const d = ev.data as { status?: string; rx_number?: string; patient_name?: string };
-        if (d.status === 'verified') {
-          addNotif({
-            id: ev.entity_id ? `ver-${ev.entity_id}` : `ver-${Date.now()}-${Math.random().toString(36).slice(2)}`,
-            type: 'rx_verified',
-            title: 'Prescription Verified',
-            subtitle: [d.rx_number && `Rx ${d.rx_number}`, d.patient_name, 'Ready for dispensing'].filter(Boolean).join('  '),
-            timestamp: new Date(),
-            read: false,
-          });
-        } else if (d.status === 'dispensed') {
-          addNotif({
-            id: ev.entity_id ? `dis-${ev.entity_id}` : `dis-${Date.now()}-${Math.random().toString(36).slice(2)}`,
-            type: 'rx_dispensed',
-            title: 'Prescription Dispensed',
-            subtitle: [d.rx_number && `Rx ${d.rx_number}`, d.patient_name].filter(Boolean).join('  '),
-            timestamp: new Date(),
-            read: false,
-          });
-        }
-      }),
-    ];
-    return () => unsubs.forEach(u => u());
-  }, [subscribe, addNotif]);
-
-  const unreadCount = notifications.filter(n => !n.read).length;
-
-  const markAllRead = useCallback(() => {
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-  }, []);
-
-  const markRead = useCallback((id: string) => {
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
-  }, []);
-
-  return { notifications, unreadCount, markAllRead, markRead };
 }
 
 type TabKey = 'all' | 'unread' | 'sla' | 'flags';
@@ -128,7 +36,6 @@ export function NotificationPanel({
   const [activeTab, setActiveTab] = useState<TabKey>('all');
   const panelRef = useRef<HTMLDivElement>(null);
 
-  // Close on Escape
   useEffect(() => {
     if (!isOpen) return;
     const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
@@ -167,7 +74,7 @@ export function NotificationPanel({
             <Bell className="w-4 h-4" style={{ color: 'var(--text-secondary)' }} />
             <h2 className="text-h3" style={{ color: 'var(--text-primary)' }}>Notifications</h2>
             {unreadCount > 0 && (
-              <span className="text-caption font-bold px-2 py-0.5 rounded-full" style={{ background: '#EFF6FF', color: '#2563EB', border: '1px solid #BFDBFE' }}>
+              <span className="text-caption font-bold px-2 py-0.5 rounded-full" style={{ background: '#F0FDF4', color: '#178A3D', border: '1px solid #BBF7D0' }}>
                 {unreadCount}
               </span>
             )}
@@ -212,8 +119,8 @@ export function NotificationPanel({
         <div className="flex-1 overflow-y-auto">
           {groups.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
-              <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4" style={{ background: '#F0FDF4' }}>
-                <CheckCircle className="w-7 h-7" style={{ color: '#059669' }} />
+              <div className="w-14 h-14 rounded-lg flex items-center justify-center mb-4" style={{ background: '#F0FDF4' }}>
+                <CheckCircle className="w-7 h-7" style={{ color: '#178A3D' }} />
               </div>
               <h3 className="text-body font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>All caught up</h3>
               <p className="text-caption" style={{ color: 'var(--text-muted)' }}>No notifications to show</p>
@@ -234,9 +141,9 @@ export function NotificationPanel({
                         key={n.id}
                         onClick={() => markRead(n.id)}
                         className="w-full px-5 py-3.5 flex items-start gap-3 text-left transition-colors hover:bg-[var(--bg-row-hover)]"
-                        style={{ background: n.read ? 'transparent' : 'rgba(37,99,235,0.04)' }}
+                        style={{ background: n.read ? 'transparent' : 'rgba(23,138,61,0.04)' }}
                       >
-                        <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: bg }}>
+                        <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: bg }}>
                           <Icon className="w-4 h-4" style={{ color }} />
                         </div>
                         <div className="flex-1 min-w-0">
@@ -245,7 +152,7 @@ export function NotificationPanel({
                               {n.title}
                             </span>
                             {!n.read && (
-                              <span className="w-2 h-2 rounded-full flex-shrink-0 mt-1" style={{ background: '#2563EB' }} />
+                              <span className="w-2 h-2 rounded-full flex-shrink-0 mt-1" style={{ background: '#178A3D' }} />
                             )}
                           </div>
                           <p className="text-caption leading-tight mb-1" style={{ color: 'var(--text-secondary)' }}>

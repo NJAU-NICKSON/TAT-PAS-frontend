@@ -7,13 +7,14 @@ import {
 import { AuditRecord, AuditSeverity, Prescription } from '../../models/types';
 import { auditsApi } from '../../api/audits';
 import { prescriptionsApi } from '../../api/prescriptions';
-import { useWebSocket, WSEvent } from '../../context/WebSocketContext';
+import { useWebSocket } from '../../context/WebSocketContext';
 import { CountersignModal } from '../../components/ui/CountersignModal';
 import { AuditLogTable } from '../../components/ui/AuditLogTable';
 import { toast } from 'sonner';
-import { cn } from '../../lib/utils';
+import { cn, withDoctorTitle } from '../../lib/utils';
 
 type Tab = 'review' | 'flags' | 'log' | 'security';
+type ListResult<T> = T[] | { items?: T[] };
 
 const SEVERITY_ORDER: Record<AuditSeverity, number> = {
   critical: 0,
@@ -84,13 +85,13 @@ function ResolveModal({ flag, onSuccess, onClose }: ResolveModalProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div
-        className="w-full max-w-lg mx-4 rounded-2xl overflow-hidden animate-slide-up"
+        className="w-full max-w-lg mx-4 rounded-lg overflow-hidden animate-slide-up"
         style={{ background: 'var(--bg-card)', boxShadow: 'var(--shadow-modal)' }}
       >
         <div className="flex items-center justify-between px-6 py-4 border-b" style={{ borderColor: 'var(--border-default)' }}>
           <h2 className="text-h3">Resolve Flag</h2>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-[var(--bg-base)]" style={{ color: 'var(--text-muted)' }}>
-            oe-
+          <button onClick={onClose} aria-label="Close" className="p-1.5 rounded-lg hover:bg-[var(--bg-base)]" style={{ color: 'var(--text-muted)' }}>
+            ×
           </button>
         </div>
 
@@ -110,7 +111,7 @@ function ResolveModal({ flag, onSuccess, onClose }: ResolveModalProps) {
             <select
               value={resType}
               onChange={e => setResType(e.target.value)}
-              className="w-full px-3 py-2 text-body-sm border rounded-xl focus:outline-none"
+              className="w-full px-3 py-2 text-body-sm border rounded-lg focus:outline-none"
               style={{ borderColor: 'var(--border-default)', background: 'var(--bg-base)', borderRadius: 'var(--radius-button)' }}
             >
               <option value="accepted_risk">Accepted Risk</option>
@@ -131,7 +132,7 @@ function ResolveModal({ flag, onSuccess, onClose }: ResolveModalProps) {
               onChange={e => setNote(e.target.value)}
               rows={4}
               placeholder="Describe the clinical rationale for this resolution"
-              className="w-full px-3 py-2.5 text-body-sm border rounded-xl resize-none focus:outline-none"
+              className="w-full px-3 py-2.5 text-body-sm border rounded-lg resize-none focus:outline-none"
               style={{
                 borderColor: note.trim().length >= 20 ? 'var(--border-focus)' : 'var(--border-default)',
                 background: 'var(--bg-base)',
@@ -145,7 +146,7 @@ function ResolveModal({ flag, onSuccess, onClose }: ResolveModalProps) {
 
           {error && (
             <div
-              className="p-3 rounded-xl border text-body-sm font-medium"
+              className="p-3 rounded-lg border text-body-sm font-medium"
               style={{ background: 'var(--bg-alert)', borderColor: 'var(--border-breach)', color: 'var(--sla-breached)' }}
             >
               {error}
@@ -156,7 +157,7 @@ function ResolveModal({ flag, onSuccess, onClose }: ResolveModalProps) {
         <div className="flex justify-end gap-3 px-6 py-4 border-t" style={{ borderColor: 'var(--border-default)' }}>
           <button
             onClick={onClose}
-            className="px-4 py-2 text-body-sm font-semibold border rounded-xl hover:bg-[var(--bg-base)] transition-colors"
+            className="px-4 py-2 text-body-sm font-semibold border rounded-lg hover:bg-[var(--bg-base)] transition-colors"
             style={{ borderColor: 'var(--border-default)', color: 'var(--text-secondary)', borderRadius: 'var(--radius-button)' }}
           >
             Cancel
@@ -164,7 +165,7 @@ function ResolveModal({ flag, onSuccess, onClose }: ResolveModalProps) {
           <button
             onClick={handleSubmit}
             disabled={!canSubmit}
-            className="flex items-center gap-2 px-4 py-2 text-body-sm font-semibold text-white rounded-xl transition-colors disabled:opacity-40"
+            className="flex items-center gap-2 px-4 py-2 text-body-sm font-semibold text-white rounded-lg transition-colors disabled:opacity-40"
             style={{ background: 'var(--clinical-600)', borderRadius: 'var(--radius-button)' }}
           >
             {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
@@ -293,10 +294,10 @@ function RxReviewRow({ rx, onApprove, onReturn, isActing }: RxReviewRowProps) {
       style={isUrgent ? { borderLeftColor: 'var(--sla-breached)' } : {}}
     >
       <div
-        className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5"
+        className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5"
         style={{ background: '#EFF6FF' }}
       >
-        <FileText className="w-4 h-4" style={{ color: '#2563EB' }} />
+        <FileText className="w-4 h-4" style={{ color: '#178A3D' }} />
       </div>
 
       <div className="flex-1 min-w-0">
@@ -310,7 +311,7 @@ function RxReviewRow({ rx, onApprove, onReturn, isActing }: RxReviewRowProps) {
           </Link>
           {rx.priority && (
             <span
-              className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+              className="text-micro font-bold px-1.5 py-0.5 rounded-full"
               style={{
                 background: rx.priority === 'stat' ? '#FEE2E2' : rx.priority === 'urgent' ? '#FEF3C7' : '#F0F9FF',
                 color: rx.priority === 'stat' ? '#991B1B' : rx.priority === 'urgent' ? '#92400E' : '#0369A1',
@@ -328,7 +329,7 @@ function RxReviewRow({ rx, onApprove, onReturn, isActing }: RxReviewRowProps) {
               {rx.patient_name}
             </span>
           )}
-          {rx.doctor_name && <span>Dr. {rx.doctor_name}</span>}
+          {rx.doctor_name && <span>{withDoctorTitle(rx.doctor_name)}</span>}
           {rx.department && <span>{rx.department}</span>}
           <span className="flex items-center gap-1">
             <Clock className="w-3 h-3" />
@@ -399,7 +400,7 @@ function ReturnModal({ rx, onSuccess, onClose }: ReturnModalProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div
-        className="w-full max-w-lg mx-4 rounded-2xl overflow-hidden animate-slide-up"
+        className="w-full max-w-lg mx-4 rounded-lg overflow-hidden animate-slide-up"
         style={{ background: 'var(--bg-card)', boxShadow: 'var(--shadow-modal)' }}
       >
         <div className="flex items-center justify-between px-6 py-4 border-b" style={{ borderColor: 'var(--border-default)' }}>
@@ -407,15 +408,15 @@ function ReturnModal({ rx, onSuccess, onClose }: ReturnModalProps) {
             <ArrowLeftCircle className="w-5 h-5 text-amber-600" />
             <h2 className="text-h3">Return for Amendment</h2>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-[var(--bg-base)]" style={{ color: 'var(--text-muted)' }}>oe-</button>
+          <button onClick={onClose} aria-label="Close" className="p-1.5 rounded-lg hover:bg-[var(--bg-base)]" style={{ color: 'var(--text-muted)' }}>×</button>
         </div>
 
         <div className="px-6 py-4 border-b" style={{ background: 'rgba(245,158,11,0.06)', borderColor: 'var(--border-default)' }}>
           <p className="text-body-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
-            {rx.rx_number ?? rx.id.slice(0, 8).toUpperCase()}  -  {rx.patient_name ?? 'Unknown Patient'}
+            {rx.rx_number ?? rx.id.slice(0, 8).toUpperCase()} - {rx.patient_name ?? 'Unknown Patient'}
           </p>
           <p className="text-meta mt-0.5" style={{ color: 'var(--text-muted)' }}>
-            Prescribed by Dr. {rx.doctor_name ?? 'Unknown Doctor'}
+            Prescribed by {withDoctorTitle(rx.doctor_name) || 'Unknown Doctor'}
           </p>
         </div>
 
@@ -429,7 +430,7 @@ function ReturnModal({ rx, onSuccess, onClose }: ReturnModalProps) {
               onChange={e => setReason(e.target.value)}
               rows={4}
               placeholder="Explain why this prescription needs to be amended by the doctor..."
-              className="w-full px-3 py-2.5 text-body-sm border rounded-xl resize-none focus:outline-none"
+              className="w-full px-3 py-2.5 text-body-sm border rounded-lg resize-none focus:outline-none"
               style={{
                 borderColor: reason.trim().length >= 10 ? 'var(--border-focus)' : 'var(--border-default)',
                 background: 'var(--bg-base)',
@@ -445,7 +446,7 @@ function ReturnModal({ rx, onSuccess, onClose }: ReturnModalProps) {
         <div className="flex justify-end gap-3 px-6 py-4 border-t" style={{ borderColor: 'var(--border-default)' }}>
           <button
             onClick={onClose}
-            className="px-4 py-2 text-body-sm font-semibold border rounded-xl"
+            className="px-4 py-2 text-body-sm font-semibold border rounded-lg"
             style={{ borderColor: 'var(--border-default)', color: 'var(--text-secondary)', borderRadius: 'var(--radius-button)' }}
           >
             Cancel
@@ -453,7 +454,7 @@ function ReturnModal({ rx, onSuccess, onClose }: ReturnModalProps) {
           <button
             onClick={handleSubmit}
             disabled={reason.trim().length < 10 || isSubmitting}
-            className="flex items-center gap-2 px-4 py-2 text-body-sm font-semibold text-white rounded-xl disabled:opacity-40"
+            className="flex items-center gap-2 px-4 py-2 text-body-sm font-semibold text-white rounded-lg disabled:opacity-40"
             style={{ background: '#D97706', borderRadius: 'var(--radius-button)' }}
           >
             {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
@@ -486,7 +487,8 @@ export function AuditorDashboard() {
     setRxLoading(true);
     try {
       const res = await prescriptionsApi.list({ status: 'submitted', limit: 100 });
-      const items = Array.isArray(res.data) ? res.data : (res.data as any).items ?? [];
+      const data = res.data as ListResult<Prescription>;
+      const items = Array.isArray(data) ? data : data.items ?? [];
       setPendingRx(items.sort((a: Prescription, b: Prescription) =>
         new Date(a.submitted_at ?? a.created_at).getTime() - new Date(b.submitted_at ?? b.created_at).getTime()
       ));
@@ -531,7 +533,7 @@ export function AuditorDashboard() {
     try {
       const res = await auditsApi.log({ limit: 200 });
       setLogRecords(Array.isArray(res.data) ? res.data : []);
-    } catch { /* non-critical */ }
+    } catch {}
     finally { setLogLoading(false); }
   }, []);
 
@@ -541,7 +543,7 @@ export function AuditorDashboard() {
       const today = new Date().toISOString().split('T')[0];
       const res = await auditsApi.getSecurityEvents(today);
       setSecurityEvents(Array.isArray(res.data) ? res.data : []);
-    } catch { /* non-critical */ }
+    } catch {}
     finally { setSecLoading(false); }
   }, []);
 
@@ -556,8 +558,8 @@ export function AuditorDashboard() {
     const auditEvents = ['audit.flag_created', 'audit.flag_resolved', 'audit.countersigned', 'audit.flag_escalated'];
     const rxEvents = ['prescription.created', 'prescription.status_changed'];
     const unsubs = [
-      ...auditEvents.map(ev => subscribe(ev, (_: WSEvent) => loadFlags())),
-      ...rxEvents.map(ev => subscribe(ev, (_: WSEvent) => loadPendingRx())),
+      ...auditEvents.map(ev => subscribe(ev, () => loadFlags())),
+      ...rxEvents.map(ev => subscribe(ev, () => loadPendingRx())),
     ];
     return () => unsubs.forEach(u => u());
   }, [subscribe, loadFlags, loadPendingRx]);
@@ -599,7 +601,7 @@ export function AuditorDashboard() {
           <AlertTriangle className="w-4 h-4 text-white flex-shrink-0" />
           <span className="text-body-sm font-bold text-white">
             {stats.critical} high-severity flag{stats.critical !== 1 ? 's' : ''} require attention
-            {oldestFlag && `  -  oldest: ${formatAge(oldestFlag.created_at)}`}
+            {oldestFlag && ` - oldest: ${formatAge(oldestFlag.created_at)}`}
           </span>
           {stats.countersignPending > 0 && (
             <span
@@ -685,7 +687,7 @@ export function AuditorDashboard() {
             <div className="flex-1 overflow-y-auto">
               {rxLoading ? (
                 <div className="space-y-2 p-4">
-                  {[1, 2, 3].map(i => <div key={i} className="h-16 rounded-xl animate-shimmer" />)}
+                  {[1, 2, 3].map(i => <div key={i} className="h-16 rounded-lg animate-shimmer" />)}
                 </div>
               ) : pendingRx.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-48">
@@ -742,7 +744,7 @@ export function AuditorDashboard() {
             <div className="flex-1 overflow-y-auto">
               {isLoading ? (
                 <div className="space-y-2 p-4">
-                  {[1, 2, 3].map(i => <div key={i} className="h-16 rounded-xl animate-shimmer" />)}
+                  {[1, 2, 3].map(i => <div key={i} className="h-16 rounded-lg animate-shimmer" />)}
                 </div>
               ) : visibleFlags.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-48">
@@ -783,7 +785,7 @@ export function AuditorDashboard() {
               {securityEvents.length > 0 && (
                 <button
                   onClick={() => handleAcknowledge(securityEvents.map(e => e.id))}
-                  className="flex items-center gap-1.5 px-3 py-2 text-body-sm font-semibold text-white rounded-xl transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-2 text-body-sm font-semibold text-white rounded-lg transition-colors"
                   style={{ background: 'var(--sla-safe)', borderRadius: 'var(--radius-button)' }}
                 >
                   <ShieldCheck className="w-4 h-4" />
@@ -794,7 +796,7 @@ export function AuditorDashboard() {
 
             {secLoading ? (
               <div className="space-y-2">
-                {[1, 2].map(i => <div key={i} className="h-12 rounded-xl animate-shimmer" />)}
+                {[1, 2].map(i => <div key={i} className="h-12 rounded-lg animate-shimmer" />)}
               </div>
             ) : securityEvents.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12">
@@ -805,7 +807,7 @@ export function AuditorDashboard() {
               </div>
             ) : (
               <div
-                className="rounded-2xl border overflow-hidden"
+                className="rounded-lg border overflow-hidden"
                 style={{ borderColor: 'var(--border-default)' }}
               >
                 <div className="divide-y divide-[var(--border-default)]">

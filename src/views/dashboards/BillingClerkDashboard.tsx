@@ -11,7 +11,7 @@ function billStatusStyle(status: Bill['status']): { bg: string; text: string } {
     case 'open':
       return { bg: 'var(--status-warning-bg, rgba(245,158,11,0.1))', text: 'var(--sla-warning)' };
     case 'partially_paid':
-      return { bg: 'var(--status-info-bg, rgba(59,130,246,0.1))', text: 'var(--status-info-text, #2563eb)' };
+      return { bg: 'var(--status-info-bg, rgba(31,166,74,0.1))', text: 'var(--status-info-text, #178A3D)' };
     case 'paid':
       return { bg: 'rgba(16,185,129,0.1)', text: 'var(--sla-safe)' };
     case 'finalized':
@@ -34,7 +34,7 @@ function StatTile({
 }) {
   return (
     <div
-      className="p-4 rounded-2xl border"
+      className="p-4 rounded-lg border"
       style={{
         background: danger ? 'var(--bg-alert)' : 'var(--bg-card)',
         borderColor: danger ? 'var(--border-breach)' : 'var(--border-default)',
@@ -56,7 +56,7 @@ function StatTile({
 function SkeletonRow() {
   return (
     <div
-      className="h-14 rounded-xl animate-shimmer"
+      className="h-14 rounded-lg animate-shimmer"
       style={{ borderRadius: 'var(--radius-card)' }}
     />
   );
@@ -87,8 +87,14 @@ function PaymentModal({ bill, onClose, onSuccess }: PaymentModalProps) {
         received_at: new Date().toISOString(),
       });
       onSuccess();
-    } catch (err: any) {
-      setError(err?.response?.data?.detail ?? 'Payment failed. Please try again.');
+    } catch (err) {
+      const detail =
+        typeof err === 'object' &&
+        err !== null &&
+        'response' in err
+          ? (err as { response?: { data?: { detail?: string } } }).response?.data?.detail
+          : undefined;
+      setError(detail ?? 'Payment failed. Please try again.');
     } finally {
       setSaving(false);
     }
@@ -104,7 +110,7 @@ function PaymentModal({ bill, onClose, onSuccess }: PaymentModalProps) {
       />
 
       <div
-        className="relative w-full max-w-lg rounded-2xl overflow-hidden"
+        className="relative w-full max-w-lg rounded-lg overflow-hidden"
         style={{
           background: 'var(--bg-card)',
           boxShadow: 'var(--shadow-modal)',
@@ -144,7 +150,7 @@ function PaymentModal({ bill, onClose, onSuccess }: PaymentModalProps) {
             ].map(({ label, value, danger }) => (
               <div
                 key={label}
-                className="p-3 rounded-xl border text-center"
+                className="p-3 rounded-lg border text-center"
                 style={{
                   background: danger ? 'var(--bg-alert)' : 'var(--bg-base)',
                   borderColor: danger ? 'var(--border-breach)' : 'var(--border-default)',
@@ -208,7 +214,7 @@ function PaymentModal({ bill, onClose, onSuccess }: PaymentModalProps) {
                   <option value="cash">Cash</option>
                   <option value="card">Card</option>
                   <option value="insurance">Insurance</option>
-                  <option value="nhif">NHIF</option>
+                  <option value="sha">SHA</option>
                   <option value="mpesa">M-Pesa</option>
                 </select>
               </div>
@@ -267,8 +273,14 @@ export function BillingClerkDashboard() {
     try {
       const data = await billingApi.getAllBills(100);
       setBills(data);
-    } catch (err: any) {
-      setError(err?.response?.data?.detail ?? 'Failed to load bills.');
+    } catch (err) {
+      const detail =
+        typeof err === 'object' &&
+        err !== null &&
+        'response' in err
+          ? (err as { response?: { data?: { detail?: string } } }).response?.data?.detail
+          : undefined;
+      setError(detail ?? 'Failed to load bills.');
       setBills([]);
     } finally {
       setLoading(false);
@@ -336,7 +348,7 @@ export function BillingClerkDashboard() {
 
       {error && (
         <div
-          className="flex-shrink-0 mx-6 mt-4 px-4 py-3 rounded-xl border text-body-sm"
+          className="flex-shrink-0 mx-6 mt-4 px-4 py-3 rounded-lg border text-body-sm"
           style={{
             background: 'var(--bg-alert)',
             borderColor: 'var(--border-breach)',
@@ -358,7 +370,7 @@ export function BillingClerkDashboard() {
         ) : bills.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
             <div
-              className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4"
+              className="w-16 h-16 rounded-lg flex items-center justify-center mb-4"
               style={{ background: 'var(--clinical-100)' }}
             >
               <DollarSign size={32} style={{ color: 'var(--clinical-600)' }} />
@@ -372,7 +384,7 @@ export function BillingClerkDashboard() {
           </div>
         ) : (
           <div
-            className="rounded-2xl border overflow-hidden"
+            className="rounded-lg border overflow-hidden"
             style={{
               borderColor: 'var(--border-default)',
               boxShadow: 'var(--shadow-card)',

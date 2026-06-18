@@ -127,7 +127,6 @@ export function usePrescriptionViewModel(): PrescriptionViewModel {
       setError(null);
       try {
         await prescriptionsApi.addFlag(id, issue, severity, recommendation);
-        // Reload the prescription to get updated flags
         const res = await prescriptionsApi.getById(id);
         setPrescriptions((prev) =>
           prev.map((p) => (p.id === id ? res.data : p))

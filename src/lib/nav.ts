@@ -1,4 +1,5 @@
-import { Users, DollarSign, Calendar, Stethoscope, Thermometer, FlaskConical } from 'lucide-react';
+import { Users, DollarSign, Calendar, Stethoscope, Thermometer, FlaskConical, Timer, Activity } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import type { UserRole } from '../models/types';
 import { NAV_ICONS } from './icons';
 
@@ -6,7 +7,7 @@ export interface NavItem {
   id: string;
   label: string;
   path: string;
-  icon: React.ComponentType<any>;
+  icon: LucideIcon;
   roles: UserRole[];
   badge?: {
     value: number;
@@ -27,12 +28,10 @@ export type NavGroup = {
   items: NavItem[];
 };
 
-// Ordered by patient journey flow:
-// Registration -> Visit Check-in -> Triage (rooms/ward) -> Consultation -> Prescriptions -> Audit -> Billing -> Admin
 const allNavItems: NavItem[] = [
   { id: 'dashboard',          label: 'Dashboard',          path: '/dashboard',          icon: NAV_ICONS.dashboard,     roles: ['receptionist', 'nurse', 'doctor', 'pharmacist', 'billing', 'auditor', 'admin'] },
   { id: 'patients',           label: 'Patients',           path: '/patients',           icon: NAV_ICONS.patients,      roles: ['receptionist', 'admin', 'doctor', 'nurse'] },
-  { id: 'visits',             label: 'Visits',             path: '/visits',             icon: Calendar,                roles: ['receptionist', 'doctor', 'nurse', 'admin'] },
+  { id: 'visits',             label: 'Visits',             path: '/visits',             icon: Calendar,                roles: ['receptionist', 'doctor', 'nurse', 'admin', 'billing'] },
   { id: 'triage',             label: 'Triage',             path: '/triage',             icon: Thermometer,             roles: ['nurse', 'admin'] },
   { id: 'rooms',              label: 'Consultation Rooms', path: '/consultation-rooms', icon: NAV_ICONS.rooms,         roles: ['admin', 'nurse', 'receptionist'] },
   { id: 'beds',               label: 'Wards & Beds',       path: '/beds',               icon: NAV_ICONS.beds,          roles: ['admin', 'nurse'] },
@@ -43,7 +42,9 @@ const allNavItems: NavItem[] = [
   { id: 'analytics',          label: 'Reports',            path: '/analytics',          icon: NAV_ICONS.analytics,     roles: ['auditor', 'admin'] },
   { id: 'billing',            label: 'Billing',            path: '/billing',            icon: DollarSign,              roles: ['billing', 'admin'] },
   { id: 'users',              label: 'Staff Accounts',     path: '/users',              icon: Users,                   roles: ['admin'] },
-  { id: 'settings',           label: 'Settings',           path: '/settings',           icon: NAV_ICONS.settings,      roles: ['admin'] },
+  { id: 'sla-config',         label: 'SLA Configuration',  path: '/sla-config',         icon: Timer,                   roles: ['admin'] },
+  { id: 'system-status',      label: 'System Status',      path: '/system-status',      icon: Activity,                roles: ['admin'] },
+  { id: 'settings',           label: 'Settings',           path: '/settings',           icon: NAV_ICONS.settings,      roles: ['receptionist', 'nurse', 'doctor', 'pharmacist', 'billing', 'auditor', 'admin'] },
 ];
 
 export const ROLE_NAV_MAP: Record<UserRole, NavItem[]> = {
@@ -103,7 +104,8 @@ export function getNavigationForRole(role: UserRole): NavGroup[] {
 
     case 'billing':
       groups.push(
-        { label: 'Finance', items: pick('billing') },
+        { label: 'Patients', items: pick('visits') },
+        { label: 'Finance',  items: pick('billing') },
       );
       break;
 
@@ -115,12 +117,11 @@ export function getNavigationForRole(role: UserRole): NavGroup[] {
         { label: 'Prescriptions', items: pick('prescriptions-list', 'pharmacy') },
         { label: 'Compliance',    items: pick('audit', 'analytics') },
         { label: 'Finance',       items: pick('billing') },
-        { label: 'Admin',         items: pick('users', 'settings') },
+        { label: 'Admin',         items: pick('users', 'sla-config', 'system-status', 'settings') },
       );
       break;
   }
 
-  // Settings for non-admin roles (always last)
   if (role !== 'admin') {
     groups.push({ label: 'Administration', items: pick('settings') });
   }

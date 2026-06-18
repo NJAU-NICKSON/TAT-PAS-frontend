@@ -24,13 +24,11 @@ import {
   Settings,
   HelpCircle,
   Bell,
-  TrendingUp,
   Ban,
   Copy,
   DollarSign,
   BedDouble,
   Calendar,
-  Activity,
   DoorOpen,
 } from 'lucide-react';
 

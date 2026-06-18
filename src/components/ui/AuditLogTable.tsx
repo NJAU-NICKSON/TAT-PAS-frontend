@@ -83,7 +83,6 @@ export function AuditLogTable({ records, isLoading = false }: AuditLogTableProps
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
 
-  // Filter state
   const [filterSeverity, setFilterSeverity] = useState<string>('all');
   const [filterResolved, setFilterResolved] = useState<string>('all');
   const [filterFlagType, setFilterFlagType] = useState('');

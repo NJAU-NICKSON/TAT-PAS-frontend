@@ -1,17 +1,13 @@
-/**
- * Design tokens for TAT-PAS clinical system
- * Centralizes all color, spacing, and typography values
- */
 
 export const COLORS = {
   clinical: {
-    50: '#EFF6FF',
-    100: '#DBEAFE',
-    200: '#BFDBFE',
-    400: '#60A5FA',
-    600: '#2563EB',
-    700: '#1D4ED8',
-    900: '#1E3A8A',
+    50: '#E9F8EF',
+    100: '#C8EED6',
+    200: '#A7E4BD',
+    400: '#4FBF74',
+    600: '#178A3D',
+    700: '#0F6E2F',
+    900: '#0A4A20',
   },
   surface: {
     0: '#FFFFFF',

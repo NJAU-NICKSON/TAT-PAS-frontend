@@ -38,44 +38,35 @@ function StatCard({
   label,
   value,
   icon: Icon,
-  accentColor,
-  accentBg,
   danger = false,
 }: {
   label: string;
   value: string | number;
   icon: React.ElementType;
-  accentColor: string;
-  accentBg: string;
+  accentColor?: string;
+  accentBg?: string;
   danger?: boolean;
 }) {
+  const isDanger = danger && Number(value) > 0;
   return (
     <div
-      className="flex items-center gap-4 p-4 rounded-xl"
+      className="flex flex-col px-4 py-3"
       style={{
-        background: danger && Number(value) > 0 ? '#FEF2F2' : 'var(--bg-card)',
-        border: `1px solid ${danger && Number(value) > 0 ? '#FECACA' : 'var(--border-default)'}`,
-        borderLeft: `3px solid ${danger && Number(value) > 0 ? '#DC2626' : accentColor}`,
-        boxShadow: '0 1px 3px rgba(15,23,42,0.06), 0 4px 12px rgba(15,23,42,0.04)',
+        background: isDanger ? 'var(--status-critical-bg)' : 'var(--bg-card)',
+        border: `1px solid ${isDanger ? 'var(--status-critical-border)' : 'var(--border-default)'}`,
+        borderRadius: 'var(--radius-card)',
       }}
     >
-      <div
-        className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-        style={{ background: danger && Number(value) > 0 ? 'rgba(220,38,38,0.10)' : accentBg }}
+      <div className="flex items-center gap-1.5">
+        <Icon className="w-3.5 h-3.5" style={{ color: isDanger ? 'var(--status-critical-icon)' : 'var(--text-muted)' }} />
+        <span className="text-label" style={{ color: 'var(--text-muted)' }}>{label}</span>
+      </div>
+      <p
+        className="text-2xl font-bold tabular-nums leading-none mt-2"
+        style={{ fontSize: '1.75rem', color: isDanger ? 'var(--status-critical-text)' : 'var(--text-primary)' }}
       >
-        <Icon className="w-5 h-5" style={{ color: danger && Number(value) > 0 ? '#DC2626' : accentColor }} />
-      </div>
-      <div>
-        <p
-          className="text-2xl font-extrabold tabular-nums leading-none"
-          style={{ color: danger && Number(value) > 0 ? '#DC2626' : 'var(--text-primary)' }}
-        >
-          {value}
-        </p>
-        <p className="text-caption font-semibold mt-0.5 uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
-          {label}
-        </p>
-      </div>
+        {value}
+      </p>
     </div>
   );
 }
@@ -84,7 +75,7 @@ function RxCard({ rx, onClick }: { rx: Prescription; onClick: () => void }) {
   return (
     <button
       onClick={onClick}
-      className="w-full text-left rounded-xl border transition-all duration-100 group"
+      className="w-full text-left rounded-lg border transition-all duration-100 group"
       style={{
         background: 'var(--bg-card)',
         borderColor: 'var(--border-default)',
@@ -193,28 +184,21 @@ export function DoctorDashboard() {
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <div
-        style={{
-          background: 'linear-gradient(135deg, #0F172A 0%, #1E3A8A 60%, #2563EB 100%)',
-          borderBottom: '1px solid rgba(255,255,255,0.06)',
-        }}
+        className="flex items-center justify-between px-6 h-12 flex-shrink-0"
+        style={{ background: '#FFFFFF', borderBottom: '1px solid var(--border-default)' }}
       >
-        <div className="flex items-center justify-between px-7 py-6">
-          <div>
-            <p className="text-caption font-bold mb-1.5" style={{ color: 'rgba(255,255,255,0.55)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-              Doctor Dashboard
-            </p>
-            <h1 className="text-xl font-bold text-white">My Prescriptions</h1>
-            <p className="text-body-sm mt-0.5" style={{ color: 'rgba(255,255,255,0.5)' }}>{formatDate()}</p>
-          </div>
-          <button
-            onClick={() => navigate('/consultation')}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-body-sm text-white transition-all hover:opacity-90 active:scale-95"
-            style={{ background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.2)' }}
-          >
-            <Stethoscope className="w-4 h-4" />
-            Enter Consultation Room
-          </button>
+        <div className="flex items-center gap-3">
+          <h1 className="text-base font-semibold tracking-tight" style={{ color: 'var(--text-primary)' }}>My Prescriptions</h1>
+          <span className="text-meta tabular-nums" style={{ color: 'var(--text-muted)' }}>{formatDate()}</span>
         </div>
+        <button
+          onClick={() => navigate('/consultation')}
+          className="flex items-center gap-1.5 px-3 py-1.5 font-semibold text-body-sm text-white transition-colors hover:opacity-90"
+          style={{ background: 'var(--scion-green-600)', borderRadius: 'var(--radius-button)' }}
+        >
+          <Stethoscope className="w-3.5 h-3.5" />
+          Consultation Room
+        </button>
       </div>
 
       <div className="flex-shrink-0 px-7 py-4" style={{ background: '#F1F5F9', borderBottom: '1px solid var(--border-default)' }}>
@@ -238,7 +222,7 @@ export function DoctorDashboard() {
             label="Completed Today"
             value={vm.isLoading ? ' - ' : completedToday.length}
             icon={CheckCircle2}
-            accentColor="#059669"
+            accentColor="#178A3D"
             accentBg="rgba(5,150,105,0.10)"
           />
         </div>
@@ -250,13 +234,13 @@ export function DoctorDashboard() {
           {vm.isLoading ? (
             <div className="space-y-3">
               {[1, 2, 3, 4, 5].map(i => (
-                <div key={i} className="h-20 rounded-xl animate-shimmer" />
+                <div key={i} className="h-20 rounded-lg animate-shimmer" />
               ))}
             </div>
           ) : !hasAny ? (
             <div className="flex flex-col items-center justify-center py-24 text-center">
               <div
-                className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4"
+                className="w-16 h-16 rounded-lg flex items-center justify-center mb-4"
                 style={{ background: 'var(--clinical-100)' }}
               >
                 <ClipboardList className="w-8 h-8" style={{ color: 'var(--clinical-600)' }} />
@@ -267,7 +251,7 @@ export function DoctorDashboard() {
               </p>
               <button
                 onClick={() => navigate('/consultation')}
-                className="flex items-center gap-2 px-5 py-2.5 text-body-sm font-semibold text-white rounded-xl hover:opacity-90 transition-opacity"
+                className="flex items-center gap-2 px-5 py-2.5 text-body-sm font-semibold text-white rounded-lg hover:opacity-90 transition-opacity"
                 style={{ background: 'var(--clinical-600)' }}
               >
                 <Stethoscope className="w-4 h-4" />
@@ -295,7 +279,7 @@ export function DoctorDashboard() {
               <SectionBlock
                 title="Completed Today"
                 icon={CheckCircle2}
-                accentColor="#059669"
+                accentColor="#178A3D"
                 accentBg="rgba(5,150,105,0.10)"
                 prescriptions={completedToday}
                 onCardClick={goToRx}
@@ -340,7 +324,7 @@ export function DoctorDashboard() {
               {[
                 { label: 'Flagged',        count: flagged.length,          color: '#DC2626', bg: '#FEF2F2' },
                 { label: 'In Pipeline',    count: pipeline.length,         color: '#D97706', bg: '#FFFBEB' },
-                { label: 'Done Today',     count: completedToday.length,   color: '#059669', bg: '#F0FDF4' },
+                { label: 'Done Today',     count: completedToday.length,   color: '#178A3D', bg: '#F0FDF4' },
                 { label: 'Total Loaded',   count: vm.prescriptions.length, color: '#475569', bg: '#F8FAFC' },
               ].map(({ label, count, color, bg }) => (
                 <div

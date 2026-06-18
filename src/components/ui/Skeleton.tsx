@@ -14,7 +14,7 @@ export function Skeleton({
 
 export function SkeletonCard() {
   return (
-    <div className="space-y-3 p-4 bg-surface-0 rounded-xl border border-surface-3">
+    <div className="space-y-3 p-4 bg-surface-0 rounded-lg border border-surface-3">
       <div className="h-4 w-3/4 bg-surface-3 rounded" />
       <div className="h-3 w-1/2 bg-surface-3 rounded" />
       <div className="h-3 w-3/4 bg-surface-3 rounded" />
@@ -41,7 +41,7 @@ export function SkeletonTableRow() {
 
 export function SkeletonKPI() {
   return (
-    <div className="p-6 bg-surface-0 border border-surface-3 rounded-xl shadow-card">
+    <div className="p-6 bg-surface-0 border border-surface-3 rounded-lg shadow-card">
       <div className="h-4 w-24 bg-surface-3 rounded mb-3" />
       <div className="h-12 w-3/4 bg-surface-3 rounded" />
     </div>
@@ -50,7 +50,7 @@ export function SkeletonKPI() {
 
 export function SkeletonChart() {
   return (
-    <div className="h-64 bg-surface-3 rounded-xl animate-shimmer" />
+    <div className="h-64 bg-surface-3 rounded-lg animate-shimmer" />
   );
 }
 

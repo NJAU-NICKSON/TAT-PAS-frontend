@@ -22,8 +22,9 @@ interface PatientViewModel {
   setSearchQuery: (query: string) => void;
   searchPatients: (query: string) => Promise<void>;
   loadPatient: (id: string) => Promise<void>;
-  createPatient: (data: CreatePatientPayload) => Promise<Patient | null>;
+  createPatient: (data: CreatePatientPayload, force?: boolean) => Promise<Patient | null>;
   updatePatient: (id: string, data: UpdatePatientPayload) => Promise<Patient | null>;
+  absorbCreated: (patient: Patient) => void;
   clearError: () => void;
 }
 
@@ -72,7 +73,6 @@ export function usePatientViewModel(): PatientViewModel {
     [searchPatients]
   );
 
-  // Initial load on mount
   useEffect(() => {
     searchPatients('');
     return () => {
@@ -95,11 +95,11 @@ export function usePatientViewModel(): PatientViewModel {
   }, []);
 
   const createPatient = useCallback(
-    async (data: CreatePatientPayload): Promise<Patient | null> => {
+    async (data: CreatePatientPayload, force = false): Promise<Patient | null> => {
       setIsLoading(true);
       setError(null);
       try {
-        const res = await patientsApi.create(data);
+        const res = await patientsApi.create(data, force);
         setPatients((prev) => [res.data, ...prev]);
         return res.data;
       } catch (err) {
@@ -137,6 +137,10 @@ export function usePatientViewModel(): PatientViewModel {
     [selectedPatient]
   );
 
+  const absorbCreated = useCallback((patient: Patient) => {
+    setPatients((prev) => [patient, ...prev]);
+  }, []);
+
   const clearError = useCallback(() => setError(null), []);
 
   return {
@@ -151,6 +155,7 @@ export function usePatientViewModel(): PatientViewModel {
     loadPatient,
     createPatient,
     updatePatient,
+    absorbCreated,
     clearError,
   };
 }

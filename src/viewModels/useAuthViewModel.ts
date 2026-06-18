@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { ApiError } from '../models/types';
 
 interface AuthViewModel {
-  login: (username: string, password: string) => Promise<boolean>;
+  login: (username: string, password: string, redirectTo?: string) => Promise<boolean>;
   logout: () => void;
   isLoading: boolean;
   error: string | null;
@@ -17,11 +17,11 @@ export function useAuthViewModel(): AuthViewModel {
   const [error, setError] = useState<string | null>(null);
 
   const login = useCallback(
-    async (username: string, password: string): Promise<boolean> => {
+    async (username: string, password: string, redirectTo?: string): Promise<boolean> => {
       setIsLoading(true);
       setError(null);
       try {
-        await ctxLogin(username, password);
+        await ctxLogin(username, password, redirectTo);
         return true;
       } catch (err) {
         const apiErr = err as ApiError;

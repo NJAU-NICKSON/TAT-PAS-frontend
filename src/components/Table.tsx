@@ -1,9 +1,12 @@
 import { ReactNode } from 'react';
+import { ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
+import type { SortDir } from './useTableControls';
 
 export interface Column<T> {
   key: string;
   label: string;
   render?: (row: T) => ReactNode;
+  sortable?: boolean;
 }
 
 interface TableProps<T> {
@@ -12,6 +15,9 @@ interface TableProps<T> {
   isLoading?: boolean;
   emptyMessage?: string;
   onRowClick?: (row: T) => void;
+  sortKey?: string | null;
+  sortDir?: SortDir;
+  onSort?: (key: string) => void;
 }
 
 function SkeletonRow({ cols }: { cols: number }) {
@@ -19,7 +25,7 @@ function SkeletonRow({ cols }: { cols: number }) {
     <tr>
       {Array.from({ length: cols }).map((_, i) => (
         <td key={i} className="px-4 py-3">
-          <div className="h-4 bg-gray-200 rounded animate-pulse" />
+          <div className="h-4 rounded animate-pulse" style={{ background: 'var(--surface-2)' }} />
         </td>
       ))}
     </tr>
@@ -32,38 +38,49 @@ export default function Table<T extends object>({
   isLoading = false,
   emptyMessage = 'No records found.',
   onRowClick,
+  sortKey,
+  sortDir,
+  onSort,
 }: TableProps<T>) {
   return (
-    <div className="overflow-x-auto rounded-lg border border-gray-200 shadow-sm">
-      <table className="min-w-full divide-y divide-gray-200">
-        <thead className="bg-[#1e3a5f]">
+    <div className="overflow-x-auto" style={{ border: '1px solid var(--border-default)', borderRadius: 'var(--radius-card)' }}>
+      <table className="min-w-full">
+        <thead style={{ background: 'var(--surface-1)', borderBottom: '1px solid var(--border-default)' }}>
           <tr>
-            {columns.map((col) => (
-              <th
-                key={col.key}
-                scope="col"
-                className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider"
-              >
-                {col.label}
-              </th>
-            ))}
+            {columns.map((col) => {
+              const isSortable = col.sortable && onSort;
+              const isActive = sortKey === col.key;
+              return (
+                <th
+                  key={col.key}
+                  scope="col"
+                  onClick={isSortable ? () => onSort!(col.key) : undefined}
+                  className={`px-4 py-3 text-left text-caption font-semibold uppercase tracking-wider ${isSortable ? 'cursor-pointer select-none' : ''}`}
+                  style={{ color: 'var(--text-muted)' }}
+                >
+                  <span className="inline-flex items-center gap-1.5">
+                    {col.label}
+                    {isSortable && (
+                      isActive
+                        ? (sortDir === 'asc'
+                            ? <ChevronUp className="w-3.5 h-3.5" style={{ color: 'var(--clinical-600)' }} />
+                            : <ChevronDown className="w-3.5 h-3.5" style={{ color: 'var(--clinical-600)' }} />)
+                        : <ChevronsUpDown className="w-3.5 h-3.5" style={{ color: 'var(--text-disabled)' }} />
+                    )}
+                  </span>
+                </th>
+              );
+            })}
           </tr>
         </thead>
-        <tbody className="bg-white divide-y divide-gray-100">
+        <tbody style={{ background: 'var(--bg-card)' }}>
           {isLoading ? (
             <>
-              <SkeletonRow cols={columns.length} />
-              <SkeletonRow cols={columns.length} />
-              <SkeletonRow cols={columns.length} />
-              <SkeletonRow cols={columns.length} />
-              <SkeletonRow cols={columns.length} />
+              {[0, 1, 2, 3, 4].map(i => <SkeletonRow key={i} cols={columns.length} />)}
             </>
           ) : data.length === 0 ? (
             <tr>
-              <td
-                colSpan={columns.length}
-                className="px-4 py-8 text-center text-gray-500 text-sm"
-              >
+              <td colSpan={columns.length} className="px-4 py-8 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
                 {emptyMessage}
               </td>
             </tr>
@@ -72,16 +89,13 @@ export default function Table<T extends object>({
               <tr
                 key={rowIndex}
                 onClick={onRowClick ? () => onRowClick(row) : undefined}
-                className={`
-                  ${rowIndex % 2 === 0 ? 'bg-white' : 'bg-gray-50'}
-                  ${onRowClick ? 'cursor-pointer hover:bg-blue-50 transition-colors duration-100' : 'hover:bg-gray-50'}
-                `}
+                className={`transition-colors ${onRowClick ? 'cursor-pointer' : ''}`}
+                style={{ borderTop: rowIndex === 0 ? 'none' : '1px solid var(--border-default)' }}
+                onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-row-hover)')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
               >
                 {columns.map((col) => (
-                  <td
-                    key={col.key}
-                    className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap"
-                  >
+                  <td key={col.key} className="px-4 py-3 text-sm whitespace-nowrap" style={{ color: 'var(--text-secondary)' }}>
                     {col.render
                       ? col.render(row)
                       : String((row as Record<string, unknown>)[col.key] ?? '')}

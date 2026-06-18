@@ -17,23 +17,11 @@ const BED_TYPE_LABELS: Record<BedType['bed_type'], string> = {
   paediatric: 'Paediatric', day_case: 'Day Case',
 };
 
-const BED_TYPE_COLORS: Record<BedType['bed_type'], { bg: string; color: string }> = {
-  icu:       { bg: '#FEF2F2', color: '#B91C1C' },
-  hdu:       { bg: '#FFF7ED', color: '#C2410C' },
-  nicu:      { bg: '#FDF4FF', color: '#7E22CE' },
-  isolation: { bg: '#F0FDF4', color: '#15803D' },
-  maternity: { bg: '#FDF2F8', color: '#BE185D' },
-  birthing:  { bg: '#FDF2F8', color: '#BE185D' },
-  general:   { bg: '#F8FAFC', color: '#475569' },
-  paediatric:{ bg: '#FFFBEB', color: '#92400E' },
-  day_case:  { bg: '#F0FDF4', color: '#166534' },
-};
-
 const STATUS_CONFIG: Record<BedStatus, { bg: string; color: string; border: string; dot: string; label: string }> = {
   available:   { bg: '#F0FDF4', color: '#15803D', border: '#86EFAC', dot: '#22C55E',  label: 'Available'    },
   occupied:    { bg: '#FEF2F2', color: '#B91C1C', border: '#FCA5A5', dot: '#EF4444',  label: 'Occupied'     },
   reserved:    { bg: '#FFFBEB', color: '#92400E', border: '#FCD34D', dot: '#F59E0B',  label: 'Reserved'     },
-  cleaning:    { bg: '#EFF6FF', color: '#1D4ED8', border: '#93C5FD', dot: '#3B82F6',  label: 'Cleaning'     },
+  cleaning:    { bg: '#EFF6FF', color: '#0F6E2F', border: '#93C5FD', dot: '#1FA64A',  label: 'Cleaning'     },
   maintenance: { bg: '#F8FAFC', color: '#475569', border: '#CBD5E1', dot: '#94A3B8',  label: 'Maintenance'  },
 };
 
@@ -61,42 +49,38 @@ function BedCell({
   bed: BedType; patientName?: string; onEdit: () => void; canEdit: boolean;
 }) {
   const cfg = STATUS_CONFIG[bed.status];
-  const typeCfg = BED_TYPE_COLORS[bed.bed_type] ?? BED_TYPE_COLORS.general;
 
   return (
     <div
-      className="relative rounded-xl p-3 flex flex-col gap-1.5 transition-shadow hover:shadow-md"
+      className="relative p-3 flex flex-col gap-1.5"
       style={{
-        background: cfg.bg,
-        border: `1.5px solid ${cfg.border}`,
+        background: 'var(--bg-card)',
+        border: '1px solid var(--border-default)',
+        borderRadius: 'var(--radius-card)',
         minWidth: 120,
       }}
     >
       <div className="flex items-center justify-between gap-1">
-        <span className="font-bold text-sm leading-tight" style={{ color: cfg.color }}>
+        <span className="font-semibold text-body-sm leading-tight" style={{ color: 'var(--text-primary)' }}>
           {bed.bed_label}
         </span>
-        <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: cfg.dot }} />
+        <span className="flex items-center gap-1 flex-shrink-0">
+          <span className="w-1.5 h-1.5 rounded-full" style={{ background: cfg.dot }} />
+          <span className="text-meta font-semibold" style={{ color: cfg.color }}>{cfg.label}</span>
+        </span>
       </div>
 
-      <p className="text-xs leading-snug font-semibold truncate" style={{ color: cfg.color }}>
+      <p className="text-caption leading-snug truncate" style={{ color: 'var(--text-muted)' }}>
         {bed.status === 'occupied' && patientName
           ? patientName
-          : cfg.label}
+          : BED_TYPE_LABELS[bed.bed_type] ?? bed.bed_type}
       </p>
-
-      <span
-        className="text-caption font-semibold px-1.5 py-0.5 rounded-md self-start"
-        style={{ background: typeCfg.bg, color: typeCfg.color, fontSize: 10 }}
-      >
-        {BED_TYPE_LABELS[bed.bed_type] ?? bed.bed_type}
-      </span>
 
       {canEdit && (
         <button
           onClick={onEdit}
           className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 p-1 rounded-md transition-opacity"
-          style={{ background: 'rgba(0,0,0,0.07)', color: cfg.color }}
+          style={{ color: 'var(--text-muted)' }}
           title="Edit status"
         >
           <Pencil className="w-3 h-3" />
@@ -145,7 +129,7 @@ function AddBedModal({ departments, onSave, onClose }: {
         <form
           onSubmit={handleSubmit}
           onClick={e => e.stopPropagation()}
-          className="w-full max-w-lg rounded-2xl overflow-hidden"
+          className="w-full max-w-lg rounded-lg overflow-hidden"
           style={{ background: 'var(--bg-card)', border: '1px solid var(--border-default)', boxShadow: 'var(--shadow-modal)' }}
         >
           <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: '1px solid var(--border-default)' }}>
@@ -252,13 +236,13 @@ function EditStatusModal({ bed, onSave, onClose }: {
     <>
       <div className="fixed inset-0 z-50 bg-black/40" onClick={onClose} />
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
-        <div onClick={e => e.stopPropagation()} className="w-full max-w-sm rounded-2xl overflow-hidden" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-default)', boxShadow: 'var(--shadow-modal)' }}>
+        <div role="dialog" aria-modal="true" onClick={e => e.stopPropagation()} className="w-full max-w-sm rounded-lg overflow-hidden" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-default)', boxShadow: 'var(--shadow-modal)' }}>
           <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid var(--border-default)' }}>
             <div>
               <h3 className="text-body font-bold" style={{ color: 'var(--text-primary)' }}>{bed.bed_label}</h3>
               <p className="text-caption mt-0.5" style={{ color: 'var(--text-muted)' }}>{bed.ward_name} · {BED_TYPE_LABELS[bed.bed_type]}</p>
             </div>
-            <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-[var(--bg-base)]" style={{ color: 'var(--text-muted)' }}><X className="w-4 h-4" /></button>
+            <button onClick={onClose} aria-label="Close" className="p-1.5 rounded-lg hover:bg-[var(--bg-base)]" style={{ color: 'var(--text-muted)' }}><X className="w-4 h-4" /></button>
           </div>
           <div className="px-5 py-4 space-y-4">
             <div className="grid grid-cols-2 gap-3">
@@ -266,7 +250,7 @@ function EditStatusModal({ bed, onSave, onClose }: {
                 <button
                   key={k}
                   onClick={() => setStatus(k as BedStatus)}
-                  className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-semibold text-left transition-all"
+                  className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-semibold text-left transition-all"
                   style={{
                     background: status === k ? v.bg : 'var(--bg-base)',
                     border: `1.5px solid ${status === k ? v.border : 'var(--border-default)'}`,
@@ -283,7 +267,7 @@ function EditStatusModal({ bed, onSave, onClose }: {
             </Field>
           </div>
           <div className="flex justify-end gap-3 px-5 py-4" style={{ borderTop: '1px solid var(--border-default)', background: 'var(--bg-base)' }}>
-            <button onClick={onClose} className="px-4 py-2 rounded-lg text-sm font-semibold border hover:bg-[var(--bg-row-hover)]" style={{ color: 'var(--text-primary)', borderColor: 'var(--border-default)' }}>Cancel</button>
+            <button onClick={onClose} aria-label="Close" className="px-4 py-2 rounded-lg text-sm font-semibold border hover:bg-[var(--bg-row-hover)]" style={{ color: 'var(--text-primary)', borderColor: 'var(--border-default)' }}>Cancel</button>
             <button onClick={handleSave} disabled={saving} className="px-4 py-2 rounded-lg text-sm font-semibold text-white hover:opacity-90 disabled:opacity-60" style={{ background: 'var(--clinical-600)' }}>
               {saving ? 'Saving' : 'Save'}
             </button>
@@ -306,7 +290,6 @@ function DepartmentAccordion({
 }) {
   const [open, setOpen] = useState(false);
 
-  // Filter beds by search
   const filtered = search
     ? beds.filter(b =>
         b.bed_label.toLowerCase().includes(search) ||
@@ -315,7 +298,6 @@ function DepartmentAccordion({
       )
     : beds;
 
-  // Group by ward
   const byWard = useMemo(() => {
     const map: Record<string, BedType[]> = {};
     for (const b of filtered) {
@@ -331,20 +313,19 @@ function DepartmentAccordion({
   const pct       = total > 0 ? Math.round((occupied / total) * 100) : 0;
   const nearCap   = pct >= 80;
 
-  // Auto-open when there's a search match
   const hasMatch = search && filtered.length > 0;
   const isOpen = open || !!hasMatch;
 
   if (search && filtered.length === 0) return null;
 
   return (
-    <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid var(--border-default)', boxShadow: 'var(--shadow-card)' }}>
+    <div className="rounded-lg overflow-hidden" style={{ border: '1px solid var(--border-default)', boxShadow: 'var(--shadow-card)' }}>
       <button
         onClick={() => setOpen(o => !o)}
         className="w-full flex items-center gap-4 px-5 py-4 text-left transition-colors hover:bg-[var(--bg-row-hover)]"
         style={{ background: 'var(--bg-card)' }}
       >
-        <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(37,99,235,0.1)' }}>
+        <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(23,138,61,0.1)' }}>
           <Building2 className="w-4.5 h-4.5" style={{ color: 'var(--clinical-600)' }} />
         </div>
 
@@ -528,15 +509,18 @@ export default function BedManagement() {
 
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         {[
-          { label: 'Total Beds',  value: total,       color: 'var(--text-primary)', bg: 'var(--bg-card)' },
-          { label: 'Available',   value: available,   color: '#15803D',             bg: '#F0FDF4' },
-          { label: 'Occupied',    value: occupied,    color: '#B91C1C',             bg: '#FEF2F2' },
-          { label: 'Cleaning',    value: cleaning,    color: '#1D4ED8',             bg: '#EFF6FF' },
-          { label: 'Maintenance', value: maintenance, color: '#475569',             bg: '#F8FAFC' },
-        ].map(({ label, value, color, bg }) => (
-          <div key={label} className="rounded-xl p-4 text-center" style={{ background: bg, border: '1px solid var(--border-default)' }}>
-            <p className="text-caption font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{label}</p>
-            <p className="text-2xl font-extrabold tabular-nums mt-1" style={{ color }}>{value}</p>
+          { label: 'Total Beds',  value: total,       dot: 'var(--text-muted)' },
+          { label: 'Available',   value: available,   dot: '#22C55E' },
+          { label: 'Occupied',    value: occupied,    dot: '#EF4444' },
+          { label: 'Cleaning',    value: cleaning,    dot: '#1FA64A' },
+          { label: 'Maintenance', value: maintenance, dot: '#94A3B8' },
+        ].map(({ label, value, dot }) => (
+          <div key={label} className="px-4 py-3" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-card)' }}>
+            <div className="flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full" style={{ background: dot }} />
+              <p className="text-caption font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{label}</p>
+            </div>
+            <p className="text-xl font-bold tabular-nums mt-1" style={{ color: 'var(--text-primary)' }}>{value}</p>
           </div>
         ))}
       </div>
@@ -546,7 +530,7 @@ export default function BedManagement() {
         <input
           value={search} onChange={e => setSearch(e.target.value)}
           placeholder="Search bed, ward, or patient"
-          className="w-full pl-9 pr-4 py-2 text-sm rounded-xl outline-none"
+          className="w-full pl-9 pr-4 py-2 text-sm rounded-lg outline-none"
           style={{ background: 'var(--bg-card)', border: '1px solid var(--border-default)', color: 'var(--text-primary)' }}
         />
       </div>
@@ -554,7 +538,7 @@ export default function BedManagement() {
       {isLoading ? (
         <div className="space-y-3">
           {[1, 2, 3].map(i => (
-            <div key={i} className="h-20 rounded-2xl animate-pulse" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-default)' }} />
+            <div key={i} className="h-20 rounded-lg animate-pulse" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-default)' }} />
           ))}
         </div>
       ) : (

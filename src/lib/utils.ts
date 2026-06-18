@@ -5,6 +5,12 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+export function withDoctorTitle(name?: string | null): string {
+  if (!name || !name.trim()) return '';
+  const n = name.trim();
+  return /^dr\.?\s/i.test(n) ? n : `Dr. ${n}`;
+}
+
 export function formatRelativeTime(date: Date): string {
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();

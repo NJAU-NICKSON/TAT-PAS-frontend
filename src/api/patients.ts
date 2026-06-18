@@ -1,12 +1,16 @@
 import apiClient from './apiClient';
-import { Patient, PaginatedResponse, ContactInfo } from '../models/types';
+import { Patient, ContactInfo, Allergy } from '../models/types';
 
 export interface CreatePatientPayload {
   first_name: string;
   last_name: string;
   dob?: string;
   gender?: string;
+  national_id?: string;
+  guardian_national_id?: string;
+  guardian_name?: string;
   contact?: ContactInfo;
+  allergies?: Allergy[];
 }
 
 export interface UpdatePatientPayload {
@@ -14,7 +18,11 @@ export interface UpdatePatientPayload {
   last_name?: string;
   dob?: string;
   gender?: string;
+  national_id?: string;
+  guardian_national_id?: string;
+  guardian_name?: string;
   contact?: ContactInfo;
+  allergies?: Allergy[];
 }
 
 export interface PatientSearchResult {
@@ -33,8 +41,8 @@ export const patientsApi = {
   getById: (id: string) =>
     apiClient.get<Patient>(`/patients/${id}`),
 
-  create: (data: CreatePatientPayload) =>
-    apiClient.post<Patient>('/patients', data),
+  create: (data: CreatePatientPayload, force = false) =>
+    apiClient.post<Patient>('/patients', data, { params: force ? { force: true } : {} }),
 
   update: (id: string, data: UpdatePatientPayload) =>
     apiClient.patch<Patient>(`/patients/${id}`, data),

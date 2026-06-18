@@ -18,19 +18,31 @@ export interface UpdateUserPayload {
 
 export const usersApi = {
   list: (skip = 0, limit = 50, role?: UserRole) =>
-    apiClient.get<PaginatedResponse<User>>('/users', {
+    apiClient.get<PaginatedResponse<User>>('/users/', {
       params: { skip, limit, ...(role ? { role } : {}) },
     }),
 
   listDoctors: () =>
-    apiClient.get<PaginatedResponse<User>>('/users', { params: { role: 'doctor', limit: 100 } }),
+    apiClient.get<PaginatedResponse<User>>('/users/', { params: { role: 'doctor', limit: 100 } }),
+
+  listNurses: () =>
+    apiClient.get<PaginatedResponse<User>>('/users/', { params: { role: 'nurse', limit: 100 } }),
 
   getById: (id: string) =>
     apiClient.get<User>(`/users/${id}`),
 
   create: (data: CreateUserPayload) =>
-    apiClient.post<User>('/users', data),
+    apiClient.post<User>('/users/', data),
 
   update: (id: string, data: UpdateUserPayload) =>
     apiClient.patch<User>(`/users/${id}`, data),
+
+  resetPassword: (id: string, password: string) =>
+    apiClient.patch<User>(`/users/${id}`, { password }),
+
+  deactivate: (id: string) =>
+    apiClient.delete<User>(`/users/${id}`),
+
+  reactivate: (id: string) =>
+    apiClient.post<User>(`/users/${id}/reactivate`),
 };

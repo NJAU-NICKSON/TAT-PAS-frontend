@@ -1,4 +1,3 @@
-// views/dashboards/index.ts
 export { AdminDashboard } from './AdminDashboard';
 export { AnalyticsDashboard } from './AnalyticsDashboard';
 export { AuditorDashboard } from './AuditorDashboard';
