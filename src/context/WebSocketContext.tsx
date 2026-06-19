@@ -1,7 +1,26 @@
 import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
 import { useAuth } from './AuthContext';
 
-const WS_BASE = import.meta.env.VITE_WS_URL || 'ws://localhost:8000';
+// Prefer VITE_WS_URL. Otherwise derive from the API URL or the page origin so
+// an HTTPS page never falls back to a blocked ws:// (mixed-content) connection.
+function resolveWsBase(): string {
+  const explicit = import.meta.env.VITE_WS_URL;
+  if (explicit) return explicit;
+  const api = import.meta.env.VITE_API_URL;
+  if (api) {
+    try {
+      const u = new URL(api);
+      return `${u.protocol === 'https:' ? 'wss:' : 'ws:'}//${u.host}`;
+    } catch { /* fall through */ }
+  }
+  if (typeof window !== 'undefined') {
+    const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    return `${proto}//${window.location.host}`;
+  }
+  return 'ws://localhost:8000';
+}
+
+const WS_BASE = resolveWsBase();
 
 export interface WSEvent {
   event_type: string;
