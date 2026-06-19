@@ -1,7 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useWebSocket, WSEvent } from '../../context/WebSocketContext';
 
-export type NotifType = 'sla_breach' | 'flag_created' | 'rx_verified' | 'rx_dispensed';
+export type NotifType =
+  | 'sla_breach'
+  | 'flag_created'
+  | 'patient_assigned'
+  | 'rx_verified'
+  | 'rx_dispensed'
+  | 'rx_administered'
+  | 'rx_returned';
 
 export interface Notification {
   id: string;
@@ -12,27 +19,38 @@ export interface Notification {
   read: boolean;
 }
 
+const RX_STATUS_NOTIF: Record<string, { type: NotifType; title: string; tail: string }> = {
+  verified:          { type: 'rx_verified',     title: 'Approved by Auditor',  tail: 'Being processed by pharmacy' },
+  dispensed:         { type: 'rx_dispensed',    title: 'Ready for Pickup',     tail: 'Dispensed by pharmacy - collect for administration' },
+  administered:      { type: 'rx_administered', title: 'Medication Administered', tail: 'Given to the patient' },
+  pending_amendment: { type: 'rx_returned',     title: 'Returned to Doctor',   tail: 'Amendment required' },
+  flagged:           { type: 'flag_created',    title: 'Prescription Flagged', tail: 'Held for review' },
+};
+
 export function useNotifications() {
   const { subscribe } = useWebSocket();
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
   const addNotif = useCallback((n: Notification) => {
-    setNotifications(prev => [n, ...prev].slice(0, 50));
+    setNotifications(prev => {
+      if (prev.some(p => p.id === n.id)) return prev;
+      return [n, ...prev].slice(0, 60);
+    });
   }, []);
+
+  const rxLine = (d: { rx_number?: string; patient_name?: string }, extra?: string) =>
+    [d.rx_number && `Rx ${d.rx_number}`, d.patient_name, extra].filter(Boolean).join(' - ');
 
   useEffect(() => {
     const unsubs = [
       subscribe('sla.breached', (ev: WSEvent) => {
-        const d = ev.data as { prescription_id?: string; rx_number?: string; patient_name?: string; elapsed_min?: number };
+        const d = ev.data as { rx_number?: string; patient_name?: string; elapsed_min?: number };
         addNotif({
-          id: ev.entity_id ? `sla-${ev.entity_id}` : `sla-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+          id: `sla-${ev.entity_id ?? Date.now()}`,
           type: 'sla_breach',
           title: 'SLA Breach',
-          subtitle: [
-            d.rx_number && `Rx ${d.rx_number}`,
-            d.patient_name,
-            d.elapsed_min != null && `${Math.round(d.elapsed_min)}m over threshold`,
-          ].filter(Boolean).join('  ') || 'Prescription exceeded SLA threshold',
+          subtitle: rxLine(d, d.elapsed_min != null ? `${Math.round(d.elapsed_min)}m over` : undefined)
+            || 'Prescription exceeded SLA threshold',
           timestamp: new Date(),
           read: false,
         });
@@ -41,40 +59,40 @@ export function useNotifications() {
       subscribe('audit.flag_created', (ev: WSEvent) => {
         const d = ev.data as { rx_number?: string; reason?: string; patient_name?: string };
         addNotif({
-          id: ev.entity_id ? `flag-${ev.entity_id}` : `flag-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+          id: `flag-${ev.entity_id ?? Date.now()}`,
           type: 'flag_created',
           title: 'Prescription Flagged',
-          subtitle: [
-            d.rx_number && `Rx ${d.rx_number}`,
-            d.patient_name,
-            d.reason,
-          ].filter(Boolean).join('  ') || 'A prescription was flagged for audit',
+          subtitle: rxLine(d, d.reason) || 'A prescription was flagged for audit',
+          timestamp: new Date(),
+          read: false,
+        });
+      }),
+
+      subscribe('patient.assigned', (ev: WSEvent) => {
+        const d = ev.data as { patient_name?: string; consultation_room?: string; visit_number?: string };
+        addNotif({
+          id: `assign-${ev.entity_id ?? Date.now()}-${Date.now()}`,
+          type: 'patient_assigned',
+          title: 'Patient Assigned to You',
+          subtitle: [d.patient_name, d.consultation_room, d.visit_number]
+            .filter(Boolean).join(' - ') || 'A patient was assigned to you',
           timestamp: new Date(),
           read: false,
         });
       }),
 
       subscribe('prescription.status_changed', (ev: WSEvent) => {
-        const d = ev.data as { status?: string; rx_number?: string; patient_name?: string };
-        if (d.status === 'verified') {
-          addNotif({
-            id: ev.entity_id ? `ver-${ev.entity_id}` : `ver-${Date.now()}-${Math.random().toString(36).slice(2)}`,
-            type: 'rx_verified',
-            title: 'Prescription Verified',
-            subtitle: [d.rx_number && `Rx ${d.rx_number}`, d.patient_name, 'Ready for dispensing'].filter(Boolean).join('  '),
-            timestamp: new Date(),
-            read: false,
-          });
-        } else if (d.status === 'dispensed') {
-          addNotif({
-            id: ev.entity_id ? `dis-${ev.entity_id}` : `dis-${Date.now()}-${Math.random().toString(36).slice(2)}`,
-            type: 'rx_dispensed',
-            title: 'Prescription Dispensed',
-            subtitle: [d.rx_number && `Rx ${d.rx_number}`, d.patient_name].filter(Boolean).join('  '),
-            timestamp: new Date(),
-            read: false,
-          });
-        }
+        const d = ev.data as { new_status?: string; rx_number?: string; patient_name?: string };
+        const cfg = d.new_status ? RX_STATUS_NOTIF[d.new_status] : undefined;
+        if (!cfg) return;
+        addNotif({
+          id: `rx-${d.new_status}-${ev.entity_id ?? Date.now()}`,
+          type: cfg.type,
+          title: cfg.title,
+          subtitle: rxLine(d, cfg.tail),
+          timestamp: new Date(),
+          read: false,
+        });
       }),
     ];
     return () => unsubs.forEach(u => u());

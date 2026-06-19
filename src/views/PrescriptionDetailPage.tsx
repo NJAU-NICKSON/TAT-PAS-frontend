@@ -730,6 +730,7 @@ export default function PrescriptionDetailPage() {
   const [rx, setRx] = useState<Prescription | null>(null);
   const [flags, setFlags] = useState<AuditRecord[]>([]);
   const [followUp, setFollowUp] = useState<FollowUp | undefined>(undefined);
+  const [clinical, setClinical] = useState<{ diagnosis?: string; clinical_findings?: string; chief_complaint?: string } | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'timeline' | 'medications' | 'tat'>('timeline');
   const [modal, setModal] = useState<'return' | 'dispense' | 'administer' | 'resubmit' | null>(null);
@@ -757,7 +758,12 @@ export default function PrescriptionDetailPage() {
             } else {
               setFollowUp(undefined);
             }
-          } catch { setFollowUp(undefined); }
+            setClinical({
+              diagnosis: v.diagnosis,
+              clinical_findings: v.clinical_findings,
+              chief_complaint: v.chief_complaint,
+            });
+          } catch { setFollowUp(undefined); setClinical(undefined); }
         }
       }
       if (flagsRes.status === 'fulfilled') {
@@ -1067,6 +1073,21 @@ export default function PrescriptionDetailPage() {
                       )}
                     </div>
                   ))}
+
+                  {(clinical?.diagnosis || clinical?.clinical_findings || clinical?.chief_complaint) && (
+                    <div className="p-3 bg-sky-50 border border-sky-200 rounded-lg space-y-1.5">
+                      <p className="text-xs font-semibold text-sky-800">Clinical Context (from consultation)</p>
+                      {clinical.chief_complaint && (
+                        <p className="text-sm text-sky-900"><span className="font-medium">Complaint:</span> {clinical.chief_complaint}</p>
+                      )}
+                      {clinical.diagnosis && (
+                        <p className="text-sm text-sky-900"><span className="font-medium">Diagnosis:</span> {clinical.diagnosis}</p>
+                      )}
+                      {clinical.clinical_findings && (
+                        <p className="text-sm text-sky-900"><span className="font-medium">Findings:</span> {clinical.clinical_findings}</p>
+                      )}
+                    </div>
+                  )}
 
                   {(rx.notes || rx.pharmacist_comment) && (
                     <div className="space-y-3 mt-2">
