@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import {
   Eye, EyeOff, AlertCircle, Loader2, Shield, Stethoscope,
-  HeartPulse, FlaskConical, ClipboardCheck, Receipt, UserCog,
+  HeartPulse, FlaskConical, ClipboardCheck, Receipt, UserCog, ChevronLeft,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../context/AuthContext';
@@ -112,19 +112,6 @@ export default function LoginPage() {
           <h1 className="text-h1 text-white leading-snug">
             Turnaround Time &amp;<br />Prescription Audit
           </h1>
-          {selectedRole && (
-            <div
-              className="mt-6 inline-flex items-center gap-2 px-3 py-2 rounded-lg animate-fade-in"
-              style={{ background: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.15)' }}
-            >
-              <span className="text-body-sm font-semibold text-white">
-                {ROLES.find(r => r.id === selectedRole)?.label}
-              </span>
-              <span className="text-meta" style={{ color: 'rgba(255,255,255,0.6)' }}>
-                · {ROLES.find(r => r.id === selectedRole)?.hint}
-              </span>
-            </div>
-          )}
         </div>
 
         <p className="text-meta" style={{ color: 'rgba(255,255,255,0.45)' }}>
@@ -144,61 +131,83 @@ export default function LoginPage() {
             </div>
           </div>
 
-          <div className="mb-6">
-            <h2 className="text-h1" style={{ color: 'var(--text-primary)' }}>Welcome back</h2>
-            <p className="text-body mt-1" style={{ color: 'var(--text-secondary)' }}>
-              Select your role, then sign in
-            </p>
-          </div>
-
-          <div className="mb-6">
-            <p className="text-label mb-2" style={{ color: 'var(--text-muted)' }}>Your role</p>
-            <div className="grid grid-cols-2 gap-2">
-              {ROLES.map(role => {
-                const Icon = role.icon;
-                const active = selectedRole === role.id;
-                return (
-                  <button
-                    key={role.id}
-                    type="button"
-                    onClick={() => setSelectedRole(active ? null : role.id)}
-                    className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-left transition-all"
-                    style={{
-                      background: active ? 'var(--scion-green-50)' : 'var(--bg-card)',
-                      border: `1.5px solid ${active ? 'var(--scion-green-600)' : 'var(--border-default)'}`,
-                    }}
-                  >
-                    <Icon
-                      className="w-4 h-4 flex-shrink-0"
-                      style={{ color: active ? 'var(--scion-green-600)' : 'var(--text-muted)' }}
-                    />
-                    <span
-                      className="text-body-sm font-semibold truncate"
-                      style={{ color: active ? 'var(--scion-green-700)' : 'var(--text-primary)' }}
+          {/* Step 1: choose a role */}
+          {!selectedRole && (
+            <div className="animate-fade-in">
+              <div className="mb-6">
+                <h2 className="text-h1" style={{ color: 'var(--text-primary)' }}>Welcome</h2>
+                <p className="text-body mt-1" style={{ color: 'var(--text-secondary)' }}>
+                  Select your role to continue
+                </p>
+              </div>
+              <div className="grid grid-cols-2 gap-2.5">
+                {ROLES.map(role => {
+                  const Icon = role.icon;
+                  return (
+                    <button
+                      key={role.id}
+                      type="button"
+                      onClick={() => { setSelectedRole(role.id); setError(''); }}
+                      className="flex flex-col items-start gap-2 p-3.5 rounded-lg text-left transition-all hover:shadow-sm"
+                      style={{ background: 'var(--bg-card)', border: '1.5px solid var(--border-default)' }}
+                      onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--scion-green-600)')}
+                      onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border-default)')}
                     >
-                      {role.label}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {error && (
-            <div
-              className="flex items-start gap-2.5 p-3.5 rounded-lg mb-5 text-body-sm border animate-fade-in"
-              style={{
-                background: 'var(--status-critical-bg)',
-                borderColor: 'var(--status-critical-border)',
-                color: 'var(--status-critical-text)',
-              }}
-            >
-              <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
-              <span>{error}</span>
+                      <Icon className="w-5 h-5" style={{ color: 'var(--scion-green-600)' }} />
+                      <div>
+                        <p className="text-body-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{role.label}</p>
+                        <p className="text-meta mt-0.5" style={{ color: 'var(--text-muted)' }}>{role.hint}</p>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           )}
 
-          <form onSubmit={handleSubmit} noValidate className="space-y-4">
+          {/* Step 2: sign in for the chosen role */}
+          {selectedRole && (() => {
+            const role = ROLES.find(r => r.id === selectedRole)!;
+            const RoleIcon = role.icon;
+            return (
+              <div className="animate-fade-in">
+                <button
+                  type="button"
+                  onClick={() => { setSelectedRole(null); setError(''); setUsername(''); setPassword(''); }}
+                  className="inline-flex items-center gap-1.5 text-body-sm font-medium mb-5 transition-colors"
+                  style={{ color: 'var(--text-muted)' }}
+                >
+                  <ChevronLeft className="w-4 h-4" /> Change role
+                </button>
+
+                <div className="flex items-center gap-3 mb-6">
+                  <div
+                    className="w-11 h-11 rounded-lg flex items-center justify-center flex-shrink-0"
+                    style={{ background: 'var(--scion-green-50)', border: '1px solid var(--scion-green-100)' }}
+                  >
+                    <RoleIcon className="w-5 h-5" style={{ color: 'var(--scion-green-600)' }} />
+                  </div>
+                  <div>
+                    <h2 className="text-h2" style={{ color: 'var(--text-primary)' }}>{role.label} sign in</h2>
+                    <p className="text-body-sm" style={{ color: 'var(--text-secondary)' }}>{role.hint}</p>
+                  </div>
+                </div>
+
+                {error && (
+                  <div
+                    className="flex items-start gap-2.5 p-3.5 rounded-lg mb-5 text-body-sm border animate-fade-in"
+                    style={{
+                      background: 'var(--status-critical-bg)',
+                      borderColor: 'var(--status-critical-border)',
+                      color: 'var(--status-critical-text)',
+                    }}
+                  >
+                    <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                    <span>{error}</span>
+                  </div>
+                )}
+
+                <form onSubmit={handleSubmit} noValidate className="space-y-4">
             <div>
               <label
                 htmlFor="username"
@@ -278,18 +287,19 @@ export default function LoginPage() {
               onMouseEnter={e => (e.currentTarget.style.background = 'var(--scion-green-700)')}
               onMouseLeave={e => (e.currentTarget.style.background = 'var(--scion-green-600)')}
             >
-              {isLoading ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Signing in
-                </>
-              ) : (
-                selectedRole
-                  ? `Sign in as ${ROLES.find(r => r.id === selectedRole)?.label}`
-                  : 'Sign in'
-              )}
-            </button>
-          </form>
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Signing in
+                    </>
+                  ) : (
+                    `Sign in as ${role.label}`
+                  )}
+                </button>
+              </form>
+              </div>
+            );
+          })()}
 
           <p
             className="text-meta text-center mt-8"
