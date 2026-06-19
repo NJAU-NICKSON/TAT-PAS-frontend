@@ -390,7 +390,8 @@ export function BillingClerkDashboard() {
               boxShadow: 'var(--shadow-card)',
             }}
           >
-            <table className="w-full text-body-sm">
+            <div className="overflow-x-auto">
+            <table className="w-full text-body-sm min-w-[640px]">
               <thead>
                 <tr
                   className="border-b"
@@ -489,6 +490,7 @@ export function BillingClerkDashboard() {
                 })}
               </tbody>
             </table>
+            </div>
           </div>
         )}
       </div>

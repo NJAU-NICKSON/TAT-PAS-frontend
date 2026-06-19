@@ -230,7 +230,8 @@ export function ReceptionistDashboard() {
                   boxShadow: 'var(--shadow-card)',
                 }}
               >
-                <table className="w-full text-body-sm">
+                <div className="overflow-x-auto">
+                <table className="w-full text-body-sm min-w-[640px]">
                   <thead>
                     <tr
                       className="border-b"
@@ -333,13 +334,14 @@ export function ReceptionistDashboard() {
                     })}
                   </tbody>
                 </table>
+                </div>
               </div>
             )}
           </div>
         </div>
 
         <div
-          className="w-72 flex-shrink-0 flex flex-col border-l overflow-y-auto"
+          className="hidden xl:flex w-72 flex-shrink-0 flex-col border-l overflow-y-auto"
           style={{ borderColor: 'var(--border-default)', background: 'var(--bg-card)' }}
         >
           <div className="px-4 pt-5 pb-4 border-b" style={{ borderColor: 'var(--border-default)' }}>

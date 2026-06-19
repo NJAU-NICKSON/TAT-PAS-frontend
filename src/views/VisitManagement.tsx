@@ -438,7 +438,8 @@ export default function VisitManagement() {
       </div>
 
       <div className="rounded-lg overflow-hidden" style={{ border: '1px solid var(--border-default)', boxShadow: 'var(--shadow-card)' }}>
-        <table className="w-full text-body-sm">
+        <div className="overflow-x-auto">
+        <table className="w-full text-body-sm min-w-[640px]">
           <thead>
             <tr style={{ background: 'var(--bg-base)', borderBottom: '1px solid var(--border-default)' }}>
               {([
@@ -524,6 +525,7 @@ export default function VisitManagement() {
             })}
           </tbody>
         </table>
+        </div>
         {!isLoading && filtered.length > 0 && (
           <TablePagination
             page={tc.page} pageCount={tc.pageCount} pageSize={tc.pageSize}

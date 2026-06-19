@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronRight, ChevronDown, User, LogOut, Bell, AlertTriangle } from 'lucide-react';
+import { ChevronRight, ChevronDown, User, LogOut, Bell, AlertTriangle, Menu } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useWebSocket } from '../../context/WebSocketContext';
 import { NotificationPanel } from '../ui/NotificationPanel';
@@ -13,9 +13,10 @@ interface Breadcrumb {
 
 interface TopBarProps {
   breadcrumbs: Breadcrumb[];
+  onMenuClick?: () => void;
 }
 
-export function TopBar({ breadcrumbs }: TopBarProps) {
+export function TopBar({ breadcrumbs, onMenuClick }: TopBarProps) {
   const { user, logout } = useAuth();
   const { subscribe } = useWebSocket();
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -35,13 +36,22 @@ export function TopBar({ breadcrumbs }: TopBarProps) {
 
   return (
     <>
-      <header className="flex items-center gap-4 px-6 flex-shrink-0"
+      <header className="flex items-center gap-2 sm:gap-4 px-3 sm:px-6 flex-shrink-0"
         style={{
           height: '60px',
           background: '#fff',
           borderBottom: '1px solid #E5E7EB',
           zIndex: 20,
         }}>
+
+        <button
+          onClick={onMenuClick}
+          className="lg:hidden p-2 -ml-1 rounded-lg transition-colors hover:bg-gray-100 flex-shrink-0"
+          style={{ color: '#6B7280' }}
+          aria-label="Open menu"
+        >
+          <Menu className="w-5 h-5" />
+        </button>
 
         <nav className="flex items-center gap-1 text-sm flex-shrink-0 min-w-0">
           {breadcrumbs.map((crumb, idx) => (

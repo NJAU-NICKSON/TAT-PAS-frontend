@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import { ReactNode, useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { TopBar } from './TopBar';
@@ -41,12 +41,18 @@ function getBreadcrumbs(pathname: string) {
 export function AppShell({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
   const breadcrumbs = getBreadcrumbs(pathname);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  // Close the mobile drawer whenever the route changes.
+  useEffect(() => {
+    setDrawerOpen(false);
+  }, [pathname]);
 
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50">
-      <Sidebar />
-      <div className="flex flex-col flex-1 min-w-0" style={{ marginLeft: '248px' }}>
-        <TopBar breadcrumbs={breadcrumbs} />
+      <Sidebar open={drawerOpen} onClose={() => setDrawerOpen(false)} />
+      <div className="flex flex-col flex-1 min-w-0 lg:ml-[248px]">
+        <TopBar breadcrumbs={breadcrumbs} onMenuClick={() => setDrawerOpen(true)} />
         <main className="flex-1 overflow-y-auto">
           {children}
         </main>

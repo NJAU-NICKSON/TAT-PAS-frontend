@@ -330,9 +330,7 @@ function DetailPanel({ rx, onDispensed }: {
                     <div className="flex flex-wrap gap-1">
                       {patient.allergies.map((a, i) => (
                         <span key={i} className="px-2 py-0.5 text-xs font-semibold rounded-full bg-red-100 text-red-800 border border-red-300">
-                          {typeof a === 'object'
-                            ? String((a as Record<string, unknown>).substance ?? JSON.stringify(a))
-                            : a}
+                          {typeof a === 'string' ? a : (a.substance ?? JSON.stringify(a))}
                         </span>
                       ))}
                     </div>

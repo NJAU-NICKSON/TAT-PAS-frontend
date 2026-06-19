@@ -83,6 +83,7 @@ export interface Prescription {
   id: string;
   rx_number?: string;
   patient_id: string;
+  visit_id?: string;
   doctor_id: string;
   medications: MedicationItem[];
   status: PrescriptionStatus;

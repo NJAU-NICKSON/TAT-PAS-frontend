@@ -10,7 +10,7 @@ import { toast } from 'sonner';
 import { visitsApi, Visit, ConsultationNotePayload } from '../api/visits';
 import { prescriptionsApi } from '../api/prescriptions';
 import { patientsApi } from '../api/patients';
-import { consultationRoomsApi, ConsultationRoom as CRoom } from '../api/consultationRooms';
+import { consultationRoomsApi } from '../api/consultationRooms';
 import { useAuth } from '../context/AuthContext';
 import { OrderSource, Patient, MedicationItem, Priority } from '../models/types';
 

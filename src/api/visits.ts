@@ -64,6 +64,7 @@ export interface Visit {
   clinical_findings?: string;
   recommendations?: string;
   follow_up_instructions?: string;
+  follow_up_date?: string;
   discharge_notes?: string;
   registered_at: string;
   triaged_at?: string;
