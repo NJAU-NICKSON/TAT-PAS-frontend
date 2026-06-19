@@ -1,12 +1,28 @@
 import { useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Eye, EyeOff, AlertCircle, Loader2 } from 'lucide-react';
+import {
+  Eye, EyeOff, AlertCircle, Loader2, Shield, Stethoscope,
+  HeartPulse, FlaskConical, ClipboardCheck, Receipt, UserCog,
+} from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../context/AuthContext';
 import { ScionMark } from '../components/ScionLogo';
 import { ApiError } from '../models/types';
 
+const ROLES = [
+  { id: 'admin',        label: 'Administrator', icon: Shield,          hint: 'Full system oversight' },
+  { id: 'doctor',       label: 'Doctor',        icon: Stethoscope,     hint: 'Consult and prescribe' },
+  { id: 'nurse',        label: 'Nurse',         icon: HeartPulse,      hint: 'Triage and administer' },
+  { id: 'pharmacist',   label: 'Pharmacist',    icon: FlaskConical,    hint: 'Dispense medication' },
+  { id: 'auditor',      label: 'Auditor',       icon: ClipboardCheck,  hint: 'Review prescriptions' },
+  { id: 'billing',      label: 'Billing',       icon: Receipt,         hint: 'Bills and payments' },
+  { id: 'receptionist', label: 'Receptionist',  icon: UserCog,         hint: 'Register and discharge' },
+] as const;
+
+type RoleId = typeof ROLES[number]['id'];
+
 export default function LoginPage() {
+  const [selectedRole, setSelectedRole] = useState<RoleId | null>(null);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -96,6 +112,19 @@ export default function LoginPage() {
           <h1 className="text-h1 text-white leading-snug">
             Turnaround Time &amp;<br />Prescription Audit
           </h1>
+          {selectedRole && (
+            <div
+              className="mt-6 inline-flex items-center gap-2 px-3 py-2 rounded-lg animate-fade-in"
+              style={{ background: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.15)' }}
+            >
+              <span className="text-body-sm font-semibold text-white">
+                {ROLES.find(r => r.id === selectedRole)?.label}
+              </span>
+              <span className="text-meta" style={{ color: 'rgba(255,255,255,0.6)' }}>
+                · {ROLES.find(r => r.id === selectedRole)?.hint}
+              </span>
+            </div>
+          )}
         </div>
 
         <p className="text-meta" style={{ color: 'rgba(255,255,255,0.45)' }}>
@@ -115,11 +144,44 @@ export default function LoginPage() {
             </div>
           </div>
 
-          <div className="mb-8">
-            <h2 className="text-h1" style={{ color: 'var(--text-primary)' }}>Sign in</h2>
+          <div className="mb-6">
+            <h2 className="text-h1" style={{ color: 'var(--text-primary)' }}>Welcome back</h2>
             <p className="text-body mt-1" style={{ color: 'var(--text-secondary)' }}>
-              Enter your clinical workstation credentials
+              Select your role, then sign in
             </p>
+          </div>
+
+          <div className="mb-6">
+            <p className="text-label mb-2" style={{ color: 'var(--text-muted)' }}>Your role</p>
+            <div className="grid grid-cols-2 gap-2">
+              {ROLES.map(role => {
+                const Icon = role.icon;
+                const active = selectedRole === role.id;
+                return (
+                  <button
+                    key={role.id}
+                    type="button"
+                    onClick={() => setSelectedRole(active ? null : role.id)}
+                    className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-left transition-all"
+                    style={{
+                      background: active ? 'var(--scion-green-50)' : 'var(--bg-card)',
+                      border: `1.5px solid ${active ? 'var(--scion-green-600)' : 'var(--border-default)'}`,
+                    }}
+                  >
+                    <Icon
+                      className="w-4 h-4 flex-shrink-0"
+                      style={{ color: active ? 'var(--scion-green-600)' : 'var(--text-muted)' }}
+                    />
+                    <span
+                      className="text-body-sm font-semibold truncate"
+                      style={{ color: active ? 'var(--scion-green-700)' : 'var(--text-primary)' }}
+                    >
+                      {role.label}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           {error && (
@@ -222,7 +284,9 @@ export default function LoginPage() {
                   Signing in
                 </>
               ) : (
-                'Sign in'
+                selectedRole
+                  ? `Sign in as ${ROLES.find(r => r.id === selectedRole)?.label}`
+                  : 'Sign in'
               )}
             </button>
           </form>
