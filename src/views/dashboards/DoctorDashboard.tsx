@@ -201,8 +201,8 @@ export function DoctorDashboard() {
         </button>
       </div>
 
-      <div className="flex-shrink-0 px-7 py-4" style={{ background: '#F1F5F9', borderBottom: '1px solid var(--border-default)' }}>
-        <div className="grid grid-cols-3 gap-3">
+      <div className="flex-shrink-0 px-4 sm:px-7 py-4" style={{ background: '#F1F5F9', borderBottom: '1px solid var(--border-default)' }}>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <StatCard
             label="Flagged"
             value={vm.isLoading ? ' - ' : flagged.length}
@@ -289,7 +289,7 @@ export function DoctorDashboard() {
         </div>
 
         <div
-          className="w-56 flex-shrink-0 flex flex-col border-l overflow-y-auto"
+          className="hidden xl:flex w-56 flex-shrink-0 flex-col border-l overflow-y-auto"
           style={{ borderColor: 'var(--border-default)', background: 'var(--bg-card)' }}
         >
           <div className="px-4 pt-5 pb-4" style={{ borderBottom: '1px solid var(--border-default)' }}>

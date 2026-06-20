@@ -329,7 +329,7 @@ export function WardNurseDashboard() {
       </div>
 
       <div
-        className="flex-shrink-0 grid grid-cols-4 gap-3 px-7 py-4"
+        className="flex-shrink-0 grid grid-cols-2 lg:grid-cols-4 gap-3 px-4 sm:px-7 py-4"
         style={{ background: '#F1F5F9', borderBottom: '1px solid var(--border-default)' }}
       >
         <StatCard
@@ -620,7 +620,7 @@ export function WardNurseDashboard() {
         </div>
 
         <div
-          className="w-72 flex-shrink-0 flex flex-col border-l overflow-y-auto"
+          className="hidden xl:flex w-72 flex-shrink-0 flex-col border-l overflow-y-auto"
           style={{ borderColor: 'var(--border-default)', background: 'var(--bg-card)' }}
         >
           <div className="px-4 pt-5 pb-3 border-b" style={{ borderColor: 'var(--border-default)' }}>
@@ -655,7 +655,7 @@ export function WardNurseDashboard() {
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {beds.map((bed) => {
                   const { borderColor, background, dotColor } = bedStatusStyle(bed.status);
                   return (

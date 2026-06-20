@@ -569,7 +569,7 @@ function BottleneckSection({ data }: { data: BottleneckData }) {
             </button>
           </div>
           <div className="flex-1 p-5">
-            <div className="grid grid-cols-3 gap-3 mb-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
               {[
                 { label: 'Queue Depth',  value: String(drillData.count), sub: 'prescriptions waiting' },
                 { label: 'Average Wait', value: formatMin(drillData.avg), sub: 'per prescription' },
@@ -672,11 +672,11 @@ export function AdminDashboard() {
       <div className="flex flex-1 overflow-hidden">
         <div className="flex-1 overflow-y-auto" style={{ background: 'var(--bg-base)' }}>
           <div
-            className="flex items-center justify-between px-6 h-12 flex-shrink-0"
+            className="flex items-center justify-between px-4 sm:px-6 h-12 flex-shrink-0"
             style={{ background: 'var(--bg-card)', borderBottom: '1px solid var(--border-default)' }}
           >
-            <div className="flex items-center gap-3">
-              <h1 className="text-base font-semibold tracking-tight" style={{ color: 'var(--text-primary)' }}>
+            <div className="flex items-center gap-3 min-w-0">
+              <h1 className="text-base font-semibold tracking-tight truncate" style={{ color: 'var(--text-primary)' }}>
                 Operations Overview
               </h1>
               {breaches.breach_count > 0 && (
@@ -693,17 +693,17 @@ export function AdminDashboard() {
             </span>
           </div>
 
-          <div className="px-6 py-5 space-y-5">
+          <div className="px-4 sm:px-6 py-5 space-y-5">
             {loading ? (
               <div className="space-y-5">
-                <div className="grid grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                   {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-36" />)}
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <Skeleton className="h-44" />
                   <Skeleton className="h-44" />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <Skeleton className="h-52" />
                   <Skeleton className="h-52" />
                 </div>

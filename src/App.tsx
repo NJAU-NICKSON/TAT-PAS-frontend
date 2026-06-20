@@ -143,7 +143,7 @@ function AppRoutes() {
       <Route
         path="/prescriptions"
         element={
-          <ProtectedRoute roles={['doctor', 'pharmacist', 'nurse', 'auditor', 'admin']}>
+          <ProtectedRoute roles={['doctor', 'pharmacist', 'nurse', 'auditor', 'admin', 'receptionist']}>
             <AppShell>
               <PageContainer><PrescriptionList /></PageContainer>
             </AppShell>
@@ -165,7 +165,7 @@ function AppRoutes() {
       <Route
         path="/prescriptions/:id"
         element={
-          <ProtectedRoute roles={['doctor', 'pharmacist', 'nurse', 'auditor', 'admin']}>
+          <ProtectedRoute roles={['doctor', 'pharmacist', 'nurse', 'auditor', 'admin', 'receptionist']}>
             <AppShell>
               <PageContainer><PrescriptionDetailPage /></PageContainer>
             </AppShell>
@@ -209,7 +209,7 @@ function AppRoutes() {
       <Route
         path="/billing"
         element={
-          <ProtectedRoute roles={['billing', 'admin']}>
+          <ProtectedRoute roles={['billing', 'admin', 'receptionist']}>
             <AppShell>
               <PageContainer><BillingPage /></PageContainer>
             </AppShell>

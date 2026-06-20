@@ -374,7 +374,7 @@ export function PharmacistDashboard() {
         </div>
 
         <aside
-          className="w-56 flex-shrink-0 border-l overflow-y-auto flex flex-col"
+          className="hidden xl:flex w-56 flex-shrink-0 border-l overflow-y-auto flex-col"
           style={{ borderColor: 'var(--border-default)', background: 'var(--bg-card)' }}
         >
           <div className="px-4 py-4" style={{ borderBottom: '1px solid var(--border-default)' }}>

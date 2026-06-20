@@ -615,7 +615,7 @@ export function AuditorDashboard() {
       )}
 
       <div
-        className="flex-shrink-0 grid grid-cols-4 border-b"
+        className="flex-shrink-0 grid grid-cols-2 lg:grid-cols-4 border-b"
         style={{ borderColor: 'var(--border-default)', background: 'var(--bg-card)' }}
       >
         {[

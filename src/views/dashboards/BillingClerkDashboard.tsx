@@ -137,8 +137,8 @@ function PaymentModal({ bill, onClose, onSuccess }: PaymentModalProps) {
           </button>
         </div>
 
-        <div className="px-6 py-5 space-y-5">
-          <div className="grid grid-cols-3 gap-3">
+        <div className="px-4 sm:px-6 py-5 space-y-5">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {[
               { label: 'TOTAL', value: fmtKES(bill.total_amount) },
               { label: 'PAID', value: fmtKES(bill.paid_amount) },
@@ -334,7 +334,7 @@ export function BillingClerkDashboard() {
       </div>
 
       <div
-        className="flex-shrink-0 grid grid-cols-3 gap-3 px-6 py-4 border-b"
+        className="flex-shrink-0 grid grid-cols-1 sm:grid-cols-3 gap-3 px-4 sm:px-6 py-4 border-b"
         style={{ borderColor: 'var(--border-default)', background: 'var(--bg-base)' }}
       >
         <StatTile label="TOTAL BILLS" value={loading ? ' - ' : bills.length} />

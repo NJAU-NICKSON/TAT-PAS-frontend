@@ -67,7 +67,7 @@ export function LiveMetricsSidebar({ metrics, title = 'Live Status', footer }: L
 
   return (
     <aside
-      className="w-56 flex-shrink-0 flex flex-col border-l overflow-y-auto"
+      className="hidden xl:flex w-56 flex-shrink-0 flex-col border-l overflow-y-auto"
       style={{ borderColor: 'var(--border-default)', background: 'var(--surface-0)' }}
     >
       <div
