@@ -258,23 +258,32 @@ function AdmitModal({
 }
 
 function AssignDoctorModal({
-  doctors, rooms, currentDoctorId, onConfirm, onClose,
+  doctors, nurses, rooms, currentDoctorId, onConfirm, onClose,
 }: {
   doctors: UserType[];
+  nurses: UserType[];
   rooms: ConsultationRoom[];
   currentDoctorId?: string;
   onConfirm: (doctorId: string, roomName?: string, nurseId?: string) => Promise<void>;
   onClose: () => void;
 }) {
   const [selected, setSelected] = useState(currentDoctorId ?? '');
+  const [roomName, setRoomName] = useState('');
+  const [nurseId, setNurseId]   = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   const autoRoom = selected ? rooms.find(r => r.current_doctor_id === selected) : undefined;
 
+  // When the doctor changes, pre-fill room + nurse from their standing room.
+  useEffect(() => {
+    setRoomName(autoRoom?.room_name ?? '');
+    setNurseId(autoRoom?.current_nurse_id ?? '');
+  }, [selected]); // eslint-disable-line react-hooks/exhaustive-deps
+
   async function handleSubmit() {
     if (!selected) return;
     setSubmitting(true);
-    try { await onConfirm(selected, autoRoom?.room_name, autoRoom?.current_nurse_id); }
+    try { await onConfirm(selected, roomName || undefined, nurseId || undefined); }
     finally { setSubmitting(false); }
   }
 
@@ -306,18 +315,44 @@ function AssignDoctorModal({
           </div>
 
           {selected && (
-            <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg" style={{ background: autoRoom ? 'rgba(5,150,105,0.08)' : 'var(--surface-1)', border: `1px solid ${autoRoom ? '#86EFAC' : 'var(--border-default)'}` }}>
-              <MapPin className="w-4 h-4 flex-shrink-0" style={{ color: autoRoom ? '#178A3D' : 'var(--text-muted)' }} />
-              {autoRoom ? (
-                <p className="text-caption" style={{ color: 'var(--text-secondary)' }}>
-                  Consultation room: <span className="font-bold" style={{ color: '#178A3D' }}>{autoRoom.room_name}</span>
-                  <span style={{ color: 'var(--text-muted)' }}> ({autoRoom.room_number}) - assigned automatically</span>
-                </p>
-              ) : (
-                <p className="text-caption" style={{ color: 'var(--text-muted)' }}>
-                  This doctor has no consultation room set. Assign one in <span className="font-semibold">Consultation Rooms</span>.
-                </p>
-              )}
+            <div className="space-y-2.5 pt-1">
+              <div>
+                <label className="text-caption font-bold uppercase tracking-wider mb-1.5 block" style={{ color: 'var(--text-muted)' }}>
+                  Consultation Room
+                </label>
+                <select
+                  value={roomName}
+                  onChange={e => setRoomName(e.target.value)}
+                  className="w-full px-3 py-2 text-sm rounded-lg border"
+                  style={{ borderColor: 'var(--border-default)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
+                >
+                  <option value="">No room</option>
+                  {rooms.map(r => (
+                    <option key={r.id} value={r.room_name}>
+                      {r.room_name}{r.room_number ? ` (${r.room_number})` : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-caption font-bold uppercase tracking-wider mb-1.5 block" style={{ color: 'var(--text-muted)' }}>
+                  Assisting Nurse
+                </label>
+                <select
+                  value={nurseId}
+                  onChange={e => setNurseId(e.target.value)}
+                  className="w-full px-3 py-2 text-sm rounded-lg border"
+                  style={{ borderColor: 'var(--border-default)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
+                >
+                  <option value="">No nurse</option>
+                  {nurses.map(n => (
+                    <option key={n.id} value={n.id}>{n.full_name}</option>
+                  ))}
+                </select>
+                {autoRoom?.current_nurse_id && nurseId === autoRoom.current_nurse_id && (
+                  <p className="text-meta mt-1" style={{ color: '#178A3D' }}>Pre-filled from the room's standing nurse</p>
+                )}
+              </div>
             </div>
           )}
         </div>
@@ -696,6 +731,7 @@ export default function VisitDetailPage() {
   const [bed, setBed]                   = useState<BedType | null>(null);
   const [assignedDoctor, setAssignedDoctor] = useState<UserType | null>(null);
   const [doctors, setDoctors]           = useState<UserType[]>([]);
+  const [nurses, setNurses]             = useState<UserType[]>([]);
   const [rooms, setRooms]               = useState<ConsultationRoom[]>([]);
   const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
   const [bill, setBill]                 = useState<Bill | null>(null);
@@ -740,7 +776,7 @@ export default function VisitDetailPage() {
         prescriptionsApi.list({ patient_id: v.patient_id, limit: 20 }),
         billingApi.getBillsByVisit(id),
         v.bed_id ? bedsApi.getById(v.bed_id) : Promise.resolve(null),
-        Promise.resolve(null),
+        usersApi.listNurses(),
       ]);
 
       if (deptRes.status === 'fulfilled') setDepartment(deptRes.value.data as Department);
@@ -756,7 +792,11 @@ export default function VisitDetailPage() {
       if (rxRes.status === 'fulfilled') setPrescriptions(Array.isArray(rxRes.value.data) ? rxRes.value.data : []);
       if (billsRes.status === 'fulfilled' && billsRes.value != null) setBill(billsRes.value);
       if (bedRes.status === 'fulfilled' && bedRes.value) setBed((bedRes.value as { data: BedType }).data);
-      void docRes;
+      if (docRes.status === 'fulfilled') {
+        const n = docRes.value.data;
+        const items: UserType[] = Array.isArray(n) ? n : (n as { items: UserType[] }).items ?? [];
+        setNurses(items.filter((u: UserType) => u.role === 'nurse'));
+      }
       if (v.assigned_doctor_id && v.assigned_doctor_name) {
         setAssignedDoctor({
           id: v.assigned_doctor_id,
@@ -1839,6 +1879,7 @@ export default function VisitDetailPage() {
       {showAssignDoc && (
         <AssignDoctorModal
           doctors={doctors}
+          nurses={nurses}
           rooms={rooms}
           currentDoctorId={visit.assigned_doctor_id}
           onConfirm={handleAssignDoctor}
@@ -1861,7 +1902,7 @@ export default function VisitDetailPage() {
       {showConsultForm && (
         <ConsultationNoteModal
           visit={visit}
-          nurses={doctors}
+          nurses={nurses}
           onConfirm={async (data) => {
             try {
               await visitsApi.update(visit.id, data);

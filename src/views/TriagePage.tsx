@@ -2,13 +2,12 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   Loader2, ChevronLeft, Activity, Thermometer, Heart,
-  Wind, User, UserCheck, MapPin, CheckCircle2,
+  Wind, User, UserCheck, CheckCircle2,
   AlertCircle, RefreshCw, Save,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { visitsApi, Visit, VitalSigns, TriagePayload } from '../api/visits';
 import { usersApi } from '../api/users';
-import { consultationRoomsApi, ConsultationRoom } from '../api/consultationRooms';
 
 interface Doctor {
   id: string;
@@ -135,13 +134,11 @@ export default function TriagePage() {
 
   const [visit,   setVisit]   = useState<Visit | null>(null);
   const [doctors, setDoctors] = useState<Doctor[]>([]);
-  const [rooms,   setRooms]   = useState<ConsultationRoom[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving,  setSaving]  = useState(false);
 
   const [vitals,    setVitals]    = useState<Partial<VitalSigns>>({});
   const [doctorId,  setDoctorId]  = useState('');
-  const [roomId,    setRoomId]    = useState('');
   const [priority,  setPriority]  = useState<'routine' | 'urgent' | 'critical' | 'immediate'>('routine');
 
   const load = async () => {
@@ -158,19 +155,6 @@ export default function TriagePage() {
         setVisit(v);
         if (v.vitals) setVitals(v.vitals);
         if (v.assigned_doctor_id) setDoctorId(v.assigned_doctor_id);
-
-        try {
-          const rRes = await consultationRoomsApi.list({});
-          const all = Array.isArray(rRes.data) ? rRes.data : (rRes.data as { items: ConsultationRoom[] }).items ?? [];
-          const isTriageRoom = (x: ConsultationRoom) =>
-            /triage/i.test(x.room_name) || /(^|-)AE-CR/i.test(x.room_number);
-          const r = all.filter(x => x.department_id === v.department_id || isTriageRoom(x));
-          setRooms(r);
-          if (v.consultation_room) {
-            const existing = r.find(x => x.room_name === v.consultation_room);
-            if (existing) setRoomId(existing.room_name);
-          }
-        } catch {}
       }
 
       if (dRes.status === 'fulfilled') {
@@ -195,9 +179,10 @@ export default function TriagePage() {
     if (!id) return;
     setSaving(true);
     try {
+      // The receptionist owns room assignment; triage only records vitals
+      // and (optionally) confirms the attending doctor.
       const payload: TriagePayload = { vitals: vitals as VitalSigns };
       if (doctorId) payload.assigned_doctor_id = doctorId;
-      if (roomId)   payload.consultation_room   = roomId;
       await visitsApi.triage(id, payload);
       toast.success('Triage completed successfully');
       navigate(`/visits/${id}`);
@@ -351,57 +336,6 @@ export default function TriagePage() {
           </select>
         </div>
 
-        <div className="rounded-lg bg-white p-5" style={{ border: '1.5px solid #E2E8F0' }}>
-          <div className="flex items-center gap-2 mb-4">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: '#F0FDF4' }}>
-              <MapPin className="w-4 h-4" style={{ color: '#178A3D' }} />
-            </div>
-            <div>
-              <h2 className="text-base font-bold text-gray-900">Consultation Room</h2>
-              <p className="text-xs text-gray-400">Direct the patient to a room after triage</p>
-            </div>
-          </div>
-
-          {rooms.length > 0 ? (
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-              <button
-                onClick={() => setRoomId('')}
-                className="px-3 py-2.5 rounded-lg text-xs font-semibold transition-all text-left"
-                style={{
-                  background: roomId === '' ? '#1E293B' : '#F8FAFC',
-                  color: roomId === '' ? 'white' : '#64748B',
-                  border: `1.5px solid ${roomId === '' ? '#1E293B' : '#E2E8F0'}`,
-                }}
-              >
-                Not assigned
-              </button>
-              {rooms.map(r => {
-                const isSelected = roomId === r.room_name;
-                const isOccupied = r.status === 'occupied';
-                return (
-                  <button
-                    key={r.id}
-                    onClick={() => setRoomId(isSelected ? '' : r.room_name)}
-                    disabled={isOccupied && !isSelected}
-                    className="px-3 py-2.5 rounded-lg text-xs font-semibold text-left transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                    style={{
-                      background: isSelected ? '#178A3D' : isOccupied ? '#FEF2F2' : '#F0FDF4',
-                      color: isSelected ? 'white' : isOccupied ? '#DC2626' : '#166534',
-                      border: `1.5px solid ${isSelected ? '#178A3D' : isOccupied ? '#FCA5A5' : '#86EFAC'}`,
-                    }}
-                  >
-                    <span className="block font-bold">{r.room_name}</span>
-                    <span className="text-micro font-normal opacity-80">
-                      {r.department_name ? `${r.department_name} · ` : ''}{isOccupied ? 'Occupied' : r.status}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          ) : (
-            <p className="text-sm text-gray-400 italic">No consultation rooms configured for this department.</p>
-          )}
-        </div>
 
         <div className="rounded-lg bg-white p-5" style={{ border: '1.5px solid #E2E8F0' }}>
           <div className="flex items-center gap-2 mb-4">
