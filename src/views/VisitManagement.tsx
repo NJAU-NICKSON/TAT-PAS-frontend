@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Plus, ChevronRight, X, Search, RefreshCw, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
 import TablePagination from '../components/TablePagination';
 import { useTableControls } from '../components/useTableControls';
+import { formatDateTimeEAT } from '../lib/utils';
 import { visitsApi, Visit, CreateVisitPayload, VisitType } from '../api/visits';
 import { departmentsApi, Department } from '../api/departments';
 import { patientsApi } from '../api/patients';
@@ -509,7 +510,7 @@ export default function VisitManagement() {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-caption" style={{ color: 'var(--text-muted)' }}>
-                    {new Date(v.registered_at).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
+                    {formatDateTimeEAT(v.registered_at)}
                   </td>
                   <td className="px-4 py-3">
                     <button

@@ -19,6 +19,7 @@ import { billingApi } from '../api/billing';
 import { Bill, Payment, BillLineItem } from '../models/types';
 import { useWebSocket } from '../context/WebSocketContext';
 import { printDocument } from '../lib/print';
+import { formatDateTimeEAT } from '../lib/utils';
 import TablePagination from '../components/TablePagination';
 import { useTableControls } from '../components/useTableControls';
 import { ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
@@ -42,13 +43,7 @@ function fmtDate(iso: string | undefined | null) {
 
 function fmtDateTime(iso: string | undefined | null) {
   if (!iso) return '-';
-  return new Date(iso).toLocaleString('en-GB', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+  return formatDateTimeEAT(iso);
 }
 
 const CATEGORY_LABEL: Record<string, string> = {

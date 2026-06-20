@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { visitsApi, Visit } from '../api/visits';
 import { useAuth } from '../context/AuthContext';
+import { formatTimeEAT } from '../lib/utils';
 
 const PRIORITY_STYLE: Record<string, { bg: string; color: string; border: string }> = {
   routine:   { bg: '#F0FDF4', color: '#166534', border: '#86EFAC' },
@@ -117,7 +118,7 @@ function PatientCard({ visit, onClick }: { visit: Visit; onClick: () => void }) 
         <div className="flex flex-col items-end gap-2 flex-shrink-0">
           <ElapsedBadge registeredAt={visit.registered_at} />
           <span className="text-xs text-gray-400">
-            {new Date(visit.registered_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
+            {formatTimeEAT(visit.registered_at)}
           </span>
           <ChevronRight
             className="w-4 h-4 transition-transform group-hover:translate-x-0.5"
@@ -150,7 +151,7 @@ function CompletedCard({ visit }: { visit: Visit }) {
             <span className="font-mono">#{visit.visit_number}</span>
             {visit.triage_nurse_name && <><span>·</span><span>by {visit.triage_nurse_name}</span></>}
             {visit.triaged_at && (
-              <><span>·</span><span>{new Date(visit.triaged_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</span></>
+              <><span>·</span><span>{formatTimeEAT(visit.triaged_at)}</span></>
             )}
           </div>
         </div>

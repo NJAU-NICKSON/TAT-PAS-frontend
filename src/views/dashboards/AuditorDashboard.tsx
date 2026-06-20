@@ -11,7 +11,7 @@ import { useWebSocket } from '../../context/WebSocketContext';
 import { CountersignModal } from '../../components/ui/CountersignModal';
 import { AuditLogTable } from '../../components/ui/AuditLogTable';
 import { toast } from 'sonner';
-import { cn, withDoctorTitle } from '../../lib/utils';
+import { cn, withDoctorTitle, formatTimeEAT } from '../../lib/utils';
 
 type Tab = 'review' | 'flags' | 'log' | 'security';
 type ListResult<T> = T[] | { items?: T[] };
@@ -817,7 +817,7 @@ export function AuditorDashboard() {
                       className="flex items-center gap-4 px-4 py-3 hover:bg-[var(--bg-row-hover)] transition-colors"
                     >
                       <span className="text-mono text-meta flex-shrink-0 w-20" style={{ color: 'var(--text-secondary)' }}>
-                        {new Date(ev.created_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
+                        {formatTimeEAT(ev.created_at)}
                       </span>
                       <span className="text-body-sm font-semibold flex-1" style={{ color: 'var(--text-primary)' }}>
                         {ev.issue}

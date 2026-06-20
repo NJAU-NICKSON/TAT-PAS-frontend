@@ -9,6 +9,7 @@ import { patientsApi } from '../api/patients';
 import { prescriptionsApi } from '../api/prescriptions';
 import { visitsApi, Visit } from '../api/visits';
 import { Patient, Prescription } from '../models/types';
+import { formatDateTimeEAT } from '../lib/utils';
 import { getSLAState, formatElapsed } from '../components/ui/SLAStatusBadge';
 
 function age(dob?: string): string {
@@ -24,7 +25,7 @@ function fmtDate(iso?: string): string {
 
 function fmtDateTime(iso?: string): string {
   if (!iso) return ' - ';
-  return new Date(iso).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+  return formatDateTimeEAT(iso);
 }
 
 const PRIORITY_COLORS: Record<string, { color: string; bg: string; border: string }> = {

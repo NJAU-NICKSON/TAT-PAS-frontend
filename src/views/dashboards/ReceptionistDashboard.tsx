@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, CalendarDays, Users, Clock, ChevronRight } from 'lucide-react';
 import { visitsApi, Visit, VisitStatus } from '../../api/visits';
+import { formatDateTimeEAT } from '../../lib/utils';
 
 type ListResult<T> = T[] | { items?: T[] };
 
@@ -15,10 +16,7 @@ function formatDate(): string {
 }
 
 function formatRegisteredTime(iso: string): string {
-  return new Date(iso).toLocaleString('en-GB', {
-    dateStyle: 'short',
-    timeStyle: 'short',
-  });
+  return formatDateTimeEAT(iso);
 }
 
 function visitStatusStyle(status: VisitStatus): { bg: string; text: string } {

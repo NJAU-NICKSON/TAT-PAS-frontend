@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Download, ChevronDown, ChevronRight, Filter } from 'lucide-react';
 import { AuditRecord, AuditSeverity } from '../../models/types';
+import { formatDateTimeEAT } from '../../lib/utils';
 
 interface AuditLogTableProps {
   records: AuditRecord[];
@@ -302,10 +303,7 @@ export function AuditLogTable({ records, isLoading = false }: AuditLogTableProps
                     }
                   </td>
                   <td className="px-4 py-2.5 text-mono whitespace-nowrap" style={{ color: 'var(--text-secondary)' }}>
-                    {new Date(record.created_at).toLocaleString('en-GB', {
-                      day: '2-digit', month: 'short', year: '2-digit',
-                      hour: '2-digit', minute: '2-digit',
-                    })}
+                    {formatDateTimeEAT(record.created_at)}
                   </td>
                   <td className="px-4 py-2.5" style={{ color: 'var(--text-secondary)' }}>
                     <span className="text-mono">{record.created_by_role}</span>

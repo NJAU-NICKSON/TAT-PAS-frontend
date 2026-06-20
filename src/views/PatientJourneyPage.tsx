@@ -12,23 +12,21 @@ import { prescriptionsApi } from '../api/prescriptions';
 import { billingApi } from '../api/billing';
 import { Prescription, Bill } from '../models/types';
 import { useAuth } from '../context/AuthContext';
+import { formatDateTimeEAT, formatTimeEAT, formatDateEAT } from '../lib/utils';
 
 type ListResult<T> = T[] | { items?: T[] };
 
 function fmt(iso?: string): string {
   if (!iso) return ' - ';
-  return new Date(iso).toLocaleString('en-GB', {
-    day: '2-digit', month: 'short', year: 'numeric',
-    hour: '2-digit', minute: '2-digit',
-  });
+  return formatDateTimeEAT(iso);
 }
 function fmtTime(iso?: string): string {
   if (!iso) return ' - ';
-  return new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+  return formatTimeEAT(iso);
 }
 function fmtDate(iso?: string): string {
   if (!iso) return ' - ';
-  return new Date(iso).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+  return formatDateEAT(iso);
 }
 function elapsedMin(from?: string, to?: string): number | null {
   if (!from || !to) return null;

@@ -13,7 +13,7 @@ import { auditsApi } from '../api/audits';
 import { Prescription, Patient, AuditRecord } from '../models/types';
 import { useAuth } from '../context/AuthContext';
 import { printDispensingReceipt } from '../lib/printDocs';
-import { withDoctorTitle } from '../lib/utils';
+import { withDoctorTitle, formatTimeEAT, formatDateTimeEAT } from '../lib/utils';
 import { toast } from 'sonner';
 
 type ListResult<T> = T[] | { items?: T[] };
@@ -50,12 +50,12 @@ function age(dob?: string): string {
 
 function fmtTime(iso?: string): string {
   if (!iso) return ' - ';
-  return new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+  return formatTimeEAT(iso);
 }
 
 function fmt(iso?: string): string {
   if (!iso) return ' - ';
-  return new Date(iso).toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+  return formatDateTimeEAT(iso);
 }
 
 function useNow(ms = 10000) {

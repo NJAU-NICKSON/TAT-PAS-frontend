@@ -4,10 +4,11 @@ import { Stethoscope, ClipboardList, AlertTriangle, CheckCircle2, Clock, Keyboar
 import { usePrescriptionViewModel } from '../../viewModels/usePrescriptionViewModel';
 import { StatusBadge } from '../../components/ui/StatusBadge';
 import { Prescription } from '../../models/types';
+import { formatTimeEAT } from '../../lib/utils';
 
 function formatTime(iso: string | undefined): string {
   if (!iso) return ' - ';
-  return new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+  return formatTimeEAT(iso);
 }
 
 function formatDate(): string {
