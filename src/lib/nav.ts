@@ -32,17 +32,17 @@ const allNavItems: NavItem[] = [
   { id: 'dashboard',          label: 'Dashboard',          path: '/dashboard',          icon: NAV_ICONS.dashboard,     roles: ['receptionist', 'nurse', 'doctor', 'pharmacist', 'billing', 'auditor', 'admin'] },
   { id: 'patients',           label: 'Patients',           path: '/patients',           icon: NAV_ICONS.patients,      roles: ['receptionist', 'admin', 'doctor', 'nurse'] },
   { id: 'visits',             label: 'Visits',             path: '/visits',             icon: Calendar,                roles: ['receptionist', 'doctor', 'nurse', 'admin', 'billing'] },
-  { id: 'triage',             label: 'Triage',             path: '/triage',             icon: Thermometer,             roles: ['nurse', 'admin'] },
+  { id: 'triage',             label: 'Triage',             path: '/triage',             icon: Thermometer,             roles: ['nurse'] },
   { id: 'rooms',              label: 'Consultation Rooms', path: '/consultation-rooms', icon: NAV_ICONS.rooms,         roles: ['admin', 'nurse', 'receptionist'] },
   { id: 'beds',               label: 'Wards & Beds',       path: '/beds',               icon: NAV_ICONS.beds,          roles: ['admin', 'nurse'] },
-  { id: 'consultation',       label: 'Consultation',       path: '/consultation',       icon: Stethoscope,             roles: ['doctor', 'admin'] },
+  { id: 'consultation',       label: 'Consultation',       path: '/consultation',       icon: Stethoscope,             roles: ['doctor'] },
   { id: 'prescriptions-list', label: 'Prescriptions',      path: '/prescriptions',      icon: NAV_ICONS.prescriptions, roles: ['doctor', 'pharmacist', 'nurse', 'auditor', 'admin', 'receptionist'] },
   { id: 'pharmacy',           label: 'Pharmacy Queue',     path: '/pharmacy',           icon: FlaskConical,            roles: ['pharmacist', 'admin'] },
   { id: 'audit',              label: 'Review Queue',       path: '/audits',             icon: NAV_ICONS.audit,         roles: ['auditor', 'admin'] },
   { id: 'analytics',          label: 'Reports',            path: '/analytics',          icon: NAV_ICONS.analytics,     roles: ['auditor', 'admin'] },
   { id: 'billing',            label: 'Billing',            path: '/billing',            icon: DollarSign,              roles: ['billing', 'admin', 'receptionist'] },
   { id: 'users',              label: 'Staff Accounts',     path: '/users',              icon: Users,                   roles: ['admin'] },
-  { id: 'sla-config',         label: 'SLA Configuration',  path: '/sla-config',         icon: Timer,                   roles: ['admin'] },
+  { id: 'sla-config',         label: 'SLA Configuration',  path: '/sla-config',         icon: Timer,                   roles: ['admin', 'auditor'] },
   { id: 'system-status',      label: 'System Status',      path: '/system-status',      icon: Activity,                roles: ['admin'] },
   { id: 'settings',           label: 'Settings',           path: '/settings',           icon: NAV_ICONS.settings,      roles: ['receptionist', 'nurse', 'doctor', 'pharmacist', 'billing', 'auditor', 'admin'] },
 ];
@@ -99,7 +99,7 @@ export function getNavigationForRole(role: UserRole): NavGroup[] {
     case 'auditor':
       groups.push(
         { label: 'Prescriptions', items: pick('prescriptions-list') },
-        { label: 'Compliance',    items: pick('audit', 'analytics') },
+        { label: 'Compliance',    items: pick('audit', 'analytics', 'sla-config') },
       );
       break;
 

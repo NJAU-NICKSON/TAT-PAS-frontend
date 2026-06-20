@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Timer, Loader2, RefreshCw } from 'lucide-react';
+import { Timer, Loader2, RefreshCw, BookOpen } from 'lucide-react';
 import { toast } from 'sonner';
 import { slaApi, SLAConfigEntry } from '../api/sla';
 
@@ -10,6 +10,16 @@ const PRIORITY_LABELS: Record<string, string> = {
   discharge: 'Discharge',
   routine: 'Routine',
   chemo: 'Chemotherapy',
+};
+
+// Published standard each default is grounded in (shown next to each row).
+const PRIORITY_STANDARD: Record<string, string> = {
+  stat: 'Standard: ~15 min pharmacy dispense (ISMP)',
+  nicu: 'Tightened for neonatal risk',
+  urgent: 'Standard: within 30 min (ISMP/ASHP)',
+  discharge: 'Prepared during discharge workflow',
+  routine: 'Standard: ~60 min window (ISMP)',
+  chemo: 'Extended for safe preparation',
 };
 
 const PRIORITY_DESC: Record<string, string> = {
@@ -76,6 +86,19 @@ export default function SLAConfigPage() {
         </button>
       </div>
 
+      <div
+        className="flex items-start gap-3 px-4 py-3 rounded-lg"
+        style={{ background: 'var(--surface-1)', border: '1px solid var(--border-default)' }}
+      >
+        <BookOpen className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: 'var(--clinical-600)' }} />
+        <p className="text-caption" style={{ color: 'var(--text-secondary)' }}>
+          Defaults follow published medication-administration standards: STAT orders dispense within
+          ~15 minutes and reach the patient within ~30 minutes; urgent orders within ~30 minutes; routine
+          orders within a ~60-minute window (ISMP / ASHP guidance). Adjust per your facility's policy;
+          every change is recorded in the audit trail.
+        </p>
+      </div>
+
       <div className="overflow-hidden" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-card)' }}>
         <div className="flex items-center gap-2 px-5 py-3.5" style={{ borderBottom: '1px solid var(--border-default)', background: 'var(--surface-1)' }}>
           <Timer className="w-4 h-4" style={{ color: 'var(--clinical-600)' }} />
@@ -95,6 +118,9 @@ export default function SLAConfigPage() {
                   <div className="flex-1 min-w-[180px]">
                     <p className="text-body-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{PRIORITY_LABELS[c.priority] ?? c.priority}</p>
                     <p className="text-caption mt-0.5" style={{ color: 'var(--text-muted)' }}>{PRIORITY_DESC[c.priority] ?? ''}</p>
+                    {PRIORITY_STANDARD[c.priority] && (
+                      <p className="text-meta mt-1" style={{ color: 'var(--clinical-600)' }}>{PRIORITY_STANDARD[c.priority]}</p>
+                    )}
                   </div>
 
                   <div className="text-right">

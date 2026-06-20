@@ -242,7 +242,7 @@ function AppRoutes() {
       <Route
         path="/consultation"
         element={
-          <ProtectedRoute roles={['doctor', 'admin']}>
+          <ProtectedRoute roles={['doctor']}>
             <AppShell>
               <ConsultationRoom />
             </AppShell>
@@ -286,7 +286,7 @@ function AppRoutes() {
       <Route
         path="/triage"
         element={
-          <ProtectedRoute roles={['nurse', 'admin']}>
+          <ProtectedRoute roles={['nurse']}>
             <AppShell>
               <TriageQueuePage />
             </AppShell>
@@ -297,7 +297,7 @@ function AppRoutes() {
       <Route
         path="/visits/:id/triage"
         element={
-          <ProtectedRoute roles={['nurse', 'admin']}>
+          <ProtectedRoute roles={['nurse']}>
             <AppShell>
               <TriagePage />
             </AppShell>
@@ -319,7 +319,7 @@ function AppRoutes() {
       <Route
         path="/sla-config"
         element={
-          <ProtectedRoute roles={['admin']}>
+          <ProtectedRoute roles={['admin', 'auditor']}>
             <AppShell>
               <PageContainer><SLAConfigPage /></PageContainer>
             </AppShell>
