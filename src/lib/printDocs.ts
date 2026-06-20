@@ -1,6 +1,6 @@
 import { Prescription } from '../models/types';
 import { printDocument } from './print';
-import { withDoctorTitle } from './utils';
+import { withDoctorTitle, KENYA_TZ, parseUtc } from './utils';
 
 function looksLikeObjectId(value?: string | null): boolean {
   return Boolean(value && /^[a-f0-9]{24}$/i.test(value));
@@ -12,16 +12,20 @@ function displayName(value?: string | null, fallback = 'Unknown user'): string {
 }
 
 function fmt(iso?: string): string {
-  if (!iso) return '-';
-  return new Date(iso).toLocaleString('en-GB', {
+  const d = parseUtc(iso);
+  if (!d) return '-';
+  return d.toLocaleString('en-GB', {
+    timeZone: KENYA_TZ,
     day: '2-digit', month: 'short', year: 'numeric',
-    hour: '2-digit', minute: '2-digit',
+    hour: '2-digit', minute: '2-digit', hour12: false,
   });
 }
 
 function fmtDate(iso?: string): string {
-  if (!iso) return '-';
-  return new Date(iso).toLocaleDateString('en-GB', {
+  const d = parseUtc(iso);
+  if (!d) return '-';
+  return d.toLocaleDateString('en-GB', {
+    timeZone: KENYA_TZ,
     weekday: 'long', day: '2-digit', month: 'long', year: 'numeric',
   });
 }

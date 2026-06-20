@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { X, Zap, AlertTriangle, CheckCircle, Package, Bell, UserPlus, Syringe, ArrowLeftCircle } from 'lucide-react';
+import { X, Zap, AlertTriangle, CheckCircle, Package, Bell, UserPlus, Syringe, ArrowLeftCircle, FilePlus } from 'lucide-react';
 import { formatRelativeTime } from '../../lib/utils';
 import { cn } from '../../lib/utils';
 import { Notification, NotifType } from './useNotifications';
@@ -9,6 +9,7 @@ function getNotifMeta(type: NotifType): { icon: typeof Zap; color: string; bg: s
     case 'sla_breach':      return { icon: Zap,             color: '#DC2626', bg: '#FEF2F2' };
     case 'flag_created':    return { icon: AlertTriangle,   color: '#7C3AED', bg: '#FAF5FF' };
     case 'patient_assigned':return { icon: UserPlus,        color: '#0284C7', bg: '#F0F9FF' };
+    case 'rx_created':      return { icon: FilePlus,        color: '#0F766E', bg: '#F0FDFA' };
     case 'rx_verified':     return { icon: CheckCircle,     color: '#178A3D', bg: '#F0FDF4' };
     case 'rx_dispensed':    return { icon: Package,         color: '#D97706', bg: '#FFFBEB' };
     case 'rx_administered': return { icon: Syringe,         color: '#178A3D', bg: '#F0FDF4' };

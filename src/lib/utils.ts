@@ -42,7 +42,46 @@ export function getInitials(name: string): string {
     .slice(0, 2);
 }
 
+export const KENYA_TZ = 'Africa/Nairobi';
+
+// Parse a backend timestamp as UTC even when it lacks a 'Z' suffix.
+export function parseUtc(value?: string | Date | null): Date | null {
+  if (!value) return null;
+  if (value instanceof Date) return value;
+  const hasZone = /[zZ]|[+-]\d{2}:?\d{2}$/.test(value);
+  const d = new Date(hasZone ? value : `${value}Z`);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+// Date + time in Kenya time (EAT, UTC+3).
+export function formatDateTimeEAT(value?: string | Date | null): string {
+  const d = parseUtc(value);
+  if (!d) return 'N/A';
+  return d.toLocaleString('en-GB', {
+    timeZone: KENYA_TZ,
+    day: '2-digit', month: 'short', year: 'numeric',
+    hour: '2-digit', minute: '2-digit', hour12: false,
+  });
+}
+
+// Time only in Kenya time (EAT).
+export function formatTimeEAT(value?: string | Date | null): string {
+  const d = parseUtc(value);
+  if (!d) return 'N/A';
+  return d.toLocaleTimeString('en-GB', {
+    timeZone: KENYA_TZ, hour: '2-digit', minute: '2-digit', hour12: false,
+  });
+}
+
+// Date only in Kenya time (EAT).
+export function formatDateEAT(value?: string | Date | null): string {
+  const d = parseUtc(value);
+  if (!d) return 'N/A';
+  return d.toLocaleDateString('en-GB', {
+    timeZone: KENYA_TZ, day: '2-digit', month: 'short', year: 'numeric',
+  });
+}
+
 export function formatDate(isoString?: string): string {
-  if (!isoString) return 'N/A';
-  return new Date(isoString).toLocaleString();
+  return formatDateTimeEAT(isoString);
 }

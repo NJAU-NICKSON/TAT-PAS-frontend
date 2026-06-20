@@ -5,6 +5,7 @@ export type NotifType =
   | 'sla_breach'
   | 'flag_created'
   | 'patient_assigned'
+  | 'rx_created'
   | 'rx_verified'
   | 'rx_dispensed'
   | 'rx_administered'
@@ -76,6 +77,19 @@ export function useNotifications() {
           title: 'Patient Assigned to You',
           subtitle: [d.patient_name, d.consultation_room, d.visit_number]
             .filter(Boolean).join(' - ') || 'A patient was assigned to you',
+          timestamp: new Date(),
+          read: false,
+        });
+      }),
+
+      subscribe('prescription.created', (ev: WSEvent) => {
+        const d = ev.data as { rx_number?: string; patient_name?: string; priority?: string };
+        addNotif({
+          id: `rxnew-${ev.entity_id ?? Date.now()}`,
+          type: 'rx_created',
+          title: 'New Prescription to Review',
+          subtitle: rxLine(d, d.priority ? `${d.priority} priority` : undefined)
+            || 'A new prescription needs auditor review',
           timestamp: new Date(),
           read: false,
         });
