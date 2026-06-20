@@ -27,15 +27,20 @@ function displayName(value?: string | null, fallback = 'Unknown user'): string {
 
 function fmt(iso?: string): string {
   if (!iso) return ' - ';
-  return new Date(iso).toLocaleString('en-GB', {
+  const hasZone = /[zZ]|[+-]\d{2}:?\d{2}$/.test(iso);
+  return new Date(hasZone ? iso : `${iso}Z`).toLocaleString('en-GB', {
+    timeZone: 'Africa/Nairobi',
     day: '2-digit', month: 'short', year: 'numeric',
-    hour: '2-digit', minute: '2-digit',
+    hour: '2-digit', minute: '2-digit', hour12: false,
   });
 }
 
 function fmtTime(iso?: string): string {
   if (!iso) return ' - ';
-  return new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+  const hasZone = /[zZ]|[+-]\d{2}:?\d{2}$/.test(iso);
+  return new Date(hasZone ? iso : `${iso}Z`).toLocaleTimeString('en-GB', {
+    timeZone: 'Africa/Nairobi', hour: '2-digit', minute: '2-digit', hour12: false,
+  });
 }
 
 function fmtDuration(min: number): string {

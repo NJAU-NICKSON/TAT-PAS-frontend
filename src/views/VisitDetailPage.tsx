@@ -8,7 +8,7 @@ import {
   PlusCircle, Banknote, Building2, Calendar, Thermometer,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { visitsApi, Visit, JourneySummary, JourneyStageSummary, UpdateVisitPayload, VitalSigns, TriagePayload } from '../api/visits';
+import { visitsApi, Visit, JourneySummary, JourneyStageSummary, VitalSigns } from '../api/visits';
 import { bedsApi, Bed as BedType } from '../api/beds';
 import { departmentsApi, Department } from '../api/departments';
 import { consultationRoomsApi, ConsultationRoom } from '../api/consultationRooms';
@@ -16,7 +16,7 @@ import { prescriptionsApi } from '../api/prescriptions';
 import { billingApi } from '../api/billing';
 import { usersApi } from '../api/users';
 import { useAuth } from '../context/AuthContext';
-import { withDoctorTitle } from '../lib/utils';
+import { withDoctorTitle, formatTimeEAT, formatDateTimeEAT } from '../lib/utils';
 import { Prescription, Bill, BillLineItem, Payment, User as UserType } from '../models/types';
 
 const STATUS_LABELS: Record<string, string> = {
@@ -63,12 +63,12 @@ const STAGE_ICONS = [UserCheck, Stethoscope, Stethoscope, FlaskConical, CreditCa
 
 function fmtTime(iso?: string) {
   if (!iso) return ' - ';
-  return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  return formatTimeEAT(iso);
 }
 
 function fmtDateTime(iso?: string) {
   if (!iso) return ' - ';
-  return new Date(iso).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+  return formatDateTimeEAT(iso);
 }
 
 function fmtKES(n: number) {
@@ -611,112 +611,6 @@ function StageCard({ stage, isLast }: { stage: JourneyStageSummary; isLast: bool
   );
 }
 
-function ConsultationNoteModal({
-  visit, nurses, onConfirm, onClose,
-}: {
-  visit: Visit;
-  nurses: UserType[];
-  onConfirm: (data: UpdateVisitPayload) => Promise<void>;
-  onClose: () => void;
-}) {
-  const [room, setRoom]           = useState(visit.consultation_room ?? '');
-  const [nurseId, setNurseId]     = useState(visit.consultation_nurse_id ?? '');
-  const [findings, setFindings]   = useState(visit.clinical_findings ?? '');
-  const [diagnosis, setDiagnosis] = useState(visit.diagnosis ?? '');
-  const [recs, setRecs]           = useState(visit.recommendations ?? '');
-  const [followUp, setFollowUp]   = useState(visit.follow_up_instructions ?? '');
-  const [submitting, setSubmitting] = useState(false);
-
-  async function handleSave() {
-    setSubmitting(true);
-    try {
-      await onConfirm({
-        consultation_room: room.trim() || undefined,
-        consultation_nurse_id: nurseId || undefined,
-        clinical_findings: findings.trim() || undefined,
-        diagnosis: diagnosis.trim() || undefined,
-        recommendations: recs.trim() || undefined,
-        follow_up_instructions: followUp.trim() || undefined,
-      });
-    } finally { setSubmitting(false); }
-  }
-
-  const field = (label: string, value: string, onChange: (v: string) => void, placeholder: string, rows = 3) => (
-    <div>
-      <p className="text-caption font-bold uppercase tracking-wider mb-1.5" style={{ color: 'var(--text-muted)' }}>{label}</p>
-      <textarea
-        value={value}
-        onChange={e => onChange(e.target.value)}
-        rows={rows}
-        placeholder={placeholder}
-        className="w-full px-3 py-2.5 rounded-lg text-sm resize-none focus:outline-none"
-        style={{ background: 'var(--surface-1)', border: '1px solid var(--border-default)', color: 'var(--text-primary)' }}
-      />
-    </div>
-  );
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.45)' }}>
-      <div role="dialog" aria-modal="true" className="w-full max-w-2xl rounded-lg overflow-hidden animate-slide-up" style={{ background: 'var(--bg-card)', boxShadow: 'var(--shadow-modal)' }}>
-        <div className="flex items-center justify-between px-6 py-4" style={{ background: '#5b21b6', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.15)' }}>
-              <Stethoscope className="w-4 h-4 text-white" />
-            </div>
-            <div>
-              <h2 className="text-body font-bold text-white">Consultation Notes</h2>
-              <p className="text-caption" style={{ color: 'rgba(255,255,255,0.5)' }}>{visit.patient_name}</p>
-            </div>
-          </div>
-          <button onClick={onClose} aria-label="Close" style={{ color: 'rgba(255,255,255,0.5)' }}><X className="w-4 h-4" /></button>
-        </div>
-
-        <div className="px-6 py-5 space-y-4 max-h-[70vh] overflow-y-auto">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <p className="text-caption font-bold uppercase tracking-wider mb-1.5" style={{ color: 'var(--text-muted)' }}>Consultation Room</p>
-              <input
-                type="text" value={room} onChange={e => setRoom(e.target.value)}
-                placeholder="e.g. Room 3A, OPD-2, Consultation 1..."
-                className="w-full px-3 py-2.5 rounded-lg text-sm focus:outline-none"
-                style={{ background: 'var(--surface-1)', border: '1px solid var(--border-default)', color: 'var(--text-primary)' }}
-              />
-            </div>
-            <div>
-              <p className="text-caption font-bold uppercase tracking-wider mb-1.5" style={{ color: 'var(--text-muted)' }}>Assisting Nurse</p>
-              <select
-                value={nurseId} onChange={e => setNurseId(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-lg text-sm focus:outline-none"
-                style={{ background: 'var(--surface-1)', border: '1px solid var(--border-default)', color: 'var(--text-primary)' }}
-              >
-                <option value="">None / Not applicable</option>
-                {nurses.filter(u => u.role === 'nurse').map(n => (
-                  <option key={n.id} value={n.id}>{n.full_name}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {field('Clinical Findings / Examination', findings, setFindings, 'Document examination findings, observations, patient presentation...', 4)}
-          {field('Diagnosis', diagnosis, setDiagnosis, 'Working or confirmed diagnosis...', 2)}
-          {field('Recommendations / Plan of Care', recs, setRecs, 'Treatment plan, interventions, referrals...', 3)}
-          {field('Follow-up Instructions', followUp, setFollowUp, 'Patient instructions, review date, warning signs to watch for...', 2)}
-        </div>
-
-        <div className="flex gap-3 px-6 py-4 justify-end" style={{ borderTop: '1px solid var(--border-default)' }}>
-          <button onClick={onClose} aria-label="Close" className="px-4 py-2 text-sm rounded-lg border" style={{ color: 'var(--text-secondary)', borderColor: 'var(--border-default)' }}>Cancel</button>
-          <button onClick={handleSave} disabled={submitting}
-            className="flex items-center gap-2 px-5 py-2 text-sm font-semibold text-white rounded-lg disabled:opacity-50"
-            style={{ background: '#178A3D' }}>
-            {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
-            Save Consultation Notes
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 type Tab = 'overview' | 'triage' | 'care' | 'consultation' | 'prescriptions' | 'billing';
 
 export default function VisitDetailPage() {
@@ -745,13 +639,7 @@ export default function VisitDetailPage() {
   const [showAssignDoc, setShowAssignDoc] = useState(false);
   const [showAddCharge, setShowAddCharge] = useState(false);
   const [showPayment, setShowPayment]   = useState(false);
-  const [showConsultForm, setShowConsultForm] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
-
-  const [triageVitals, setTriageVitals] = useState<VitalSigns>({});
-  const [triageDoctorId, setTriageDoctorId] = useState('');
-  const [triageRoomId, setTriageRoomId] = useState('');
-  const [triageLoading, setTriageLoading] = useState(false);
 
   const load = useCallback(async () => {
     if (!id) return;
@@ -760,7 +648,6 @@ export default function VisitDetailPage() {
       const [vRes, jRes] = await Promise.all([visitsApi.getById(id), visitsApi.journey(id)]);
       const v = vRes.data;
       setVisit(v);
-      if (v.vitals) setTriageVitals(v.vitals);
       setJourney(jRes.data);
 
       const [deptRes, docsRes, roomsRes, rxRes, billsRes, bedRes, docRes] = await Promise.allSettled([
@@ -825,17 +712,6 @@ export default function VisitDetailPage() {
     if (activeTab !== 'prescriptions' || canOpenRx) return;
     setActiveTab(triaged ? 'consultation' : 'triage');
   }, [activeTab, visit]);
-
-  useEffect(() => {
-    if (!visit || visit.triaged_at) return;
-    if (user?.role !== 'nurse') return;
-    if (triageDoctorId) return;
-    const myRoom = rooms.find(r => r.current_nurse_id === user.id);
-    if (myRoom?.current_doctor_id) {
-      setTriageDoctorId(myRoom.current_doctor_id);
-      setTriageRoomId(myRoom.room_name);
-    }
-  }, [rooms, user, visit, triageDoctorId]);
 
   const handleAdmit = async (bedId: string, notes: string, doctorId?: string) => {
     if (!id) return;
@@ -902,23 +778,6 @@ export default function VisitDetailPage() {
     const newBill = await billingApi.createBill(id!, lineItems);
     setBill(newBill);
     toast.success('Bill generated');
-  };
-
-  const handleTriage = async () => {
-    if (!id) return;
-    setTriageLoading(true);
-    try {
-      const payload: TriagePayload = { vitals: triageVitals };
-      if (triageDoctorId) payload.assigned_doctor_id = triageDoctorId;
-      if (triageRoomId) payload.consultation_room = triageRoomId;
-      await visitsApi.triage(id, payload);
-      toast.success('Triage recorded');
-      await load();
-    } catch (e: unknown) {
-      toast.error((e as { response?: { data?: { detail?: string } } })?.response?.data?.detail ?? 'Triage failed');
-    } finally {
-      setTriageLoading(false);
-    }
   };
 
   if (loading) {
@@ -1082,12 +941,19 @@ export default function VisitDetailPage() {
       <div className="flex-1 overflow-y-auto" style={{ background: 'var(--bg-base)' }}>
         {activeTab === 'triage' && (
           <div className="w-full max-w-4xl px-6 py-5 space-y-5">
-            {visit.triaged_at && (
+            {visit.triaged_at ? (
               <div className="flex items-center gap-3 px-4 py-3 rounded-lg" style={{ background: 'var(--status-ok-bg)', border: '1px solid var(--status-ok-border)' }}>
                 <CheckCircle2 className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--status-ok-icon)' }} />
                 <p className="text-body-sm font-semibold" style={{ color: 'var(--status-ok-icon)' }}>
-                  Patient already triaged{visit.triaged_at ? `  -  ${fmtDateTime(visit.triaged_at)}` : ''}.
+                  Patient triaged  -  {fmtDateTime(visit.triaged_at)}.
                   {visit.triage_nurse_name ? ` By ${visit.triage_nurse_name}.` : ''}
+                </p>
+              </div>
+            ) : (
+              <div className="flex items-center gap-3 px-4 py-3 rounded-lg" style={{ background: 'var(--surface-1)', border: '1px solid var(--border-default)' }}>
+                <Thermometer className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
+                <p className="text-body-sm" style={{ color: 'var(--text-secondary)' }}>
+                  This patient has not been triaged yet. Triage is recorded by a nurse on the Triage page.
                 </p>
               </div>
             )}
@@ -1096,134 +962,47 @@ export default function VisitDetailPage() {
               <CardHeader
                 icon={<div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background: 'rgba(220,38,38,0.1)' }}><Activity className="w-3.5 h-3.5" style={{ color: '#DC2626' }} /></div>}
                 title="Vital Signs"
+                sub="Recorded at triage  -  read only"
               />
               <div className="px-5 py-4 grid grid-cols-2 gap-4">
                 {[
-                  { label: 'BP Systolic (mmHg)',  key: 'blood_pressure_systolic'  as keyof VitalSigns, type: 'number', placeholder: 'e.g. 120' },
-                  { label: 'BP Diastolic (mmHg)', key: 'blood_pressure_diastolic' as keyof VitalSigns, type: 'number', placeholder: 'e.g. 80' },
-                  { label: 'Temperature (°C)',    key: 'temperature_celsius'      as keyof VitalSigns, type: 'number', placeholder: 'e.g. 37.2', step: '0.1' },
-                  { label: 'Pulse Rate (bpm)',    key: 'pulse_rate'               as keyof VitalSigns, type: 'number', placeholder: 'e.g. 72' },
-                  { label: 'SpO,, (%)',            key: 'oxygen_saturation'        as keyof VitalSigns, type: 'number', placeholder: 'e.g. 98' },
-                  { label: 'Respiratory Rate',    key: 'respiratory_rate'         as keyof VitalSigns, type: 'number', placeholder: 'e.g. 16' },
-                  { label: 'Weight (kg)',         key: 'weight_kg'                as keyof VitalSigns, type: 'number', placeholder: 'e.g. 70', step: '0.1' },
-                  { label: 'Height (cm)',         key: 'height_cm'                as keyof VitalSigns, type: 'number', placeholder: 'e.g. 170' },
-                ].map(({ label, key, type, placeholder, step }) => (
+                  { label: 'BP Systolic (mmHg)',  key: 'blood_pressure_systolic'  as keyof VitalSigns },
+                  { label: 'BP Diastolic (mmHg)', key: 'blood_pressure_diastolic' as keyof VitalSigns },
+                  { label: 'Temperature (°C)',    key: 'temperature_celsius'      as keyof VitalSigns },
+                  { label: 'Pulse Rate (bpm)',    key: 'pulse_rate'               as keyof VitalSigns },
+                  { label: 'SpO2 (%)',            key: 'oxygen_saturation'        as keyof VitalSigns },
+                  { label: 'Respiratory Rate',    key: 'respiratory_rate'         as keyof VitalSigns },
+                  { label: 'Weight (kg)',         key: 'weight_kg'                as keyof VitalSigns },
+                  { label: 'Height (cm)',         key: 'height_cm'                as keyof VitalSigns },
+                ].map(({ label, key }) => (
                   <div key={key}>
-                    <label className="text-caption font-semibold block mb-1" style={{ color: 'var(--text-secondary)' }}>{label}</label>
-                    <input
-                      type={type}
-                      step={step}
-                      placeholder={placeholder}
-                      value={triageVitals[key] as number ?? ''}
-                      onChange={e => setTriageVitals(v => ({ ...v, [key]: e.target.value ? Number(e.target.value) : undefined }))}
-                      className="w-full px-3 py-2 rounded-lg text-body-sm"
-                      style={{ background: 'var(--surface-1)', border: '1px solid var(--border-default)', color: 'var(--text-primary)', outline: 'none' }}
-                    />
+                    <p className="text-caption font-semibold mb-1" style={{ color: 'var(--text-secondary)' }}>{label}</p>
+                    <p className="text-body-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+                      {visit.vitals?.[key] != null && visit.vitals[key] !== '' ? String(visit.vitals[key]) : ' - '}
+                    </p>
                   </div>
                 ))}
-                <div className="col-span-2">
-                  <label className="text-caption font-semibold block mb-1" style={{ color: 'var(--text-secondary)' }}>Triage Notes</label>
-                  <textarea
-                    rows={3}
-                    placeholder="Clinical observations, presenting symptoms"
-                    value={triageVitals.triage_notes ?? ''}
-                    onChange={e => setTriageVitals(v => ({ ...v, triage_notes: e.target.value || undefined }))}
-                    className="w-full px-3 py-2 rounded-lg text-body-sm resize-none"
-                    style={{ background: 'var(--surface-1)', border: '1px solid var(--border-default)', color: 'var(--text-primary)', outline: 'none' }}
-                  />
-                </div>
-              </div>
-            </Card>
-
-            <Card>
-              <CardHeader
-                icon={<div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background: 'rgba(23,138,61,0.1)' }}><UserCheck className="w-3.5 h-3.5" style={{ color: '#178A3D' }} /></div>}
-                title="Assign Doctor"
-                sub="Optional  -  can be assigned later"
-              />
-              <div className="px-5 py-4">
-                <select
-                  value={triageDoctorId}
-                  onChange={e => {
-                    const docId = e.target.value;
-                    setTriageDoctorId(docId);
-                    const docRoom = docId ? rooms.find(r => r.current_doctor_id === docId) : undefined;
-                    setTriageRoomId(docRoom?.room_name ?? '');
-                  }}
-                  className="w-full px-3 py-2 rounded-lg text-body-sm"
-                  style={{ background: 'var(--surface-1)', border: '1px solid var(--border-default)', color: 'var(--text-primary)', outline: 'none' }}
-                >
-                  <option value=""> -  No doctor assigned yet  - </option>
-                  {doctors.map(d => (
-                    <option key={d.id} value={d.id}>{d.full_name || d.username}</option>
-                  ))}
-                </select>
-              </div>
-            </Card>
-
-            <Card>
-              <CardHeader
-                icon={<div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background: 'rgba(5,150,105,0.1)' }}><MapPin className="w-3.5 h-3.5" style={{ color: '#178A3D' }} /></div>}
-                title="Consultation Room"
-                sub="Set automatically from the assigned doctor"
-              />
-              <div className="px-5 py-4">
-                {visit.consultation_room && (
-                  <p className="text-caption font-semibold mb-2" style={{ color: '#178A3D' }}>
-                    Currently assigned: <span className="font-bold">{visit.consultation_room}</span>
-                  </p>
-                )}
-                {triageRoomId ? (
-                  <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg" style={{ background: 'rgba(5,150,105,0.08)', border: '1px solid #86EFAC' }}>
-                    <MapPin className="w-4 h-4 flex-shrink-0" style={{ color: '#178A3D' }} />
-                    <p className="text-body-sm" style={{ color: 'var(--text-secondary)' }}>
-                      <span className="font-bold" style={{ color: '#178A3D' }}>{triageRoomId}</span>
-                      <span style={{ color: 'var(--text-muted)' }}> - from assigned doctor</span>
-                    </p>
+                {visit.vitals?.triage_notes && (
+                  <div className="col-span-2">
+                    <p className="text-caption font-semibold mb-1" style={{ color: 'var(--text-secondary)' }}>Triage Notes</p>
+                    <p className="text-body-sm" style={{ color: 'var(--text-primary)' }}>{visit.vitals.triage_notes}</p>
                   </div>
-                ) : triageDoctorId ? (
-                  <>
-                    <p className="text-caption mb-2" style={{ color: 'var(--text-muted)' }}>
-                      The selected doctor has no fixed room. Choose one manually:
-                    </p>
-                    <select
-                      value={triageRoomId}
-                      onChange={e => setTriageRoomId(e.target.value)}
-                      className="w-full px-3 py-2 rounded-lg text-body-sm"
-                      style={{ background: 'var(--surface-1)', border: '1px solid var(--border-default)', color: 'var(--text-primary)', outline: 'none' }}
-                    >
-                      <option value=""> -  No room assigned yet  - </option>
-                      {rooms.map(r => (
-                        <option key={r.id} value={r.room_name}>
-                          {r.room_name} ({r.room_number}){r.status !== 'available' ? `  -  ${r.status}` : ''}
-                        </option>
-                      ))}
-                    </select>
-                  </>
-                ) : (
-                  <p className="text-caption" style={{ color: 'var(--text-muted)' }}>
-                    Select a doctor above and the room fills in automatically.
-                  </p>
-                )}
-                {rooms.length === 0 && (
-                  <p className="text-caption mt-2" style={{ color: 'var(--text-muted)' }}>
-                    No consultation rooms configured for this department.
-                  </p>
                 )}
               </div>
             </Card>
 
-            <div className="flex justify-end">
-              <button
-                onClick={handleTriage}
-                disabled={triageLoading}
-                className="flex items-center gap-2 px-6 py-2.5 rounded-lg text-body-sm font-semibold text-white disabled:opacity-50"
-                style={{ background: 'var(--clinical-600)' }}
-              >
-                {triageLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Thermometer className="w-4 h-4" />}
-                {visit.triaged_at ? 'Update Triage' : 'Complete Triage'}
-              </button>
-            </div>
+            {!visit.triaged_at && user?.role === 'nurse' && (
+              <div className="flex justify-end">
+                <button
+                  onClick={() => navigate(`/visits/${visit.id}/triage`)}
+                  className="flex items-center gap-2 px-6 py-2.5 rounded-lg text-body-sm font-semibold text-white"
+                  style={{ background: 'var(--clinical-600)' }}
+                >
+                  <Thermometer className="w-4 h-4" />
+                  Go to Triage Page
+                </button>
+              </div>
+            )}
           </div>
         )}
 
@@ -1491,14 +1270,14 @@ export default function VisitDetailPage() {
                 title="Consultation Record"
                 sub={visit.consultation_started_at ? `Started: ${fmtDateTime(visit.consultation_started_at)}` : 'Not yet started'}
                 action={
-                  ['doctor', 'admin'].includes(user?.role ?? '') ? (
+                  user?.role === 'doctor' ? (
                     <button
-                      onClick={() => setShowConsultForm(true)}
+                      onClick={() => navigate('/consultation')}
                       className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold text-white rounded-lg"
                       style={{ background: '#178A3D' }}
                     >
-                      <FilePlus className="w-3.5 h-3.5" />
-                      {visit.diagnosis ? 'Update Notes' : 'Add Notes'}
+                      <Stethoscope className="w-3.5 h-3.5" />
+                      Open Consultation Page
                     </button>
                   ) : null
                 }
@@ -1579,16 +1358,16 @@ export default function VisitDetailPage() {
                     </div>
                     <p className="text-sm font-semibold text-gray-600 mb-1">No consultation notes yet</p>
                     <p className="text-xs text-gray-400 mb-3">
-                      {['doctor', 'admin'].includes(user?.role ?? '') ? 'Document your findings, diagnosis and recommendations.' : 'The doctor has not yet recorded consultation notes.'}
+                      {user?.role === 'doctor' ? 'Record findings, diagnosis and recommendations on the Consultation page.' : 'The doctor has not yet recorded consultation notes.'}
                     </p>
-                    {['doctor', 'admin'].includes(user?.role ?? '') && (
+                    {user?.role === 'doctor' && (
                       <button
-                        onClick={() => setShowConsultForm(true)}
+                        onClick={() => navigate('/consultation')}
                         className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white rounded-lg"
                         style={{ background: '#178A3D' }}
                       >
-                        <FilePlus className="w-4 h-4" />
-                        Record Consultation Notes
+                        <Stethoscope className="w-4 h-4" />
+                        Open Consultation Page
                       </button>
                     )}
                   </div>
@@ -1897,23 +1676,6 @@ export default function VisitDetailPage() {
           balance={bill.balance_due}
           onConfirm={handlePayment}
           onClose={() => setShowPayment(false)}
-        />
-      )}
-      {showConsultForm && (
-        <ConsultationNoteModal
-          visit={visit}
-          nurses={nurses}
-          onConfirm={async (data) => {
-            try {
-              await visitsApi.update(visit.id, data);
-              toast.success('Consultation notes saved');
-              setShowConsultForm(false);
-              load();
-            } catch {
-              toast.error('Failed to save consultation notes');
-            }
-          }}
-          onClose={() => setShowConsultForm(false)}
         />
       )}
     </div>
