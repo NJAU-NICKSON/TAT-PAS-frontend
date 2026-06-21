@@ -107,6 +107,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(
     async (username: string, password: string, redirectTo = '/dashboard') => {
+      // Clear any leftover state from a previous session before signing in,
+      // so a new user never inherits the prior user's tokens or cached data.
+      clearRefreshTimer();
+      try { localStorage.clear(); sessionStorage.clear(); } catch {}
+
       const response = await authApi.login(username, password);
       const { access_token, refresh_token, user: userData } = response.data;
       localStorage.setItem('access_token', access_token);

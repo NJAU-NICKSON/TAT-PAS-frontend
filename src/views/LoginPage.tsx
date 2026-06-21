@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useLocation } from 'react-router-dom';
 import {
   Eye, EyeOff, AlertCircle, Loader2, Shield, Stethoscope,
   HeartPulse, FlaskConical, ClipboardCheck, Receipt, UserCog, ChevronLeft,
@@ -29,10 +28,10 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [failedAttempts, setFailedAttempts] = useState(0);
-  const location = useLocation();
   const { login } = useAuth();
-  const redirectTo =
-    (location.state as { from?: { pathname?: string } } | null)?.from?.pathname || '/dashboard';
+  // Always land a fresh login on the role dashboard, never the previous
+  // session's page (which would leak one user's location to the next).
+  const redirectTo = '/dashboard';
 
   const MAX_ATTEMPTS = 5;
 
