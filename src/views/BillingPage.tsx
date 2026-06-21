@@ -493,7 +493,7 @@ function BillDrawer({ bill, onClose, onPaymentAdded }: {
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+        <div className="flex-1 min-w-0 overflow-y-auto px-4 sm:px-6 py-5 space-y-5">
           <div className="grid grid-cols-3 gap-3">
             {[
               { label: 'Total',   value: fmtKES(bill.total_amount), color: 'var(--text-primary)' },
@@ -576,13 +576,14 @@ function BillDrawer({ bill, onClose, onPaymentAdded }: {
                 No charges listed.
               </p>
             ) : (
+              <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr style={{ borderBottom: '1px solid var(--border-default)', background: 'var(--surface-1)' }}>
                     {['Category', 'Description', 'Qty', 'Unit Price', 'Total'].map(h => (
                       <th
                         key={h}
-                        className={`px-4 py-2 text-caption font-semibold uppercase tracking-wider text-left ${['Qty', 'Unit Price', 'Total'].includes(h) ? 'text-right' : ''}`}
+                        className={`px-2.5 py-2 text-caption font-semibold uppercase tracking-wider text-left whitespace-nowrap ${['Qty', 'Unit Price', 'Total'].includes(h) ? 'text-right' : ''}`}
                         style={{ color: 'var(--text-muted)' }}
                       >
                         {h}
@@ -599,24 +600,24 @@ function BillDrawer({ bill, onClose, onPaymentAdded }: {
                         background:   i % 2 === 0 ? 'transparent' : 'var(--surface-1)',
                       }}
                     >
-                      <td className="px-4 py-2.5">
+                      <td className="px-2.5 py-2.5">
                         <span
-                          className="text-caption font-semibold px-2 py-0.5 rounded-full"
+                          className="text-caption font-semibold px-2 py-0.5 rounded-full whitespace-nowrap"
                           style={{ background: 'var(--surface-2)', color: 'var(--text-secondary)' }}
                         >
                           {CATEGORY_LABEL[item.category] ?? item.category}
                         </span>
                       </td>
-                      <td className="px-4 py-2.5" style={{ color: 'var(--text-primary)' }}>
+                      <td className="px-2.5 py-2.5" style={{ color: 'var(--text-primary)' }}>
                         {item.description}
                       </td>
-                      <td className="px-4 py-2.5 text-right tabular-nums" style={{ color: 'var(--text-secondary)' }}>
+                      <td className="px-2.5 py-2.5 text-right tabular-nums" style={{ color: 'var(--text-secondary)' }}>
                         {item.quantity}
                       </td>
-                      <td className="px-4 py-2.5 text-right tabular-nums" style={{ color: 'var(--text-secondary)' }}>
+                      <td className="px-2.5 py-2.5 text-right tabular-nums whitespace-nowrap" style={{ color: 'var(--text-secondary)' }}>
                         {item.unit_price.toLocaleString('en-KE', { minimumFractionDigits: 2 })}
                       </td>
-                      <td className="px-4 py-2.5 text-right tabular-nums font-semibold" style={{ color: 'var(--text-primary)' }}>
+                      <td className="px-2.5 py-2.5 text-right tabular-nums font-semibold whitespace-nowrap" style={{ color: 'var(--text-primary)' }}>
                         {item.total_price.toLocaleString('en-KE', { minimumFractionDigits: 2 })}
                       </td>
                     </tr>
@@ -624,17 +625,18 @@ function BillDrawer({ bill, onClose, onPaymentAdded }: {
                   <tr style={{ background: 'var(--surface-2)', borderTop: '2px solid var(--border-default)' }}>
                     <td
                       colSpan={4}
-                      className="px-4 py-2.5 text-right font-bold"
+                      className="px-2.5 py-2.5 text-right font-bold"
                       style={{ color: 'var(--text-primary)' }}
                     >
                       Total
                     </td>
-                    <td className="px-4 py-2.5 text-right font-extrabold tabular-nums" style={{ color: 'var(--text-primary)' }}>
+                    <td className="px-2.5 py-2.5 text-right font-extrabold tabular-nums whitespace-nowrap" style={{ color: 'var(--text-primary)' }}>
                       {fmtKES(bill.total_amount)}
                     </td>
                   </tr>
                 </tbody>
               </table>
+              </div>
             )}
           </div>
 
