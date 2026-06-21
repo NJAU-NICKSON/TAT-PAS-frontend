@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Activity, Database, Server, Cpu, RefreshCw, Loader2, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { Activity, Database, Server, Cpu, RefreshCw, Loader2, CheckCircle2, AlertTriangle, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { adminApi, SystemHealth } from '../api/admin';
 
@@ -66,6 +66,7 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
 export default function SystemStatusPage() {
   const [health, setHealth] = useState<SystemHealth | null>(null);
   const [loading, setLoading] = useState(false);
+  const [showModules, setShowModules] = useState(false);
 
   const load = () => {
     setLoading(true);
@@ -138,7 +139,35 @@ export default function SystemStatusPage() {
               <Row label="Status" value={<StatusPill ok={true} okLabel="Running" badLabel="Down" />} />
               <Row label="Version" value={`v${health.version}`} />
               <Row label="Uptime" value={formatUptime(health.uptime_seconds)} />
-              <Row label="Active modules" value={`${Object.values(health.modules).filter(c => c > 0).length} / ${Object.keys(health.modules).length}`} />
+              <button
+                onClick={() => setShowModules(v => !v)}
+                className="w-full flex items-center justify-between py-2 group"
+              >
+                <span className="text-caption" style={{ color: 'var(--text-muted)' }}>Active modules</span>
+                <span className="flex items-center gap-1.5">
+                  <span className="text-body-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+                    {Object.values(health.modules).filter(c => c > 0).length} / {Object.keys(health.modules).length}
+                  </span>
+                  <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showModules ? 'rotate-180' : ''}`} style={{ color: 'var(--text-muted)' }} />
+                </span>
+              </button>
+              {showModules && (
+                <div className="mt-1 pt-2 space-y-1.5" style={{ borderTop: '1px solid var(--border-default)' }}>
+                  {Object.entries(health.modules).map(([name, count]) => (
+                    <div key={name} className="flex items-center justify-between">
+                      <span className="flex items-center gap-2 text-caption capitalize" style={{ color: 'var(--text-secondary)' }}>
+                        {count > 0
+                          ? <CheckCircle2 className="w-3.5 h-3.5" style={{ color: '#178A3D' }} />
+                          : <AlertTriangle className="w-3.5 h-3.5" style={{ color: '#DC2626' }} />}
+                        {name.replace(/_/g, ' ')}
+                      </span>
+                      <span className="text-caption font-semibold tabular-nums" style={{ color: count > 0 ? 'var(--text-secondary)' : '#DC2626' }}>
+                        {count > 0 ? `${count} route${count === 1 ? '' : 's'}` : 'not active'}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </StatCard>
 
             <StatCard icon={<Database className="w-4 h-4" />} title="Database (MongoDB)">
