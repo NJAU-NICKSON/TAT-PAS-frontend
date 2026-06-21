@@ -1,7 +1,9 @@
 import { useState } from 'react';
-import { User, Lock, Bell, Shield, Info, Check, X, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { User, Lock, Bell, Shield, Info, Check, X, Eye, EyeOff, Loader2, Activity, RefreshCw, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { authApi } from '../api/auth';
+import { adminApi, SystemHealth } from '../api/admin';
+import { formatTimeEAT } from '../lib/utils';
 
 function Section({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) {
   return (
@@ -42,7 +44,25 @@ export default function SettingsPage() {
     prescription_updates: false,
   });
 
+  const [health, setHealth] = useState<SystemHealth | null>(null);
+  const [checking, setChecking] = useState(false);
+  const [lastChecked, setLastChecked] = useState<Date | null>(null);
+
   const isAdmin = user?.role === 'admin';
+
+  const runHealthCheck = async () => {
+    setChecking(true);
+    try {
+      const res = await adminApi.health();
+      setHealth(res.data);
+      setLastChecked(new Date());
+    } catch {
+      setHealth(null);
+      setLastChecked(new Date());
+    } finally {
+      setChecking(false);
+    }
+  };
 
   const handleChangePassword = async () => {
     setPwError('');
@@ -240,6 +260,65 @@ export default function SettingsPage() {
           </div>
         </div>
       </Section>
+
+      {isAdmin && (
+        <Section title="System Health" icon={<Activity className="w-4 h-4" />}>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <div className="flex items-center gap-3">
+                {checking ? (
+                  <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
+                ) : health?.status === 'ok' ? (
+                  <CheckCircle2 className="w-5 h-5 text-green-600" />
+                ) : health ? (
+                  <AlertTriangle className="w-5 h-5 text-amber-600" />
+                ) : (
+                  <Activity className="w-5 h-5 text-gray-300" />
+                )}
+                <div>
+                  <p className="text-sm font-semibold text-gray-800">
+                    {checking
+                      ? 'Checking…'
+                      : health?.status === 'ok'
+                        ? 'All systems operational'
+                        : health
+                          ? 'System degraded'
+                          : 'Not checked yet'}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    {lastChecked ? `Last checked ${formatTimeEAT(lastChecked)}` : 'Run a check to see live system health'}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={runHealthCheck}
+                disabled={checking}
+                className="flex items-center gap-2 px-4 py-2 bg-[#178A3D] hover:opacity-90 text-white text-sm font-semibold rounded-lg transition-opacity disabled:opacity-60"
+              >
+                {checking ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                {checking ? 'Checking…' : 'Run check'}
+              </button>
+            </div>
+
+            {health && !checking && (
+              <div className="grid grid-cols-2 gap-3 pt-2">
+                <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-gray-50 border border-gray-100">
+                  <span className="text-xs text-gray-500">Database</span>
+                  <span className={`text-xs font-semibold ${health.database === 'ok' ? 'text-green-700' : 'text-amber-700'}`}>
+                    {health.database === 'ok' ? 'Connected' : 'Error'}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-gray-50 border border-gray-100">
+                  <span className="text-xs text-gray-500">Background jobs</span>
+                  <span className={`text-xs font-semibold ${health.scheduler === 'ok' ? 'text-green-700' : 'text-amber-700'}`}>
+                    {health.scheduler === 'ok' ? 'Running' : 'Stopped'}
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+        </Section>
+      )}
 
       {isAdmin && (
         <Section title="About" icon={<Info className="w-4 h-4" />}>
