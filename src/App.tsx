@@ -17,6 +17,7 @@ import AuditQueue from './views/AuditQueue';
 import AnalyticsDashboard from './views/AnalyticsDashboard';
 import UserManagement from './views/UserManagement';
 import SLAConfigPage from './views/SLAConfigPage';
+import ActivityLogPage from './views/ActivityLogPage';
 import SystemStatusPage from './views/SystemStatusPage';
 import BillingPage from './views/BillingPage';
 import BedManagement from './views/BedManagement';
@@ -322,6 +323,17 @@ function AppRoutes() {
           <ProtectedRoute roles={['admin', 'auditor']}>
             <AppShell>
               <PageContainer><SLAConfigPage /></PageContainer>
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/activity-log"
+        element={
+          <ProtectedRoute roles={['admin', 'auditor']}>
+            <AppShell>
+              <PageContainer><ActivityLogPage /></PageContainer>
             </AppShell>
           </ProtectedRoute>
         }

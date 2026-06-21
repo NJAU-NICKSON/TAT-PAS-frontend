@@ -766,18 +766,16 @@ export default function VisitDetailPage() {
   };
 
   const handleGenerateBill = async () => {
-    if (!visit) return;
-    const lineItems: BillLineItem[] = [
-      { description: 'Consultation Fee', quantity: 1, unit_price: 1500, total_price: 1500, category: 'consultation' },
-    ];
-    if (bed) {
-      const bedRates: Record<string, number> = { icu: 8000, hdu: 5000, nicu: 6000, general: 2000, isolation: 3000, maternity: 3500, paediatric: 2500, day_case: 1500, birthing: 4000 };
-      const bedRate = bedRates[bed.bed_type] ?? 2000;
-      lineItems.push({ description: `Bed Charge (${bed.bed_type.toUpperCase()})  -  ${bed.bed_label}`, quantity: 1, unit_price: bedRate, total_price: bedRate, category: 'ward' });
+    if (!visit || !id) return;
+    try {
+      // Auto-build from the catalogue: consultation, bed-days, nursing, meds.
+      const newBill = await billingApi.autoGenerate(id);
+      setBill(newBill);
+      toast.success('Bill generated automatically from this visit');
+    } catch (e: unknown) {
+      const detail = (e as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
+      toast.error(detail ?? 'Failed to generate bill');
     }
-    const newBill = await billingApi.createBill(id!, lineItems);
-    setBill(newBill);
-    toast.success('Bill generated');
   };
 
   if (loading) {
@@ -1524,8 +1522,8 @@ export default function VisitDetailPage() {
                     <Receipt className="w-8 h-8" style={{ color: '#178A3D' }} />
                   </div>
                   <p className="text-body font-semibold" style={{ color: 'var(--text-primary)' }}>No bill generated yet</p>
-                  <p className="text-caption" style={{ color: 'var(--text-muted)' }}>
-                    Generate a bill to track charges for this visit.
+                  <p className="text-caption text-center max-w-sm" style={{ color: 'var(--text-muted)' }}>
+                    Auto-generates an itemized bill from this visit: consultation, bed-days, nursing and dispensed medications, priced from the catalogue.
                   </p>
                   {canBill && (
                     <button
@@ -1534,7 +1532,7 @@ export default function VisitDetailPage() {
                       style={{ background: '#178A3D' }}
                     >
                       <Receipt className="w-4 h-4" />
-                      Generate Bill
+                      Auto-Generate Bill
                     </button>
                   )}
                 </div>

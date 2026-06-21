@@ -103,9 +103,10 @@ export const prescriptionsApi = {
       return_reason: reason,
     }),
 
-  resubmit: (id: string, notes?: string) =>
+  resubmit: (id: string, opts: { amendment_note?: string; medications?: MedicationItem[] } = {}) =>
     apiClient.patch<Prescription>(`/prescriptions/${id}/status`, {
       status: 'submitted',
-      ...(notes ? { notes } : {}),
+      ...(opts.amendment_note ? { amendment_note: opts.amendment_note } : {}),
+      ...(opts.medications ? { medications: opts.medications } : {}),
     }),
 };

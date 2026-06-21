@@ -66,6 +66,14 @@ export interface MedicationItem {
   duration_days: number;
 }
 
+export interface PrescriptionRevision {
+  medications: MedicationItem[];
+  notes?: string;
+  revised_at: string;
+  revised_by?: string;
+  reason?: string;
+}
+
 export type PrescriptionStatus =
   | 'draft'
   | 'submitted'
@@ -121,6 +129,9 @@ export interface Prescription {
   auditor_approved_at?: string;
   returned_at?: string;
   return_reason?: string;
+  resubmitted_at?: string;
+  amendment_count?: number;
+  revisions?: PrescriptionRevision[];
   dispensed_by_id?: string;
   dispensed_by_name?: string;
   administered_by_id?: string;

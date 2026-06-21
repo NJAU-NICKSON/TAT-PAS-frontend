@@ -43,6 +43,7 @@ const allNavItems: NavItem[] = [
   { id: 'billing',            label: 'Billing',            path: '/billing',            icon: DollarSign,              roles: ['billing', 'admin', 'receptionist'] },
   { id: 'users',              label: 'Staff Accounts',     path: '/users',              icon: Users,                   roles: ['admin'] },
   { id: 'sla-config',         label: 'SLA Configuration',  path: '/sla-config',         icon: Timer,                   roles: ['admin', 'auditor'] },
+  { id: 'activity-log',       label: 'Activity Log',       path: '/activity-log',       icon: Activity,                roles: ['admin', 'auditor'] },
   { id: 'system-status',      label: 'System Status',      path: '/system-status',      icon: Activity,                roles: ['admin'] },
   { id: 'settings',           label: 'Settings',           path: '/settings',           icon: NAV_ICONS.settings,      roles: ['receptionist', 'nurse', 'doctor', 'pharmacist', 'billing', 'auditor', 'admin'] },
 ];
@@ -99,7 +100,7 @@ export function getNavigationForRole(role: UserRole): NavGroup[] {
     case 'auditor':
       groups.push(
         { label: 'Prescriptions', items: pick('prescriptions-list') },
-        { label: 'Compliance',    items: pick('audit', 'analytics', 'sla-config') },
+        { label: 'Compliance',    items: pick('audit', 'analytics', 'sla-config', 'activity-log') },
       );
       break;
 
@@ -118,7 +119,7 @@ export function getNavigationForRole(role: UserRole): NavGroup[] {
         { label: 'Prescriptions', items: pick('prescriptions-list', 'pharmacy') },
         { label: 'Compliance',    items: pick('audit', 'analytics') },
         { label: 'Finance',       items: pick('billing') },
-        { label: 'Admin',         items: pick('users', 'sla-config', 'system-status', 'settings') },
+        { label: 'Admin',         items: pick('users', 'sla-config', 'activity-log', 'system-status', 'settings') },
       );
       break;
   }

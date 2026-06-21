@@ -9,7 +9,7 @@ import { prescriptionsApi } from '../api/prescriptions';
 import { auditsApi } from '../api/audits';
 import { visitsApi } from '../api/visits';
 import { useAuth } from '../context/AuthContext';
-import { Prescription, AuditRecord } from '../models/types';
+import { Prescription, AuditRecord, MedicationItem } from '../models/types';
 import { cn } from '../lib/utils';
 import { printPrescription, printDispensingReceipt, FollowUp } from '../lib/printDocs';
 import { toast } from 'sonner';
@@ -638,22 +638,32 @@ function AdministerModal({
 }
 
 function ResubmitModal({
-  rxId,
+  rx,
   onSuccess,
   onClose,
 }: {
-  rxId: string;
+  rx: Prescription;
   onSuccess: () => void;
   onClose: () => void;
 }) {
   const [notes, setNotes] = useState('');
+  const [meds, setMeds] = useState<MedicationItem[]>(rx.medications.map(m => ({ ...m })));
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const setMedField = (i: number, field: keyof MedicationItem, value: string) => {
+    setMeds(prev => prev.map((m, idx) => idx === i ? { ...m, [field]: field === 'duration_days' ? Number(value) : value } : m));
+  };
+
+  const changed = JSON.stringify(meds) !== JSON.stringify(rx.medications);
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
-      await prescriptionsApi.resubmit(rxId, notes.trim() || undefined);
-      toast.success('Prescription resubmitted for audit review');
+      await prescriptionsApi.resubmit(rx.id, {
+        amendment_note: notes.trim() || undefined,
+        medications: changed ? meds : undefined,
+      });
+      toast.success('Prescription amended and resubmitted for audit review');
       onSuccess();
     } catch {
       toast.error('Failed to resubmit prescription');
@@ -664,25 +674,44 @@ function ResubmitModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="w-full max-w-md mx-4 rounded-lg overflow-hidden bg-white shadow-2xl">
+      <div className="w-full max-w-lg mx-4 rounded-lg overflow-hidden bg-white shadow-2xl max-h-[90vh] flex flex-col">
         <div className="flex items-center justify-between px-6 py-4 border-b">
           <div className="flex items-center gap-2">
             <RefreshCw className="w-5 h-5 text-green-700" />
-            <h2 className="font-semibold text-gray-900">Resubmit for Audit</h2>
+            <h2 className="font-semibold text-gray-900">Amend &amp; Resubmit for Audit</h2>
           </div>
           <button onClick={onClose} aria-label="Close"><X className="w-5 h-5 text-gray-400" /></button>
         </div>
-        <div className="px-6 py-5 space-y-4">
+        <div className="px-6 py-5 space-y-4 overflow-y-auto">
+          {rx.return_reason && (
+            <div className="text-sm rounded-lg px-3 py-2 bg-amber-50 border border-amber-200 text-amber-800">
+              Auditor note: {rx.return_reason}
+            </div>
+          )}
           <p className="text-sm text-gray-600">
-            Resubmit the amended prescription for auditor review. Add a note explaining the changes made.
+            Edit the medications if needed, then resubmit. The previous version is kept in the audit trail and patient journey.
           </p>
+          <div className="space-y-2">
+            {meds.map((m, i) => (
+              <div key={i} className="grid grid-cols-12 gap-2">
+                <input value={m.name} onChange={e => setMedField(i, 'name', e.target.value)} placeholder="Drug"
+                  className="col-span-4 px-2 py-1.5 text-sm border border-gray-300 rounded-lg" />
+                <input value={m.dose} onChange={e => setMedField(i, 'dose', e.target.value)} placeholder="Dose"
+                  className="col-span-3 px-2 py-1.5 text-sm border border-gray-300 rounded-lg" />
+                <input value={m.route} onChange={e => setMedField(i, 'route', e.target.value)} placeholder="Route"
+                  className="col-span-2 px-2 py-1.5 text-sm border border-gray-300 rounded-lg" />
+                <input value={m.frequency} onChange={e => setMedField(i, 'frequency', e.target.value)} placeholder="Freq"
+                  className="col-span-3 px-2 py-1.5 text-sm border border-gray-300 rounded-lg" />
+              </div>
+            ))}
+          </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Amendment Notes (optional)</label>
             <textarea
               value={notes}
               onChange={e => setNotes(e.target.value)}
-              rows={3}
-              placeholder="Describe the changes made to the prescription..."
+              rows={2}
+              placeholder="Describe the changes made..."
               className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-green-500"
             />
           </div>
@@ -697,7 +726,7 @@ function ResubmitModal({
             className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white rounded-lg bg-green-700 hover:bg-green-800 disabled:opacity-40"
           >
             {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
-            Resubmit Prescription
+            {changed ? 'Resubmit Amended Rx' : 'Resubmit'}
           </button>
         </div>
       </div>
@@ -1240,7 +1269,7 @@ export default function PrescriptionDetailPage() {
         <AdministerModal rx={rx} onSuccess={() => { setModal(null); load(); }} onClose={() => setModal(null)} />
       )}
       {modal === 'resubmit' && (
-        <ResubmitModal rxId={rx.id} onSuccess={() => { setModal(null); load(); }} onClose={() => setModal(null)} />
+        <ResubmitModal rx={rx} onSuccess={() => { setModal(null); load(); }} onClose={() => setModal(null)} />
       )}
     </div>
   );

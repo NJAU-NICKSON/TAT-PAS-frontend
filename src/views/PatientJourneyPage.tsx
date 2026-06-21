@@ -1005,18 +1005,44 @@ export default function PatientJourneyPage() {
                 isPending={!visit.consultation_started_at}
                 isActive={activeStop === 'ordering'}
               >
-                <div className="space-y-1.5">
+                <div className="space-y-2.5">
                   {prescriptions.map(rx => (
-                    <div key={rx.id} className="flex items-center justify-between gap-2">
-                      <span className="text-xs font-mono font-bold" style={{ color: '#178A3D' }}>
-                        {rx.rx_number ?? `RX-${rx.id.slice(0, 8).toUpperCase()}`}
-                      </span>
-                      <span className="text-xs flex-1 truncate" style={{ color: '#475569' }}>
-                        {rx.medications.map(m => m.name).join(', ')}
-                      </span>
-                      <span className="text-micro flex-shrink-0" style={{ color: '#94A3B8' }}>
-                        {rx.submitted_at ? fmtTime(rx.submitted_at) : 'Pending'}
-                      </span>
+                    <div key={rx.id}>
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs font-mono font-bold" style={{ color: '#178A3D' }}>
+                          {rx.rx_number ?? `RX-${rx.id.slice(0, 8).toUpperCase()}`}
+                        </span>
+                        <span className="text-xs flex-1 truncate" style={{ color: '#475569' }}>
+                          {rx.medications.map(m => `${m.name} ${m.dose}`).join(', ')}
+                        </span>
+                        <span className="text-micro flex-shrink-0" style={{ color: '#94A3B8' }}>
+                          {rx.submitted_at ? fmtTime(rx.submitted_at) : 'Pending'}
+                        </span>
+                      </div>
+                      {/* Amendment trail: requested -> sent back -> resubmitted */}
+                      {((rx.amendment_count ?? 0) > 0 || rx.returned_at) && (
+                        <div className="mt-1.5 ml-2 pl-2.5 space-y-1 border-l-2" style={{ borderColor: '#E2E8F0' }}>
+                          <p className="text-micro" style={{ color: '#64748B' }}>
+                            Requested {fmt(rx.ordered_at ?? rx.submitted_at)}
+                          </p>
+                          {rx.returned_at && (
+                            <p className="text-micro" style={{ color: '#B45309' }}>
+                              Sent back by auditor {fmt(rx.returned_at)}{rx.return_reason ? ` — ${rx.return_reason}` : ''}
+                            </p>
+                          )}
+                          {rx.resubmitted_at && (
+                            <p className="text-micro" style={{ color: '#178A3D' }}>
+                              Doctor amended &amp; resubmitted {fmt(rx.resubmitted_at)}
+                              {(rx.amendment_count ?? 0) > 0 ? ` (revision ${rx.amendment_count})` : ''}
+                            </p>
+                          )}
+                          {(rx.revisions ?? []).map((rev, i) => (
+                            <p key={i} className="text-micro" style={{ color: '#94A3B8' }}>
+                              Previous: {rev.medications.map(m => `${m.name} ${m.dose}`).join(', ')} ({fmt(rev.revised_at)})
+                            </p>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>

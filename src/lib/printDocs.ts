@@ -1,6 +1,7 @@
 import { Prescription } from '../models/types';
 import { printDocument } from './print';
 import { withDoctorTitle, KENYA_TZ, parseUtc } from './utils';
+import { activityApi } from '../api/activity';
 
 function looksLikeObjectId(value?: string | null): boolean {
   return Boolean(value && /^[a-f0-9]{24}$/i.test(value));
@@ -60,6 +61,7 @@ const FOLLOWUP_STYLE = `
 
 export function printPrescription(rx: Prescription, followUp?: FollowUp): void {
   const rxNo = rx.rx_number ?? `RX-${rx.id.slice(0, 8).toUpperCase()}`;
+  activityApi.log('print_prescription', { entity_type: 'prescription', entity_id: rx.id, detail: rxNo });
 
   const medRows = rx.medications.map((m, i) => `
     <tr>
@@ -123,6 +125,7 @@ export function printPrescription(rx: Prescription, followUp?: FollowUp): void {
 
 export function printDispensingReceipt(rx: Prescription, followUp?: FollowUp): void {
   const rxNo = rx.rx_number ?? `RX-${rx.id.slice(0, 8).toUpperCase()}`;
+  activityApi.log('print_receipt', { entity_type: 'prescription', entity_id: rx.id, detail: rxNo });
 
   const medRows = rx.medications.map((m) => `
     <tr>

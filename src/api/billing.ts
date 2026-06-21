@@ -9,6 +9,14 @@ export interface BillUpdatePayload {
   tax_amount?: number;
 }
 
+export interface CatalogueItem {
+  code: string;
+  category: string;
+  name: string;
+  unit_price: number;
+  unit: string;
+}
+
 export const billingApi = {
   createBill: async (visitId: string, lineItems: BillLineItem[]): Promise<Bill> => {
     const response = await apiClient.post('/bills/', {
@@ -63,6 +71,21 @@ export const billingApi = {
       params: { start_date: startDate, end_date: endDate },
     });
     return response.data;
+  },
+
+  autoGenerate: async (visitId: string): Promise<Bill> => {
+    const response = await apiClient.post(`/bills/auto/${visitId}`);
+    return response.data as Bill;
+  },
+
+  getCatalogue: async (): Promise<CatalogueItem[]> => {
+    const response = await apiClient.get('/bills/catalogue');
+    return (response.data as CatalogueItem[]) ?? [];
+  },
+
+  updateCatalogue: async (code: string, unit_price: number): Promise<CatalogueItem> => {
+    const response = await apiClient.put('/bills/catalogue', { code, unit_price });
+    return response.data as CatalogueItem;
   },
 };
 

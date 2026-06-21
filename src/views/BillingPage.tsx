@@ -14,12 +14,14 @@ import {
   Printer,
   Search,
   Filter,
+  DollarSign,
 } from 'lucide-react';
-import { billingApi } from '../api/billing';
+import { billingApi, CatalogueItem } from '../api/billing';
 import { Bill, Payment, BillLineItem } from '../models/types';
 import { useWebSocket } from '../context/WebSocketContext';
 import { printDocument } from '../lib/print';
 import { formatDateTimeEAT } from '../lib/utils';
+import { activityApi } from '../api/activity';
 import TablePagination from '../components/TablePagination';
 import { useTableControls } from '../components/useTableControls';
 import { ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
@@ -101,6 +103,7 @@ const STATUS_STYLE: Record<string, {
 };
 
 function printReceipt(bill: Bill) {
+  activityApi.log('print_receipt', { entity_type: 'bill', entity_id: bill._id, detail: bill.bill_number });
   const paid    = bill.paid_amount ?? 0;
   const balance = bill.balance_due ?? 0;
 
@@ -699,6 +702,73 @@ function BillDrawer({ bill, onClose, onPaymentAdded }: {
   );
 }
 
+function CatalogueModal({ onClose }: { onClose: () => void }) {
+  const [items, setItems] = useState<CatalogueItem[]>([]);
+  const [draft, setDraft] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(true);
+  const [savingCode, setSavingCode] = useState<string | null>(null);
+
+  useEffect(() => {
+    billingApi.getCatalogue()
+      .then(d => { setItems(d); setDraft(Object.fromEntries(d.map(i => [i.code, String(i.unit_price)]))); })
+      .catch(() => toast.error('Failed to load catalogue'))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const save = async (code: string) => {
+    const val = Number(draft[code]);
+    if (val < 0 || Number.isNaN(val)) { toast.error('Enter a valid price'); return; }
+    setSavingCode(code);
+    try {
+      const updated = await billingApi.updateCatalogue(code, val);
+      setItems(prev => prev.map(i => i.code === code ? updated : i));
+      toast.success(`${updated.name} price updated`);
+    } catch { toast.error('Failed to update price'); }
+    finally { setSavingCode(null); }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+      <div className="w-full max-w-xl mx-4 rounded-lg overflow-hidden bg-white shadow-2xl max-h-[90vh] flex flex-col">
+        <div className="flex items-center justify-between px-6 py-4 border-b">
+          <div className="flex items-center gap-2">
+            <DollarSign className="w-5 h-5 text-green-700" />
+            <h2 className="font-semibold text-gray-900">Price Catalogue</h2>
+          </div>
+          <button onClick={onClose} aria-label="Close"><X className="w-5 h-5 text-gray-400" /></button>
+        </div>
+        <div className="px-6 py-4 overflow-y-auto">
+          <p className="text-sm text-gray-500 mb-3">Edit the tariff used by the automatic bill calculator. All amounts in KES.</p>
+          {loading ? (
+            <div className="flex items-center gap-2 text-sm text-gray-400 py-6"><Loader2 className="w-4 h-4 animate-spin" /> Loading…</div>
+          ) : (
+            <div className="space-y-2">
+              {items.map(it => {
+                const dirty = draft[it.code] !== String(it.unit_price);
+                return (
+                  <div key={it.code} className="flex items-center gap-3 py-1.5">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-gray-800 truncate">{it.name}</p>
+                      <p className="text-xs text-gray-400 capitalize">{it.category} · {it.unit}</p>
+                    </div>
+                    <input type="number" min={0} value={draft[it.code] ?? ''}
+                      onChange={e => setDraft(p => ({ ...p, [it.code]: e.target.value }))}
+                      className="w-28 px-2 py-1.5 text-sm text-right border border-gray-300 rounded-lg" />
+                    <button onClick={() => save(it.code)} disabled={!dirty || savingCode === it.code}
+                      className="w-16 flex items-center justify-center px-3 py-1.5 text-sm font-semibold text-white rounded-lg bg-green-700 disabled:opacity-40">
+                      {savingCode === it.code ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save'}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function BillingPage() {
   const [bills,        setBills]        = useState<Bill[]>([]);
   const [isLoading,    setIsLoading]    = useState(false);
@@ -706,6 +776,7 @@ export default function BillingPage() {
   const [selectedBill, setSelectedBill] = useState<Bill | null>(null);
   const [search,       setSearch]       = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [showCatalogue, setShowCatalogue] = useState(false);
 
   const { subscribe } = useWebSocket();
 
@@ -800,16 +871,28 @@ export default function BillingPage() {
             Patient bills and payment records
           </p>
         </div>
-        <button
-          onClick={loadBills}
-          disabled={isLoading}
-          className="flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg border transition-colors hover:bg-[var(--bg-base)] disabled:opacity-50"
-          style={{ color: 'var(--text-secondary)', borderColor: 'var(--border-default)' }}
-        >
-          <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-          Refresh
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowCatalogue(true)}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg border transition-colors hover:bg-[var(--bg-base)]"
+            style={{ color: 'var(--text-secondary)', borderColor: 'var(--border-default)' }}
+          >
+            <DollarSign className="w-4 h-4" />
+            Price Catalogue
+          </button>
+          <button
+            onClick={loadBills}
+            disabled={isLoading}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg border transition-colors hover:bg-[var(--bg-base)] disabled:opacity-50"
+            style={{ color: 'var(--text-secondary)', borderColor: 'var(--border-default)' }}
+          >
+            <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+            Refresh
+          </button>
+        </div>
       </div>
+
+      {showCatalogue && <CatalogueModal onClose={() => setShowCatalogue(false)} />}
 
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         {[
