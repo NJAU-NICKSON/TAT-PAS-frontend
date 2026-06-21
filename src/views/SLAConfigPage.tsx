@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Timer, Loader2, RefreshCw, BookOpen } from 'lucide-react';
+import { Timer, Loader2, RefreshCw, BookOpen, Pill } from 'lucide-react';
 import { toast } from 'sonner';
-import { slaApi, SLAConfigEntry } from '../api/sla';
+import { slaApi, SLAConfigEntry, DoseLimitEntry } from '../api/sla';
 
 const PRIORITY_LABELS: Record<string, string> = {
   stat: 'STAT (immediate)',
@@ -37,18 +37,42 @@ export default function SLAConfigPage() {
   const [loading, setLoading] = useState(false);
   const [savingId, setSavingId] = useState<string | null>(null);
 
+  const [doses, setDoses] = useState<DoseLimitEntry[]>([]);
+  const [doseDraft, setDoseDraft] = useState<Record<string, DoseLimitEntry>>({});
+  const [savingDose, setSavingDose] = useState<string | null>(null);
+
   const load = () => {
     setLoading(true);
-    slaApi.getConfig()
-      .then(res => {
-        setConfig(res.data);
-        setDraft(Object.fromEntries(res.data.map(c => [c.priority, String(c.threshold_min)])));
+    Promise.all([slaApi.getConfig(), slaApi.getDoseLimits()])
+      .then(([cfg, dl]) => {
+        setConfig(cfg.data);
+        setDraft(Object.fromEntries(cfg.data.map(c => [c.priority, String(c.threshold_min)])));
+        setDoses(dl.data);
+        setDoseDraft(Object.fromEntries(dl.data.map(d => [d.drug, { ...d }])));
       })
-      .catch(() => toast.error('Failed to load SLA configuration'))
+      .catch(() => toast.error('Failed to load configuration'))
       .finally(() => setLoading(false));
   };
 
   useEffect(() => { load(); }, []);
+
+  const saveDose = async (drug: string) => {
+    const entry = doseDraft[drug];
+    if (!entry || entry.adult_max_single_mg <= 0 || entry.max_mg_per_kg_day <= 0 || entry.abs_max_mg_day <= 0) {
+      toast.error('All dose limits must be greater than 0');
+      return;
+    }
+    setSavingDose(drug);
+    try {
+      const res = await slaApi.updateDoseLimit(entry);
+      setDoses(prev => prev.map(d => d.drug === drug ? res.data : d));
+      toast.success(`${drug} dose limits updated`);
+    } catch {
+      toast.error('Failed to update dose limits');
+    } finally {
+      setSavingDose(null);
+    }
+  };
 
   const save = async (priority: string) => {
     const val = Number(draft[priority]);
@@ -152,6 +176,68 @@ export default function SLAConfigPage() {
                 </div>
               );
             })}
+          </div>
+        )}
+      </div>
+
+      {/* Prescription dosing limits used by the audit engine */}
+      <div className="overflow-hidden" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-card)' }}>
+        <div className="flex items-center gap-2 px-5 py-3.5" style={{ borderBottom: '1px solid var(--border-default)', background: 'var(--surface-1)' }}>
+          <Pill className="w-4 h-4" style={{ color: 'var(--clinical-600)' }} />
+          <span className="text-body-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Prescription Dosing Limits</span>
+          <span className="text-caption ml-1" style={{ color: 'var(--text-muted)' }}>used by the prescription audit (weight/age dose checks)</span>
+        </div>
+
+        {loading ? (
+          <div className="flex items-center gap-2 text-sm px-5 py-8" style={{ color: 'var(--text-muted)' }}>
+            <Loader2 className="w-4 h-4 animate-spin" /> Loading dose limits…
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-body-sm min-w-[640px]">
+              <thead>
+                <tr style={{ background: 'var(--surface-1)', borderBottom: '1px solid var(--border-default)' }}>
+                  <th className="text-left px-5 py-2.5 text-caption font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Drug</th>
+                  <th className="text-right px-3 py-2.5 text-caption font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Adult max single (mg)</th>
+                  <th className="text-right px-3 py-2.5 text-caption font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Max mg/kg/day</th>
+                  <th className="text-right px-3 py-2.5 text-caption font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Absolute max/day (mg)</th>
+                  <th className="px-3 py-2.5" />
+                </tr>
+              </thead>
+              <tbody>
+                {doses.map(d => {
+                  const dr = doseDraft[d.drug];
+                  const dirty = dr && (dr.adult_max_single_mg !== d.adult_max_single_mg || dr.max_mg_per_kg_day !== d.max_mg_per_kg_day || dr.abs_max_mg_day !== d.abs_max_mg_day);
+                  const numInput = (field: keyof DoseLimitEntry) => (
+                    <input
+                      type="number" min={1}
+                      value={dr ? String(dr[field]) : ''}
+                      onChange={e => setDoseDraft(prev => ({ ...prev, [d.drug]: { ...prev[d.drug], [field]: Number(e.target.value) } }))}
+                      className="w-24 px-2 py-1.5 rounded-lg text-sm text-right outline-none"
+                      style={{ background: 'var(--bg-base)', border: '1px solid var(--border-default)', color: 'var(--text-primary)' }}
+                    />
+                  );
+                  return (
+                    <tr key={d.drug} style={{ borderBottom: '1px solid var(--border-default)' }}>
+                      <td className="px-5 py-3 font-semibold capitalize" style={{ color: 'var(--text-primary)' }}>{d.drug}</td>
+                      <td className="px-3 py-3 text-right">{numInput('adult_max_single_mg')}</td>
+                      <td className="px-3 py-3 text-right">{numInput('max_mg_per_kg_day')}</td>
+                      <td className="px-3 py-3 text-right">{numInput('abs_max_mg_day')}</td>
+                      <td className="px-3 py-3 text-right">
+                        <button
+                          onClick={() => saveDose(d.drug)}
+                          disabled={!dirty || savingDose === d.drug}
+                          className="flex items-center justify-center gap-1 w-20 px-3 py-1.5 rounded-lg text-sm font-semibold text-white transition-opacity disabled:opacity-40 ml-auto"
+                          style={{ background: 'var(--clinical-600)' }}
+                        >
+                          {savingDose === d.drug ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save'}
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         )}
       </div>

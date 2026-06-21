@@ -616,7 +616,10 @@ export default function PatientJourneyPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const isAdmin = user?.role === 'admin';
+  // Action buttons belong to the responsible clinical role; admin observes only.
+  const canTriage = user?.role === 'nurse';
+  const canConsult = user?.role === 'doctor';
+  const isObserver = user?.role === 'admin' || user?.role === 'auditor';
 
   const [visit,         setVisit]         = useState<Visit | null>(null);
   const [journey,       setJourney]       = useState<JourneySummary | null>(null);
@@ -867,7 +870,7 @@ export default function PatientJourneyPage() {
                       <p className="text-xs text-gray-700">{visit.vitals.triage_notes}</p>
                     </div>
                   )}
-                  {isAdmin && (
+                  {canTriage && !visit.triaged_at && (
                     <div className="mt-3 pt-3 border-t border-amber-200">
                       <button
                         onClick={() => navigate(`/visits/${visit.id}/triage`)}
@@ -880,7 +883,7 @@ export default function PatientJourneyPage() {
                     </div>
                   )}
                 </div>
-              ) : isAdmin && activeStop === 'triage' ? (
+              ) : canTriage && activeStop === 'triage' ? (
                 <button
                   onClick={() => navigate(`/visits/${visit.id}/triage`)}
                   className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-semibold text-white transition-opacity hover:opacity-90"
@@ -906,9 +909,9 @@ export default function PatientJourneyPage() {
               isPending={!visit.triaged_at}
               isActive={activeStop === 'waiting'}
             >
-              {isAdmin && activeStop === 'waiting' ? (
+              {canConsult && activeStop === 'waiting' ? (
                 <button
-                  onClick={() => navigate(`/visits/${visit.id}?tab=consultation`)}
+                  onClick={() => navigate('/consultation')}
                   className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-semibold text-white transition-opacity hover:opacity-90"
                   style={{ background: '#178A3D' }}
                 >
@@ -969,10 +972,10 @@ export default function PatientJourneyPage() {
                     )}
                   </div>
                 )}
-                {isAdmin && (activeStop === 'consultation' || visit.status === 'in_consultation') && (
+                {canConsult && (activeStop === 'consultation' || visit.status === 'in_consultation') && (
                   <div className="pt-3 border-t border-purple-200">
                     <button
-                      onClick={() => navigate(`/visits/${visit.id}?tab=consultation`)}
+                      onClick={() => navigate('/consultation')}
                       className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-semibold text-white transition-opacity hover:opacity-90"
                       style={{ background: '#178A3D' }}
                     >
@@ -1350,14 +1353,14 @@ export default function PatientJourneyPage() {
                 </div>
               )}
 
-              {isAdmin && !isComplete && !isCancelled && (
+              {!isObserver && !isComplete && !isCancelled && (
                 <div className="pt-4 border-t border-gray-100">
                   <div className="flex items-center gap-2 mb-3">
                     <Zap className="w-3.5 h-3.5 text-green-600" />
                     <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Quick Actions</h4>
                   </div>
                   <div className="space-y-2">
-                    {visit.status === 'registered' && (
+                    {visit.status === 'registered' && canTriage && (
                       <button
                         onClick={() => navigate(`/visits/${visit.id}/triage`)}
                         className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-semibold text-white transition-opacity hover:opacity-90"
@@ -1367,9 +1370,9 @@ export default function PatientJourneyPage() {
                         <ArrowRight className="w-3.5 h-3.5" />
                       </button>
                     )}
-                    {['waiting_for_doctor', 'triaged'].includes(visit.status) && (
+                    {['waiting_for_doctor', 'triaged'].includes(visit.status) && canConsult && (
                       <button
-                        onClick={() => navigate(`/visits/${visit.id}?tab=consultation`)}
+                        onClick={() => navigate('/consultation')}
                         className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-semibold text-white transition-opacity hover:opacity-90"
                         style={{ background: '#178A3D' }}
                       >
@@ -1377,9 +1380,9 @@ export default function PatientJourneyPage() {
                         <ArrowRight className="w-3.5 h-3.5" />
                       </button>
                     )}
-                    {visit.status === 'in_consultation' && (
+                    {visit.status === 'in_consultation' && canConsult && (
                       <button
-                        onClick={() => navigate(`/visits/${visit.id}?tab=consultation`)}
+                        onClick={() => navigate('/consultation')}
                         className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-semibold text-white transition-opacity hover:opacity-90"
                         style={{ background: '#178A3D' }}
                       >
