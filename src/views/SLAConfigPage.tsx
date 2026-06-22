@@ -68,7 +68,7 @@ export default function SLAConfigPage() {
     for (const b of entry.bands) {
       if (b.max_age_years <= b.min_age_years) return 'Each band: max age must be greater than min age';
       if (b.abs_max_mg_day <= 0) return 'Each band: absolute max/day must be greater than 0';
-      if (b.max_mg_per_kg_day < 0) return 'mg/kg/day cannot be negative';
+      if (b.max_mg_per_kg_day < 0) return 'Min per kg cannot be negative';
     }
     return null;
   };
@@ -249,7 +249,7 @@ export default function SLAConfigPage() {
 
         <div className="px-5 py-3" style={{ borderBottom: '1px solid var(--border-default)' }}>
           <p className="text-caption" style={{ color: 'var(--text-muted)' }}>
-            Each drug has age bands. A prescription is checked against the band matching the patient's age (weight-based mg/kg/day and an absolute daily ceiling). A drug with no band for the patient's age is flagged.
+            Each drug has age bands. A prescription is checked against the band matching the patient's age using a weight-based per-kg limit and an absolute daily ceiling. A drug with no band for the patient's age is flagged.
           </p>
         </div>
 
@@ -363,9 +363,9 @@ function BandEditor({ bands, onChange, onAdd, onRemove }: {
     />
   );
   return (
-    <div className="space-y-1.5">
+      <div className="space-y-1.5">
       <div className="grid grid-cols-[1fr_1fr_1fr_1fr_auto] gap-2 px-1">
-        {['Min age (yrs)', 'Max age (yrs)', 'Max per kg (mg/kg/day)', 'Absolute max/day (mg)', ''].map((h, i) => (
+        {['Min age (yrs)', 'Max age (yrs)', 'Min per kg', 'Absolute max/day (mg)', ''].map((h, i) => (
           <span key={i} className="text-meta font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{h}</span>
         ))}
       </div>

@@ -5,6 +5,7 @@ import TablePagination from '../components/TablePagination';
 import { useTableControls } from '../components/useTableControls';
 import { formatDateTimeEAT } from '../lib/utils';
 import { visitsApi, Visit, CreateVisitPayload, VisitType } from '../api/visits';
+import { useAuth } from '../context/AuthContext';
 import { departmentsApi, Department } from '../api/departments';
 import { patientsApi } from '../api/patients';
 import { Patient } from '../models/types';
@@ -402,14 +403,19 @@ export default function VisitManagement() {
           >
             <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
           </button>
-          <button
-            onClick={() => setShowNew(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-body-sm font-semibold text-white hover:opacity-90"
-            style={{ background: 'var(--clinical-600)' }}
-          >
-            <Plus className="w-4 h-4" />
-            New Visit
-          </button>
+          {(() => {
+            const auth = useAuth();
+            return auth.hasRole('receptionist') ? (
+              <button
+                onClick={() => setShowNew(true)}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg text-body-sm font-semibold text-white hover:opacity-90"
+                style={{ background: 'var(--clinical-600)' }}
+              >
+                <Plus className="w-4 h-4" />
+                New Visit
+              </button>
+            ) : null;
+          })()}
         </div>
       </div>
 

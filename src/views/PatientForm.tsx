@@ -1,4 +1,5 @@
 import React, { useState, ChangeEvent } from 'react';
+import { useAuth } from '../context/AuthContext';
 import { Search, Plus, X, CreditCard as Edit2, User } from 'lucide-react';
 import Table, { Column } from '../components/Table';
 import TablePagination from '../components/TablePagination';
@@ -299,13 +300,18 @@ export default function PatientFormPage() {
           <h1 className="text-2xl font-bold text-gray-900">Patient Management</h1>
           <p className="text-gray-500 text-sm mt-1">Search, add, and manage patient records</p>
         </div>
-        <button
-          onClick={openNewPatient}
-          className="flex items-center gap-2 bg-[var(--clinical-600)] hover:opacity-90 text-white px-4 py-2.5 rounded-lg text-sm font-semibold transition-colors shadow-sm"
-        >
-          <Plus className="h-4 w-4" />
-          New Patient
-        </button>
+        {(() => {
+          const auth = useAuth();
+          return auth.hasRole('receptionist') ? (
+            <button
+              onClick={openNewPatient}
+              className="flex items-center gap-2 bg-[var(--clinical-600)] hover:opacity-90 text-white px-4 py-2.5 rounded-lg text-sm font-semibold transition-colors shadow-sm"
+            >
+              <Plus className="h-4 w-4" />
+              New Patient
+            </button>
+          ) : null;
+        })()}
       </div>
 
       <div className="relative max-w-md">
