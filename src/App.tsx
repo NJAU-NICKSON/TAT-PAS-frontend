@@ -331,7 +331,7 @@ function AppRoutes() {
       <Route
         path="/activity-log"
         element={
-          <ProtectedRoute roles={['admin', 'auditor']}>
+          <ProtectedRoute roles={['admin']}>
             <AppShell>
               <PageContainer><ActivityLogPage /></PageContainer>
             </AppShell>

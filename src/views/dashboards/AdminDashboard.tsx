@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { AreaChart, Area, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { AreaChart, Area, BarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
 import {
   ShieldAlert, Pill, Timer, CheckCircle2,
   BedDouble, AlertTriangle, ChevronRight, X,
@@ -116,43 +116,38 @@ function KpiCard({ label, value, sub, icon: Icon, trend, trendLabel, danger }: K
   );
 }
 
-const PIPELINE_STAGES = [
-  { label: 'Ordered',      color: '#1FA64A', bg: 'rgba(31,166,74,0.10)'  },
-  { label: 'Verified',     color: '#178A3D', bg: 'rgba(23,138,61,0.10)'  },
-  { label: 'Dispensed',    color: '#0891B2', bg: 'rgba(8,145,178,0.10)'   },
-  { label: 'Administered', color: '#178A3D', bg: 'rgba(23,138,61,0.10)'   },
-];
 
 function PrescriptionPipeline({ metrics }: { metrics: TATMetrics | null }) {
-  const gaps = [
-    metrics?.average_order_to_verify_minutes,
-    metrics?.average_verify_to_dispense_minutes,
-    metrics?.average_dispense_to_administer_minutes,
+  const data = [
+    { stage: 'Order → Verify',     minutes: metrics?.average_order_to_verify_minutes ?? 0,     fill: '#1FA64A' },
+    { stage: 'Verify → Dispense',  minutes: metrics?.average_verify_to_dispense_minutes ?? 0,  fill: '#0891B2' },
+    { stage: 'Dispense → Admin',   minutes: metrics?.average_dispense_to_administer_minutes ?? 0, fill: '#178A3D' },
   ];
 
   return (
-    <Card>
+    <Card className="h-full w-full flex flex-col">
       <CardHeader
         title="Prescription Flow"
-        subtitle="avg time between stages"
+        subtitle="average time spent in each stage"
         icon={Activity}
       />
-      <div className="flex items-stretch divide-x px-2 py-3" style={{ borderColor: 'var(--border-default)' }}>
-        {PIPELINE_STAGES.map((stage, i) => (
-          <div key={stage.label} className="flex items-center flex-1 min-w-0">
-            <div className="flex-1 text-center px-2">
-              <p className="text-label" style={{ color: 'var(--text-muted)' }}>{stage.label}</p>
-            </div>
-            {i < PIPELINE_STAGES.length - 1 && (
-              <div className="flex flex-col items-center flex-shrink-0 px-1">
-                <span className="text-meta tabular-nums font-semibold" style={{ color: 'var(--text-secondary)' }}>
-                  {formatMin(gaps[i])}
-                </span>
-                <span className="text-meta leading-none" style={{ color: 'var(--text-disabled)' }}>→</span>
-              </div>
-            )}
-          </div>
-        ))}
+      <div className="px-4 py-4" style={{ width: '100%', height: 200 }}>
+        <ResponsiveContainer>
+          <BarChart layout="vertical" data={data} margin={{ top: 4, right: 24, left: 8, bottom: 4 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--border-default)" horizontal={false} />
+            <XAxis type="number" tick={{ fontSize: 11, fill: 'var(--text-muted)' }} axisLine={false} tickLine={false}
+              tickFormatter={(v) => `${v}m`} />
+            <YAxis type="category" dataKey="stage" tick={{ fontSize: 11, fill: 'var(--text-secondary)' }}
+              axisLine={false} tickLine={false} width={104} />
+            <Tooltip
+              formatter={(v) => [formatMin(Number(v)), 'Avg time']}
+              contentStyle={{ borderRadius: 8, border: '1px solid var(--border-default)', fontSize: 12 }}
+            />
+            <Bar dataKey="minutes" radius={[0, 5, 5, 0]} maxBarSize={26}>
+              {data.map((d, i) => <Cell key={i} fill={d.fill} />)}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
       </div>
     </Card>
   );
@@ -181,7 +176,7 @@ function BedSummaryWidget({ summary }: { summary: BedAvailabilitySummary[] }) {
   ];
 
   return (
-    <Card>
+    <Card className="h-full w-full flex flex-col">
       <CardHeader
         title="Bed Availability"
         subtitle={`${total} beds · ${summary.length} department${summary.length !== 1 ? 's' : ''}`}
@@ -450,7 +445,6 @@ function BottleneckSection({ data }: { data: BottleneckData }) {
     count: (data[s.key] as { count: number }).count ?? 0,
   }));
 
-  const maxAvg = Math.max(...stagesWithData.map(s => s.avg), 1);
   const worstStage = [...stagesWithData].sort((a, b) => b.avg - a.avg)[0];
   const drillData = drillStage ? stagesWithData.find(s => s.name === drillStage) : null;
 
@@ -482,74 +476,54 @@ function BottleneckSection({ data }: { data: BottleneckData }) {
         }
       />
 
-      <div className="p-5 space-y-5">
-        {stagesWithData.map(stage => {
-          const avgPct = maxAvg > 0 ? (stage.avg / maxAvg) * 100 : 0;
-          const p95Pct = maxAvg > 0 ? (stage.p95 / maxAvg) * 100 : 0;
-          const isWorst = stage.name === worstStage?.name && stage.avg > 0;
+      <div className="p-5 space-y-4">
+        <div style={{ width: '100%', height: 200 }}>
+          <ResponsiveContainer>
+            <BarChart data={stagesWithData} margin={{ top: 8, right: 8, left: -8, bottom: 0 }} barGap={4}>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border-default)" vertical={false} />
+              <XAxis dataKey="shortName" tick={{ fontSize: 11, fill: 'var(--text-muted)' }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 11, fill: 'var(--text-muted)' }} axisLine={false} tickLine={false} width={40}
+                tickFormatter={(v) => `${v}m`} />
+              <Tooltip
+                formatter={(v, n) => [formatMin(Number(v)), n === 'avg' ? 'Average' : 'P95']}
+                contentStyle={{ borderRadius: 8, border: '1px solid var(--border-default)', fontSize: 12 }}
+              />
+              <Legend formatter={(v) => (v === 'avg' ? 'Average' : 'P95')} wrapperStyle={{ fontSize: 12 }} />
+              <Bar dataKey="avg" name="avg" radius={[5, 5, 0, 0]} maxBarSize={48}>
+                {stagesWithData.map((s, i) => (
+                  <Cell key={i} fill={s.name === worstStage?.name && s.avg > 0 ? '#DC2626' : '#178A3D'} />
+                ))}
+              </Bar>
+              <Bar dataKey="p95" name="p95" radius={[5, 5, 0, 0]} maxBarSize={48} fill="rgba(23,138,61,0.25)" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
 
-          return (
-            <div key={stage.name}>
-              <div className="flex items-center justify-between mb-2">
+        <div className="space-y-1.5 pt-1" style={{ borderTop: '1px solid var(--border-default)' }}>
+          {stagesWithData.map(stage => {
+            const isWorst = stage.name === worstStage?.name && stage.avg > 0;
+            return (
+              <div key={stage.name} className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  {isWorst && (
-                    <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: '#DC2626' }} />
-                  )}
-                  <span className="text-body-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{stage.name}</span>
+                  {isWorst && <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: '#DC2626' }} />}
+                  <span className="text-caption font-semibold" style={{ color: 'var(--text-primary)' }}>{stage.name}</span>
                   {stage.count > 0 && (
-                    <span
-                      className="text-caption font-semibold px-1.5 py-0.5 rounded-full"
-                      style={{ background: 'var(--bg-base)', color: 'var(--text-muted)', border: '1px solid var(--border-default)' }}
-                    >
+                    <span className="text-micro font-semibold px-1.5 py-0.5 rounded-full"
+                      style={{ background: 'var(--bg-base)', color: 'var(--text-muted)', border: '1px solid var(--border-default)' }}>
                       {stage.count} waiting
                     </span>
                   )}
                 </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-body-sm font-bold tabular-nums" style={{ color: isWorst ? '#DC2626' : 'var(--text-primary)' }}>
-                    {formatMin(stage.avg)}
-                  </span>
-                  <span className="text-caption tabular-nums" style={{ color: 'var(--text-muted)' }}>p95: {formatMin(stage.p95)}</span>
-                  <button
-                    onClick={() => setDrillStage(stage.name)}
-                    className="flex items-center gap-0.5 text-caption font-semibold transition-colors hover:underline"
-                    style={{ color: '#178A3D' }}
-                  >
-                    Detail <ChevronRight className="w-3 h-3" />
-                  </button>
-                </div>
+                <button
+                  onClick={() => setDrillStage(stage.name)}
+                  className="flex items-center gap-0.5 text-caption font-semibold transition-colors hover:underline"
+                  style={{ color: '#178A3D' }}
+                >
+                  Detail <ChevronRight className="w-3 h-3" />
+                </button>
               </div>
-              <div className="relative h-3 rounded-full overflow-hidden" style={{ background: 'var(--surface-2)' }}>
-                <div
-                  className="absolute inset-y-0 left-0 rounded-full"
-                  style={{ width: `${p95Pct}%`, background: isWorst ? 'rgba(220,38,38,0.12)' : 'rgba(23,138,61,0.10)', transition: 'width 0.5s ease' }}
-                />
-                <div
-                  className="absolute inset-y-0 left-0 rounded-full"
-                  style={{
-                    width: `${avgPct}%`,
-                    background: isWorst
-                      ? 'linear-gradient(90deg, #DC2626, #EF4444)'
-                      : 'linear-gradient(90deg, #0F6E2F, #178A3D)',
-                    transition: 'width 0.5s ease',
-                    minWidth: stage.avg > 0 ? 8 : 0,
-                  }}
-                />
-              </div>
-            </div>
-          );
-        })}
-
-        <div className="flex items-center gap-4 pt-1" style={{ borderTop: '1px solid var(--border-default)' }}>
-          {[
-            { color: '#178A3D', label: 'Average' },
-            { color: 'rgba(23,138,61,0.25)', label: 'P95' },
-          ].map(item => (
-            <div key={item.label} className="flex items-center gap-1.5">
-              <div className="w-2.5 h-2.5 rounded-sm" style={{ background: item.color }} />
-              <span className="text-caption" style={{ color: 'var(--text-muted)' }}>{item.label}</span>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
@@ -747,11 +721,11 @@ export function AdminDashboard() {
                   />
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
-                  <div className="lg:col-span-3">
+                <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 items-stretch">
+                  <div className="lg:col-span-3 flex">
                     <PrescriptionPipeline metrics={liveMetrics} />
                   </div>
-                  <div className="lg:col-span-2">
+                  <div className="lg:col-span-2 flex">
                     <BedSummaryWidget summary={bedSummary} />
                   </div>
                 </div>

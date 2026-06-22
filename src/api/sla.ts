@@ -7,11 +7,17 @@ export interface SLAConfigEntry {
   updated_at?: string | null;
 }
 
+export interface DoseBand {
+  min_age_years: number;
+  max_age_years: number;
+  max_mg_per_kg_day: number;
+  abs_max_mg_day: number;
+}
+
 export interface DoseLimitEntry {
   drug: string;
   adult_max_single_mg: number;
-  max_mg_per_kg_day: number;
-  abs_max_mg_day: number;
+  bands: DoseBand[];
 }
 
 export const slaApi = {

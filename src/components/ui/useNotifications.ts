@@ -28,14 +28,36 @@ const RX_STATUS_NOTIF: Record<string, { type: NotifType; title: string; tail: st
   flagged:           { type: 'flag_created',    title: 'Prescription Flagged', tail: 'Held for review' },
 };
 
+const STORAGE_KEY = 'tatpas_notifications';
+
+// Load saved notifications, reviving timestamps to Date objects.
+function loadStored(): Notification[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return [];
+    return (JSON.parse(raw) as Notification[]).map(n => ({ ...n, timestamp: new Date(n.timestamp) }));
+  } catch {
+    return [];
+  }
+}
+
 export function useNotifications() {
   const { subscribe } = useWebSocket();
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>(loadStored);
+
+  // Persist so history survives refresh and re-login.
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(notifications));
+    } catch {
+      // ignore quota errors
+    }
+  }, [notifications]);
 
   const addNotif = useCallback((n: Notification) => {
     setNotifications(prev => {
       if (prev.some(p => p.id === n.id)) return prev;
-      return [n, ...prev].slice(0, 60);
+      return [n, ...prev].slice(0, 100);
     });
   }, []);
 

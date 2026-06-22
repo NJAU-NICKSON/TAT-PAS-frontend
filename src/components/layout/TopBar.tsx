@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { ChevronRight, ChevronDown, User, LogOut, Bell, AlertTriangle, Menu } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useWebSocket } from '../../context/WebSocketContext';
@@ -18,6 +18,7 @@ interface TopBarProps {
 
 export function TopBar({ breadcrumbs, onMenuClick }: TopBarProps) {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const { subscribe } = useWebSocket();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showNotifs, setShowNotifs]     = useState(false);
@@ -122,7 +123,9 @@ export function TopBar({ breadcrumbs, onMenuClick }: TopBarProps) {
                     <p className="text-xs text-gray-400 mt-0.5 truncate">{user?.email}</p>
                   </div>
                   <div className="py-1">
-                    <button className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 transition-colors">
+                    <button
+                      onClick={() => { navigate('/settings'); setShowUserMenu(false); }}
+                      className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 transition-colors">
                       <User className="w-4 h-4 text-gray-400" />
                       My Profile
                     </button>

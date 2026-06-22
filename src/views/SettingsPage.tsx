@@ -41,7 +41,7 @@ export default function SettingsPage() {
   const [notifications, setNotifications] = useState({
     sla_breach: true,
     audit_flags: true,
-    prescription_updates: false,
+    prescription_updates: true,
   });
 
   const [health, setHealth] = useState<SystemHealth | null>(null);
@@ -116,7 +116,6 @@ export default function SettingsPage() {
         <Field label="Username" value={user.username} />
         <Field label="Email" value={user.email || ' - '} />
         <Field label="Role" value={user.role.replace(/_/g, ' ')} />
-        <Field label="Account ID" value={user.id.slice(0, 16) + ''} />
       </Section>
 
       <Section title="Change Password" icon={<Lock className="w-4 h-4" />}>
@@ -214,31 +213,31 @@ export default function SettingsPage() {
       <Section title="Notifications" icon={<Bell className="w-4 h-4" />}>
         <div className="space-y-4">
           {[
-            { key: 'sla_breach' as const, label: 'SLA Breach Alerts', desc: 'Get notified when a prescription exceeds the time threshold' },
-            { key: 'audit_flags' as const, label: 'Audit Flag Updates', desc: 'Notifications for new and resolved audit flags' },
-            { key: 'prescription_updates' as const, label: 'Prescription Status Changes', desc: 'Real-time updates on prescription workflow progress' },
-          ].map(({ key, label, desc }) => (
-            <label key={key} className="flex items-start gap-4 cursor-pointer group">
-              <div className="relative mt-0.5">
-                <input
-                  type="checkbox"
-                  checked={notifications[key]}
-                  onChange={e => setNotifications(prev => ({ ...prev, [key]: e.target.checked }))}
-                  className="sr-only"
-                />
-                <div
-                  className={`w-10 h-5 rounded-full transition-colors ${notifications[key] ? 'bg-[#1e3a5f]' : 'bg-gray-200'}`}
-                  onClick={() => setNotifications(prev => ({ ...prev, [key]: !prev[key] }))}
-                >
-                  <div className={`w-4 h-4 bg-white rounded-full shadow transition-transform mt-0.5 mx-0.5 ${notifications[key] ? 'translate-x-5' : 'translate-x-0'}`} />
+            { key: 'sla_breach' as const, label: 'SLA Breach Alerts', desc: 'Get notified when a prescription exceeds the time threshold', locked: false },
+            { key: 'audit_flags' as const, label: 'Audit Flag Updates', desc: 'Notifications for new and resolved audit flags', locked: false },
+            { key: 'prescription_updates' as const, label: 'Prescription Status Changes', desc: 'Real-time updates on prescription workflow progress. Always on so no step is missed.', locked: true },
+          ].map(({ key, label, desc, locked }) => {
+            const on = locked ? true : notifications[key];
+            return (
+              <div key={key} className="flex items-start gap-4">
+                <div className="relative mt-0.5">
+                  <div
+                    className={`w-10 h-5 rounded-full transition-colors ${on ? 'bg-[#1e3a5f]' : 'bg-gray-200'} ${locked ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}`}
+                    onClick={() => { if (!locked) setNotifications(prev => ({ ...prev, [key]: !prev[key] })); }}
+                  >
+                    <div className={`w-4 h-4 bg-white rounded-full shadow transition-transform mt-0.5 mx-0.5 ${on ? 'translate-x-5' : 'translate-x-0'}`} />
+                  </div>
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-medium text-gray-800">{label}</p>
+                    {locked && <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-green-100 text-green-700">Always on</span>}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-0.5">{desc}</p>
                 </div>
               </div>
-              <div>
-                <p className="text-sm font-medium text-gray-800">{label}</p>
-                <p className="text-xs text-gray-500 mt-0.5">{desc}</p>
-              </div>
-            </label>
-          ))}
+            );
+          })}
         </div>
       </Section>
 

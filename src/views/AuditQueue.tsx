@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { X, CheckCircle, AlertTriangle, Loader2, ShieldCheck, RefreshCw } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { X, CheckCircle, AlertTriangle, Loader2, ShieldCheck, RefreshCw, ExternalLink } from 'lucide-react';
 import Table, { Column } from '../components/Table';
 import TablePagination from '../components/TablePagination';
 import { useTableControls } from '../components/useTableControls';
@@ -18,6 +19,7 @@ function formatDate(iso?: string): string {
 
 export default function AuditQueue() {
   const vm = useAuditViewModel();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<TabValue>('unresolved');
   const [resolveModal, setResolveModal] = useState<AuditRecord | null>(null);
   const [resolutionNote, setResolutionNote] = useState('');
@@ -403,7 +405,18 @@ export default function AuditQueue() {
               )}
             </div>
 
-            <div className="flex justify-end gap-3 px-6 py-4 bg-gray-50 border-t border-gray-100 rounded-b-2xl">
+            <div className="flex items-center justify-between gap-3 px-6 py-4 bg-gray-50 border-t border-gray-100 rounded-b-2xl">
+              {resolveModal.prescription_id ? (
+                <button
+                  onClick={() => navigate(`/prescriptions/${resolveModal.prescription_id}`)}
+                  className="flex items-center gap-1.5 px-3 py-2 text-sm font-semibold rounded-lg border transition-colors hover:bg-white"
+                  style={{ color: '#178A3D', borderColor: '#BBF7D0' }}
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  View Full Prescription
+                </button>
+              ) : <span />}
+              <div className="flex gap-3">
               <button
                 onClick={() => setResolveModal(null)}
                 className="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 transition-colors"
@@ -420,6 +433,7 @@ export default function AuditQueue() {
                   Mark as Resolved
                 </button>
               )}
+              </div>
             </div>
           </div>
         </div>

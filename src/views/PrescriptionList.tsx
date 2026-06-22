@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { ChevronDown, ChevronUp, AlertTriangle, X, Loader as Loader2, Clock, FileText } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { ChevronDown, ChevronUp, AlertTriangle, X, Loader as Loader2, Clock, FileText, ExternalLink } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { usePrescriptionViewModel } from '../viewModels/usePrescriptionViewModel';
 import { StatusBadge } from '../components/StatusBadge';
@@ -54,6 +55,7 @@ interface FlagFormErrors {
 
 export default function PrescriptionList() {
   const { hasRole } = useAuth();
+  const navigate = useNavigate();
   const vm = usePrescriptionViewModel();
 
   const [statusFilter, setStatusFilter] = useState('');
@@ -341,9 +343,19 @@ export default function PrescriptionList() {
                 <h3 className="font-semibold text-gray-800">Prescription Detail</h3>
                 <span className="font-mono text-xs text-gray-500">{rx.id.slice(0, 12)}...</span>
               </div>
-              <button onClick={() => setExpandedId(null)} className="text-gray-400 hover:text-gray-600">
-                <X className="h-4 w-4" />
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => navigate(`/prescriptions/${rx.id}`)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md border transition-colors hover:bg-green-50"
+                  style={{ color: '#178A3D', borderColor: '#BBF7D0' }}
+                >
+                  <ExternalLink className="h-3.5 w-3.5" />
+                  Open full record
+                </button>
+                <button onClick={() => setExpandedId(null)} className="text-gray-400 hover:text-gray-600">
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
             </div>
 
             <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
