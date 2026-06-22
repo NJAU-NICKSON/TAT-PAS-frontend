@@ -365,7 +365,7 @@ function BandEditor({ bands, onChange, onAdd, onRemove }: {
   return (
     <div className="space-y-1.5">
       <div className="grid grid-cols-[1fr_1fr_1fr_1fr_auto] gap-2 px-1">
-        {['Min age (yrs)', 'Max age (yrs)', 'Max mg/kg/day', 'Absolute max/day (mg)', ''].map((h, i) => (
+        {['Min age (yrs)', 'Max age (yrs)', 'Max per kg (mg/kg/day)', 'Absolute max/day (mg)', ''].map((h, i) => (
           <span key={i} className="text-meta font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{h}</span>
         ))}
       </div>

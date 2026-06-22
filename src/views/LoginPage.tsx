@@ -68,7 +68,7 @@ export default function LoginPage() {
           description: 'You have exceeded the limit of 5 attempts per minute.',
         });
       } else if (statusCode === 403) {
-        setError('This account has been deactivated. Please contact your administrator.');
+        setError('Your account access is restricted. Please contact management for assistance.');
       } else if (statusCode === 401 || statusCode === 400) {
         const attempts = failedAttempts + 1;
         setFailedAttempts(attempts);
