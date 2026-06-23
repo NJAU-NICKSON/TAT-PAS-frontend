@@ -5,10 +5,7 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-// Pull a human-readable message out of any error shape we might get:
-// the normalized ApiError (flat .detail), the raw axios response
-// (response.data.detail as string, {message}, or a Pydantic array), or a
-// plain Error. Always returns a clean string, falling back to `fallback`.
+// Extract a readable message from any error shape, falling back to `fallback`.
 export function getErrorMessage(err: unknown, fallback = 'Something went wrong. Please try again.'): string {
   if (!err) return fallback;
 

@@ -88,7 +88,7 @@ function withAutoPrint(html: string): string {
     if (document.readyState === 'complete') { setTimeout(go, 120); }
     else { window.addEventListener('load', function () { setTimeout(go, 120); }); }
   })();
-<\/script>`;
+</scr` + `ipt>`;
   return html.includes('</body>')
     ? html.replace('</body>', `${autoPrint}</body>`)
     : html + autoPrint;
@@ -113,7 +113,7 @@ function printViaIframe(html: string): boolean {
 
     iframe.addEventListener('load', () => {
       setTimeout(() => {
-        try { iframe.contentWindow?.focus(); iframe.contentWindow?.print(); } catch {}
+        try { iframe.contentWindow?.focus(); iframe.contentWindow?.print(); } catch { /* ignore */ }
       }, 150);
       setTimeout(() => iframe.remove(), 2000);
     });
