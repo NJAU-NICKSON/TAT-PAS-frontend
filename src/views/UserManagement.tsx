@@ -224,7 +224,7 @@ export default function UserManagement() {
     }
   };
 
-  const tc = useTableControls({ data: users, initialSortKey: 'full_name' });
+  const tc = useTableControls({ data: users, initialSortKey: 'created_at', initialSortDir: 'desc' });
 
   const columns: Column<User>[] = [
     { key: 'username', label: 'Username', sortable: true },

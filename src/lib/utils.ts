@@ -5,6 +5,42 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+// Pull a human-readable message out of any error shape we might get:
+// the normalized ApiError (flat .detail), the raw axios response
+// (response.data.detail as string, {message}, or a Pydantic array), or a
+// plain Error. Always returns a clean string, falling back to `fallback`.
+export function getErrorMessage(err: unknown, fallback = 'Something went wrong. Please try again.'): string {
+  if (!err) return fallback;
+
+  const pick = (d: unknown): string | undefined => {
+    if (!d) return undefined;
+    if (typeof d === 'string') return d;
+    if (Array.isArray(d)) {
+      const msgs = d.map(e => (e && typeof e === 'object' && 'msg' in e ? String((e as { msg: unknown }).msg) : '')).filter(Boolean);
+      return msgs.length ? msgs.join('; ') : undefined;
+    }
+    if (typeof d === 'object' && 'message' in d) {
+      const m = (d as { message?: unknown }).message;
+      return typeof m === 'string' ? m : undefined;
+    }
+    return undefined;
+  };
+
+  const e = err as {
+    detail?: unknown;
+    message?: unknown;
+    response?: { data?: { detail?: unknown; message?: unknown } };
+  };
+
+  return (
+    pick(e.detail) ??
+    pick(e.response?.data?.detail) ??
+    pick(e.response?.data?.message) ??
+    (typeof e.message === 'string' && !e.response ? e.message : undefined) ??
+    fallback
+  );
+}
+
 export function withDoctorTitle(name?: string | null): string {
   if (!name || !name.trim()) return '';
   const n = name.trim();

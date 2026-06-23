@@ -13,7 +13,7 @@ import { auditsApi } from '../api/audits';
 import { Prescription, Patient, AuditRecord } from '../models/types';
 import { useAuth } from '../context/AuthContext';
 import { printDispensingReceipt } from '../lib/printDocs';
-import { withDoctorTitle, formatTimeEAT, formatDateTimeEAT } from '../lib/utils';
+import { withDoctorTitle, formatTimeEAT, formatDateTimeEAT, getErrorMessage } from '../lib/utils';
 import { toast } from 'sonner';
 
 type ListResult<T> = T[] | { items?: T[] };
@@ -125,14 +125,24 @@ function DispensePanel({ rx, onSuccess, onCancel }: {
   const [comment, setComment] = useState('');
   const [busy, setBusy] = useState(false);
 
+  // Auto-generate a receipt number if the pharmacist leaves it blank.
+  const autoReceipt = () => {
+    const d = new Date();
+    const ymd = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
+    const tail = (rx.rx_number ?? rx.id.slice(-4)).replace(/[^0-9A-Za-z]/g, '').slice(-4).toUpperCase();
+    return `RCP-${ymd}-${tail}`;
+  };
+
   const go = async () => {
     setBusy(true);
     try {
       const extra: UpdateStatusExtra = {};
-      if (receipt.trim()) extra.receipt_number = receipt.trim();
+      extra.receipt_number = receipt.trim() || autoReceipt();
       if (comment.trim()) extra.pharmacist_comment = comment.trim();
-      await prescriptionsApi.updateStatus(rx.id, 'dispensed', extra);
-      toast.success('Prescription dispensed');
+      const updated = await prescriptionsApi.updateStatus(rx.id, 'dispensed', extra);
+      toast.success(`Dispensed · Receipt ${extra.receipt_number}`);
+      // Print the dispensing receipt so the patient gets a copy.
+      printReceiptWithFollowUp((updated.data as typeof rx) ?? { ...rx, receipt_number: extra.receipt_number });
       onSuccess();
     } catch { toast.error('Failed to dispense'); }
     finally { setBusy(false); }
@@ -487,17 +497,7 @@ function DetailPanel({ rx, onDispensed }: {
                       toast.success('Prescription approved  -  ready to dispense');
                       onDispensed();
                     } catch (e) {
-                      const detail =
-                        typeof e === 'object' &&
-                        e !== null &&
-                        'response' in e
-                          ? (e as { response?: { data?: { detail?: string | { message?: string } } } }).response?.data?.detail
-                          : undefined;
-                      const msg =
-                        typeof detail === 'string'
-                          ? detail
-                          : detail?.message ?? 'Could not approve - check for unresolved flags';
-                      toast.error(msg);
+                      toast.error(getErrorMessage(e, 'Could not approve. Check for unresolved flags.'));
                     }
                   }}
                   className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white rounded-lg transition-colors"

@@ -7,6 +7,7 @@ import { StatusBadge } from '../components/StatusBadge';
 import ConfirmDialog from '../components/ConfirmDialog';
 import FormField from '../components/FormField';
 import { Prescription, PrescriptionStatus, AuditSeverity } from '../models/types';
+import { prescriptionsApi, PrescriptionHistoryEntry } from '../api/prescriptions';
 import Table, { Column } from '../components/Table';
 import TablePagination from '../components/TablePagination';
 import { useTableControls } from '../components/useTableControls';
@@ -41,6 +42,59 @@ function tatMinutes(start?: string, end?: string): string {
   return m > 0 ? `${h}h ${m}m` : `${h}h`;
 }
 
+interface AuditStep {
+  label: string;
+  at?: string;
+  note?: string;
+  done: boolean;
+}
+
+// Build the prescription lifecycle in order. Amendment steps only appear when
+// the prescription was actually returned and resubmitted, so a clean rx shows
+// a single Verified step (after the amendment, never before the return).
+function buildAuditTrail(rx: Prescription): AuditStep[] {
+  const wasReturned = !!(rx.returned_at || rx.return_reason || (rx.amendment_count ?? 0) > 0);
+  const steps: AuditStep[] = [
+    { label: 'Ordered', at: rx.ordered_at || rx.created_at, done: true },
+    { label: 'Submitted to Audit', at: rx.submitted_at || rx.ordered_at || rx.created_at, done: true },
+  ];
+
+  if (wasReturned) {
+    steps.push({
+      label: 'Request for Amendment',
+      at: rx.returned_at,
+      note: rx.return_reason ? `Auditor: ${rx.return_reason}` : 'Returned to doctor',
+      done: true,
+    });
+    steps.push({
+      label: 'Amendment Resubmitted',
+      at: rx.resubmitted_at,
+      note: rx.amendment_count ? `Revision ${rx.amendment_count}` : undefined,
+      done: !!rx.resubmitted_at,
+    });
+  }
+
+  steps.push({
+    label: 'Verified by Auditor',
+    at: rx.verified_at || rx.auditor_approved_at,
+    note: rx.auditor_name ? `By ${rx.auditor_name}` : undefined,
+    done: !!(rx.verified_at || rx.auditor_approved_at),
+  });
+  steps.push({
+    label: 'Dispensed',
+    at: rx.dispensed_at,
+    note: rx.dispensed_by_name ? `By ${rx.dispensed_by_name}` : undefined,
+    done: !!rx.dispensed_at,
+  });
+  steps.push({
+    label: 'Administered',
+    at: rx.administered_at,
+    note: rx.administered_by_name ? `By ${rx.administered_by_name}` : undefined,
+    done: !!rx.administered_at,
+  });
+  return steps;
+}
+
 interface FlagFormData {
   issue: string;
   severity: AuditSeverity | '';
@@ -63,6 +117,16 @@ export default function PrescriptionList() {
   const [dateTo, setDateTo] = useState('');
 
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [history, setHistory] = useState<PrescriptionHistoryEntry[]>([]);
+
+  useEffect(() => {
+    if (!expandedId) { setHistory([]); return; }
+    let active = true;
+    prescriptionsApi.history(expandedId)
+      .then(res => { if (active) setHistory(res.data); })
+      .catch(() => { if (active) setHistory([]); });
+    return () => { active = false; };
+  }, [expandedId]);
 
   const [confirmAction, setConfirmAction] = useState<{
     id: string;
@@ -360,20 +424,22 @@ export default function PrescriptionList() {
 
             <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <h4 className="text-sm font-semibold text-gray-600 mb-3 uppercase tracking-wide">Timeline</h4>
-                <dl className="space-y-2 text-sm">
-                  {[
-                    ['Ordered', rx.ordered_at || rx.created_at],
-                    ['Verified', rx.verified_at],
-                    ['Dispensed', rx.dispensed_at],
-                    ['Administered', rx.administered_at],
-                  ].map(([label, val]) => (
-                    <div key={label} className="flex gap-3">
-                      <dt className="text-gray-500 w-28 flex-shrink-0">{label}:</dt>
-                      <dd className="text-gray-800">{formatDate(val ?? undefined)}</dd>
-                    </div>
+                <h4 className="text-sm font-semibold text-gray-600 mb-3 uppercase tracking-wide">Audit Trail</h4>
+                <ol className="relative border-l border-gray-200 ml-2 space-y-3 text-sm">
+                  {buildAuditTrail(rx).map((step, i) => (
+                    <li key={i} className="ml-4">
+                      <span
+                        className="absolute -left-[5px] mt-1.5 h-2.5 w-2.5 rounded-full"
+                        style={{ background: step.done ? '#178A3D' : '#D1D5DB' }}
+                      />
+                      <div className="flex items-baseline justify-between gap-3">
+                        <span className={step.done ? 'font-medium text-gray-800' : 'text-gray-400'}>{step.label}</span>
+                        <span className="text-xs text-gray-500 flex-shrink-0">{step.at ? formatDate(step.at) : 'Pending'}</span>
+                      </div>
+                      {step.note && <p className="text-xs text-gray-500 mt-0.5">{step.note}</p>}
+                    </li>
                   ))}
-                </dl>
+                </ol>
               </div>
 
               <div>
@@ -424,16 +490,30 @@ export default function PrescriptionList() {
                 </div>
               </div>
 
-              {rx.flags.length > 0 && (
+              {(history.some(h => h.type !== 'sla_breach' && h.type !== 'sla_warning') || rx.flags.length > 0) && (
                 <div className="md:col-span-2">
-                  <h4 className="text-sm font-semibold text-gray-600 mb-3 uppercase tracking-wide">Flags</h4>
-                  <ul className="space-y-1">
-                    {rx.flags.map((flag, i) => (
-                      <li key={i} className="flex items-start gap-2 text-sm text-amber-700 bg-amber-50 rounded-lg px-3 py-2">
-                        <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                        {flag}
-                      </li>
-                    ))}
+                  <h4 className="text-sm font-semibold text-gray-600 mb-3 uppercase tracking-wide">Flags & Safety Findings</h4>
+                  <ul className="space-y-2">
+                    {history.filter(h => h.type !== 'sla_breach' && h.type !== 'sla_warning' && h.issue).length > 0
+                      ? history
+                          .filter(h => h.type !== 'sla_breach' && h.type !== 'sla_warning' && h.issue)
+                          .map((h) => (
+                            <li key={h.id} className="flex items-start gap-2 text-sm rounded-lg px-3 py-2.5 bg-amber-50 text-amber-800">
+                              <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0 text-amber-600" />
+                              <div>
+                                <p className="font-medium">{h.issue}</p>
+                                <p className="text-xs text-amber-700/80 mt-0.5 capitalize">
+                                  {h.flag_code.replace(/_/g, ' ')} · {h.severity} severity · {h.resolved ? 'resolved' : 'open'}
+                                </p>
+                              </div>
+                            </li>
+                          ))
+                      : rx.flags.map((flag, i) => (
+                          <li key={i} className="flex items-start gap-2 text-sm text-amber-700 bg-amber-50 rounded-lg px-3 py-2">
+                            <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                            <span className="capitalize">{flag.replace(/_/g, ' ')}</span>
+                          </li>
+                        ))}
                   </ul>
                 </div>
               )}

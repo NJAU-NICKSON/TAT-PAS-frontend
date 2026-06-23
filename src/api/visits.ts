@@ -83,6 +83,7 @@ export interface CreateVisitPayload {
   department_id: string;
   chief_complaint?: string;
   priority?: "routine" | "urgent" | "critical" | "immediate";
+  assigned_doctor_id?: string;
 }
 
 export interface UpdateVisitPayload {

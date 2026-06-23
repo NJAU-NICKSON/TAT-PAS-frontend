@@ -203,9 +203,9 @@ function TATSummaryStrip({ journey, visit }: { journey: JourneySummary | null; v
           ) : (
             <>
               <TATStageCard num={1} name="Registration"          tatMin={elapsedMin(visit.registered_at, visit.triaged_at) ?? undefined}                         targetMin={10}  isActive={!visit.triaged_at} />
-              <TATStageCard num={2} name="Triage"                tatMin={elapsedMin(visit.triaged_at, visit.consultation_started_at) ?? undefined}                targetMin={15}  isActive={!!visit.triaged_at && !visit.consultation_started_at} />
-              <TATStageCard num={3} name="Consultation"          tatMin={elapsedMin(visit.consultation_started_at, visit.consultation_ended_at) ?? undefined}     targetMin={30}  isActive={!!visit.consultation_started_at && !visit.consultation_ended_at} />
-              <TATStageCard num={4} name="Prescription Audit"    tatMin={undefined}                                                                               targetMin={30}  isPending={!visit.consultation_ended_at} isActive={!!visit.consultation_ended_at && !visit.billing_completed_at} />
+              <TATStageCard num={2} name="Triage"                tatMin={elapsedMin(visit.registered_at, visit.triaged_at) ?? undefined}                          targetMin={15}  isActive={false} isPending={!visit.triaged_at} />
+              <TATStageCard num={3} name="Consultation"          tatMin={elapsedMin(visit.consultation_started_at, visit.consultation_ended_at) ?? undefined}     targetMin={30}  isActive={!!visit.consultation_started_at && !visit.consultation_ended_at} isPending={!visit.triaged_at} />
+              <TATStageCard num={4} name="Prescription Audit"    tatMin={undefined}                                                                               targetMin={30}  isPending={!visit.consultation_ended_at} />
               <TATStageCard num={5} name="Pharmacy Dispensing"   tatMin={undefined}                                                                               targetMin={20}  isPending={!visit.consultation_ended_at} />
               <TATStageCard num={6} name="Drug Administration"   tatMin={undefined}                                                                               targetMin={15}  isPending={!visit.consultation_ended_at} />
               <TATStageCard num={7} name="Billing"               tatMin={elapsedMin(visit.billing_completed_at, visit.discharged_at) ?? undefined}               targetMin={15}  isActive={!!visit.billing_completed_at && !visit.discharged_at} />

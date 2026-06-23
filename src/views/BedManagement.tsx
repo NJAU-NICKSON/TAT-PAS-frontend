@@ -3,6 +3,7 @@ import {
   Plus, X, Pencil, RefreshCw, ChevronDown, ChevronRight,
   BedDouble, Building2, Users, Search,
 } from 'lucide-react';
+import { getErrorMessage } from '../lib/utils';
 import { bedsApi, Bed as BedType, CreateBedPayload } from '../api/beds';
 import { departmentsApi, Department } from '../api/departments';
 import { patientsApi } from '../api/patients';
@@ -115,8 +116,7 @@ function AddBedModal({ departments, onSave, onClose }: {
       toast.success(`Bed "${form.bed_label}" created`);
       onSave(res.data);
     } catch (err: unknown) {
-      const e = err as { response?: { data?: { detail?: string } } };
-      toast.error(e?.response?.data?.detail ?? 'Failed to create');
+      toast.error(getErrorMessage(err, 'Could not save the bed.'));
     } finally {
       setSaving(false);
     }

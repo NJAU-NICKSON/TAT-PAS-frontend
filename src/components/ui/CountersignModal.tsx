@@ -3,6 +3,7 @@ import { AlertTriangle, X, ShieldCheck, Loader2 } from 'lucide-react';
 import { AuditRecord } from '../../models/types';
 import { auditsApi } from '../../api/audits';
 import { useAuth } from '../../context/AuthContext';
+import { getErrorMessage } from '../../lib/utils';
 
 interface CountersignModalProps {
   flag: AuditRecord;
@@ -37,15 +38,7 @@ export function CountersignModal({ flag, onSuccess, onClose }: CountersignModalP
       await auditsApi.countersign({ flag_id: flag.id, note: note.trim() });
       onSuccess();
     } catch (err: unknown) {
-      const detail = (err as { response?: { data?: { detail?: { message?: string; code?: string } | string } } })
-        ?.response?.data?.detail;
-      if (typeof detail === 'object' && detail?.message) {
-        setError(detail.message);
-      } else if (typeof detail === 'string') {
-        setError(detail);
-      } else {
-        setError('Countersign failed. Ensure you are not the original flag author.');
-      }
+      setError(getErrorMessage(err, 'Countersign failed. Ensure you are not the original flag author.'));
     } finally {
       setIsSubmitting(false);
     }

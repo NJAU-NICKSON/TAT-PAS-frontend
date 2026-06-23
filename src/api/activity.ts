@@ -13,10 +13,21 @@ export interface ActivityEntry {
   created_at: string;
 }
 
+export interface ServerNotification {
+  id: string;
+  type: string;
+  title: string;
+  subtitle: string;
+  timestamp: string;
+}
+
 export const activityApi = {
   list: (params: { action?: string; user_role?: string; skip?: number; limit?: number } = {}) =>
     apiClient.get<ActivityEntry[]>('/activity', { params }),
 
   log: (action: string, opts: { detail?: string; entity_type?: string; entity_id?: string } = {}) =>
     apiClient.post('/activity/log', { action, ...opts }).catch(() => {}),
+
+  myNotifications: () =>
+    apiClient.get<ServerNotification[]>('/activity/my-notifications'),
 };

@@ -16,7 +16,7 @@ import { prescriptionsApi } from '../api/prescriptions';
 import { billingApi } from '../api/billing';
 import { usersApi } from '../api/users';
 import { useAuth } from '../context/AuthContext';
-import { withDoctorTitle, formatTimeEAT, formatDateTimeEAT } from '../lib/utils';
+import { withDoctorTitle, formatTimeEAT, formatDateTimeEAT, getErrorMessage } from '../lib/utils';
 import { Prescription, Bill, BillLineItem, Payment, User as UserType } from '../models/types';
 
 const STATUS_LABELS: Record<string, string> = {
@@ -136,8 +136,7 @@ function AdmitModal({
     setSubmitting(true); setError('');
     try { await onConfirm(selectedBed, notes, selectedDoctor || undefined); }
     catch (e: unknown) {
-      const msg = (e as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
-      setError(msg || 'Admission failed'); setSubmitting(false);
+      setError(getErrorMessage(e, 'Could not admit the patient.')); setSubmitting(false);
     }
   }
 
@@ -737,7 +736,7 @@ export default function VisitDetailPage() {
     if (!id || !window.confirm('Confirm discharge? The assigned bed will be released.')) return;
     setActionLoading(true);
     try { await visitsApi.discharge(id); toast.success('Patient discharged'); await load(); }
-    catch (e: unknown) { toast.error((e as { response?: { data?: { detail?: string } } })?.response?.data?.detail ?? 'Discharge failed'); }
+    catch (e: unknown) { toast.error(getErrorMessage(e, 'Could not discharge the patient.')); }
     finally { setActionLoading(false); }
   };
 
@@ -773,8 +772,7 @@ export default function VisitDetailPage() {
       setBill(newBill);
       toast.success('Bill generated automatically from this visit');
     } catch (e: unknown) {
-      const detail = (e as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
-      toast.error(detail ?? 'Failed to generate bill');
+      toast.error(getErrorMessage(e, 'Could not generate the bill.'));
     }
   };
 

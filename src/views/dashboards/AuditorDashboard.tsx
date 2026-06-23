@@ -1,14 +1,17 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import {
-  CheckCircle2, Clock, ShieldCheck, AlertTriangle, Loader2,
-  ArrowLeftCircle, FileText, User,
+  CheckCircle2, Clock, ShieldCheck, AlertTriangle,
+  FileText, User, ChevronRight,
 } from 'lucide-react';
+import {
+  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell,
+} from 'recharts';
 import { AuditRecord, AuditSeverity, Prescription } from '../../models/types';
 import { auditsApi } from '../../api/audits';
 import { prescriptionsApi } from '../../api/prescriptions';
+import { useAnalyticsViewModel } from '../../viewModels/useAnalyticsViewModel';
 import { useWebSocket } from '../../context/WebSocketContext';
-import { CountersignModal } from '../../components/ui/CountersignModal';
 import { AuditLogTable } from '../../components/ui/AuditLogTable';
 import { toast } from 'sonner';
 import { cn, withDoctorTitle, formatTimeEAT } from '../../lib/utils';
@@ -51,146 +54,24 @@ function SeverityBadge({ severity }: { severity: AuditSeverity }) {
   );
 }
 
-interface ResolveModalProps {
-  flag: AuditRecord;
-  onSuccess: () => void;
-  onClose: () => void;
-}
-
-function ResolveModal({ flag, onSuccess, onClose }: ResolveModalProps) {
-  const [note, setNote] = useState('');
-  const [resType, setResType] = useState('accepted_risk');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const canSubmit = note.trim().length >= 20 && !isSubmitting;
-
-  const handleSubmit = async () => {
-    if (!canSubmit) return;
-    setIsSubmitting(true);
-    setError(null);
-    try {
-      await auditsApi.resolve(flag.prescription_id, note.trim(), resType);
-      onSuccess();
-    } catch (err: unknown) {
-      const detail = (err as { response?: { data?: { detail?: { message?: string } | string } } })
-        ?.response?.data?.detail;
-      const msg = typeof detail === 'object' ? detail?.message : typeof detail === 'string' ? detail : null;
-      setError(msg ?? 'Resolution failed. Ensure all required countersigns are complete.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div
-        className="w-full max-w-lg mx-4 rounded-lg overflow-hidden animate-slide-up"
-        style={{ background: 'var(--bg-card)', boxShadow: 'var(--shadow-modal)' }}
-      >
-        <div className="flex items-center justify-between px-6 py-4 border-b" style={{ borderColor: 'var(--border-default)' }}>
-          <h2 className="text-h3">Resolve Flag</h2>
-          <button onClick={onClose} aria-label="Close" className="p-1.5 rounded-lg hover:bg-[var(--bg-base)]" style={{ color: 'var(--text-muted)' }}>
-            ×
-          </button>
-        </div>
-
-        <div className="px-6 py-4 border-b" style={{ background: 'var(--bg-alert)', borderColor: 'var(--border-default)' }}>
-          <div className="flex items-center gap-2 mb-1.5">
-            <SeverityBadge severity={flag.severity} />
-            {flag.flag_code && (
-              <span className="text-mono text-body-sm" style={{ color: 'var(--text-secondary)' }}>{flag.flag_code}</span>
-            )}
-          </div>
-          <p className="text-body-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{flag.issue}</p>
-        </div>
-
-        <div className="px-6 py-5 space-y-4">
-          <div>
-            <label className="block text-label mb-1.5" style={{ color: 'var(--text-secondary)' }}>Resolution Type</label>
-            <select
-              value={resType}
-              onChange={e => setResType(e.target.value)}
-              className="w-full px-3 py-2 text-body-sm border rounded-lg focus:outline-none"
-              style={{ borderColor: 'var(--border-default)', background: 'var(--bg-base)', borderRadius: 'var(--radius-button)' }}
-            >
-              <option value="accepted_risk">Accepted Risk</option>
-              <option value="dose_adjusted">Dose Adjusted</option>
-              <option value="drug_changed">Drug Changed</option>
-              <option value="prescription_cancelled">Prescription Cancelled</option>
-              <option value="false_positive">False Positive</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-label mb-1.5" style={{ color: 'var(--text-secondary)' }}>
-              Resolution Note
-              <span className="ml-1 font-normal normal-case" style={{ color: 'var(--text-muted)' }}>(min. 20 characters)</span>
-            </label>
-            <textarea
-              value={note}
-              onChange={e => setNote(e.target.value)}
-              rows={4}
-              placeholder="Describe the clinical rationale for this resolution"
-              className="w-full px-3 py-2.5 text-body-sm border rounded-lg resize-none focus:outline-none"
-              style={{
-                borderColor: note.trim().length >= 20 ? 'var(--border-focus)' : 'var(--border-default)',
-                background: 'var(--bg-base)',
-                borderRadius: 'var(--radius-card)',
-              }}
-            />
-            <p className="text-meta mt-1" style={{ color: note.trim().length >= 20 ? 'var(--sla-safe)' : 'var(--text-disabled)' }}>
-              {note.trim().length}/20 minimum
-            </p>
-          </div>
-
-          {error && (
-            <div
-              className="p-3 rounded-lg border text-body-sm font-medium"
-              style={{ background: 'var(--bg-alert)', borderColor: 'var(--border-breach)', color: 'var(--sla-breached)' }}
-            >
-              {error}
-            </div>
-          )}
-        </div>
-
-        <div className="flex justify-end gap-3 px-6 py-4 border-t" style={{ borderColor: 'var(--border-default)' }}>
-          <button
-            onClick={onClose}
-            className="px-4 py-2 text-body-sm font-semibold border rounded-lg hover:bg-[var(--bg-base)] transition-colors"
-            style={{ borderColor: 'var(--border-default)', color: 'var(--text-secondary)', borderRadius: 'var(--radius-button)' }}
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSubmit}
-            disabled={!canSubmit}
-            className="flex items-center gap-2 px-4 py-2 text-body-sm font-semibold text-white rounded-lg transition-colors disabled:opacity-40"
-            style={{ background: 'var(--clinical-600)', borderRadius: 'var(--radius-button)' }}
-          >
-            {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
-            {isSubmitting ? 'Resolving' : 'Confirm Resolution'}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 interface FlagRowProps {
   flag: AuditRecord;
-  onResolve: (f: AuditRecord) => void;
-  onCountersign: (f: AuditRecord) => void;
 }
 
-function FlagRow({ flag, onResolve, onCountersign }: FlagRowProps) {
+function FlagRow({ flag }: FlagRowProps) {
+  const navigate = useNavigate();
   const needsCountersign = flag.esig_required && !flag.countersigned && !flag.resolved;
   const isHighSeverity = flag.severity === 'critical' || flag.severity === 'high';
+  const target = `/audits?rx=${encodeURIComponent(flag.rx_number ?? flag.prescription_id)}`;
 
   return (
     <div
+      onClick={() => navigate(target)}
+      role="button"
+      tabIndex={0}
+      onKeyDown={e => { if (e.key === 'Enter') navigate(target); }}
       className={cn(
-        'flex items-start gap-4 px-6 py-4 hover:bg-[var(--bg-row-hover)] transition-colors',
+        'flex items-start gap-4 px-6 py-4 cursor-pointer hover:bg-[var(--bg-row-hover)] transition-colors',
         isHighSeverity && 'border-l-[3px]'
       )}
       style={isHighSeverity ? { borderLeftColor: 'var(--sla-breached)' } : {}}
@@ -232,33 +113,17 @@ function FlagRow({ flag, onResolve, onCountersign }: FlagRowProps) {
         )}
       </div>
 
-      <div className="flex-shrink-0 flex items-center gap-2">
+      <div className="flex-shrink-0 flex items-center self-center gap-2">
         {flag.resolved ? (
           <div className="flex items-center gap-1 text-body-sm font-semibold" style={{ color: 'var(--sla-safe)' }}>
             <CheckCircle2 className="w-4 h-4" />
             Resolved
           </div>
         ) : (
-          <>
-            {needsCountersign && (
-              <button
-                onClick={() => onCountersign(flag)}
-                className="px-3 py-1.5 text-body-sm font-semibold text-white rounded-lg transition-colors"
-                style={{ background: 'var(--border-stat)', borderRadius: 'var(--radius-button)' }}
-              >
-                <ShieldCheck className="inline w-3.5 h-3.5 mr-1" />
-                Countersign
-              </button>
-            )}
-            <button
-              onClick={() => onResolve(flag)}
-              disabled={needsCountersign}
-              className="px-3 py-1.5 text-body-sm font-semibold text-white rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-              style={{ background: 'var(--clinical-600)', borderRadius: 'var(--radius-button)' }}
-            >
-              Resolve
-            </button>
-          </>
+          <div className="flex items-center gap-1.5 text-body-sm font-semibold" style={{ color: 'var(--clinical-700)' }}>
+            {needsCountersign ? 'Countersign' : 'Resolve'}
+            <ChevronRight className="w-4 h-4" />
+          </div>
         )}
       </div>
     </div>
@@ -276,19 +141,21 @@ function fmtAge(dateStr: string): string {
 
 interface RxReviewRowProps {
   rx: Prescription;
-  onApprove: (id: string) => void;
-  onReturn: (rx: Prescription) => void;
-  isActing: boolean;
 }
 
-function RxReviewRow({ rx, onApprove, onReturn, isActing }: RxReviewRowProps) {
+function RxReviewRow({ rx }: RxReviewRowProps) {
+  const navigate = useNavigate();
   const elapsed = (Date.now() - new Date(rx.submitted_at ?? rx.created_at).getTime()) / 60000;
   const isUrgent = elapsed > 20 || rx.priority === 'stat' || rx.priority === 'urgent';
 
   return (
     <div
+      onClick={() => navigate(`/prescriptions/${rx.id}`)}
+      role="button"
+      tabIndex={0}
+      onKeyDown={e => { if (e.key === 'Enter') navigate(`/prescriptions/${rx.id}`); }}
       className={cn(
-        'flex items-start gap-4 px-6 py-4 hover:bg-[var(--bg-row-hover)] transition-colors',
+        'flex items-start gap-4 px-6 py-4 cursor-pointer hover:bg-[var(--bg-row-hover)] transition-colors',
         isUrgent && 'border-l-[3px]'
       )}
       style={isUrgent ? { borderLeftColor: 'var(--sla-breached)' } : {}}
@@ -302,13 +169,9 @@ function RxReviewRow({ rx, onApprove, onReturn, isActing }: RxReviewRowProps) {
 
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-1 flex-wrap">
-          <Link
-            to={`/prescriptions/${rx.id}`}
-            className="text-body-sm font-bold hover:underline"
-            style={{ color: 'var(--clinical-700)' }}
-          >
+          <span className="text-body-sm font-bold" style={{ color: 'var(--clinical-700)' }}>
             {rx.rx_number ?? rx.id.slice(0, 8).toUpperCase()}
-          </Link>
+          </span>
           {rx.priority && (
             <span
               className="text-micro font-bold px-1.5 py-0.5 rounded-full"
@@ -344,123 +207,79 @@ function RxReviewRow({ rx, onApprove, onReturn, isActing }: RxReviewRowProps) {
         )}
       </div>
 
-      <div className="flex-shrink-0 flex items-center gap-2">
-        <button
-          onClick={() => onReturn(rx)}
-          disabled={isActing}
-          className="px-3 py-1.5 text-body-sm font-semibold rounded-lg border transition-colors disabled:opacity-40"
-          style={{
-            background: '#FFFBEB',
-            borderColor: '#FDE68A',
-            color: '#92400E',
-            borderRadius: 'var(--radius-button)',
-          }}
-        >
-          <ArrowLeftCircle className="inline w-3.5 h-3.5 mr-1" />
-          Return
-        </button>
-        <button
-          onClick={() => onApprove(rx.id)}
-          disabled={isActing}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-body-sm font-semibold text-white rounded-lg transition-colors disabled:opacity-40"
-          style={{ background: 'var(--clinical-600)', borderRadius: 'var(--radius-button)' }}
-        >
-          {isActing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
-          Approve
-        </button>
+      <div className="flex-shrink-0 flex items-center gap-1.5 self-center text-body-sm font-semibold" style={{ color: 'var(--clinical-700)' }}>
+        Review
+        <ChevronRight className="w-4 h-4" />
       </div>
     </div>
   );
 }
 
-interface ReturnModalProps {
-  rx: Prescription;
-  onSuccess: () => void;
-  onClose: () => void;
+const SEVERITY_FILL: Record<AuditSeverity, string> = {
+  critical: '#DC2626',
+  high:     '#EA580C',
+  medium:   '#D97706',
+  low:      '#178A3D',
+};
+
+function fmtMin(min: number): string {
+  if (!min || isNaN(min)) return '0m';
+  if (min < 60) return `${Math.round(min)}m`;
+  const h = Math.floor(min / 60);
+  const m = Math.round(min % 60);
+  return m > 0 ? `${h}h ${m}m` : `${h}h`;
 }
 
-function ReturnModal({ rx, onSuccess, onClose }: ReturnModalProps) {
-  const [reason, setReason] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+function AuditorCharts({ flags }: { flags: AuditRecord[] }) {
+  const vm = useAnalyticsViewModel();
+  useEffect(() => { vm.loadMetrics(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, []);
 
-  const handleSubmit = async () => {
-    if (reason.trim().length < 10) return;
-    setIsSubmitting(true);
-    try {
-      await prescriptionsApi.returnToDoctor(rx.id, reason.trim());
-      toast.success('Prescription returned to doctor');
-      onSuccess();
-    } catch {
-      toast.error('Failed to return prescription');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  const stageData = vm.metrics ? [
+    { stage: 'Order to Verify',    minutes: Math.round(vm.metrics.average_order_to_verify_minutes ?? 0) },
+    { stage: 'Verify to Dispense', minutes: Math.round(vm.metrics.average_verify_to_dispense_minutes ?? 0) },
+    { stage: 'Dispense to Admin',  minutes: Math.round(vm.metrics.average_dispense_to_administer_minutes ?? 0) },
+  ] : [];
+
+  const severityData = (['critical', 'high', 'medium', 'low'] as AuditSeverity[])
+    .map(sev => ({ sev, label: sev.charAt(0).toUpperCase() + sev.slice(1), count: flags.filter(f => f.severity === sev).length }))
+    .filter(d => d.count > 0);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div
-        className="w-full max-w-lg mx-4 rounded-lg overflow-hidden animate-slide-up"
-        style={{ background: 'var(--bg-card)', boxShadow: 'var(--shadow-modal)' }}
-      >
-        <div className="flex items-center justify-between px-6 py-4 border-b" style={{ borderColor: 'var(--border-default)' }}>
-          <div className="flex items-center gap-2">
-            <ArrowLeftCircle className="w-5 h-5 text-amber-600" />
-            <h2 className="text-h3">Return for Amendment</h2>
-          </div>
-          <button onClick={onClose} aria-label="Close" className="p-1.5 rounded-lg hover:bg-[var(--bg-base)]" style={{ color: 'var(--text-muted)' }}>×</button>
-        </div>
+    <div className="flex-shrink-0 grid grid-cols-1 lg:grid-cols-2 gap-4 px-6 py-4 border-b" style={{ borderColor: 'var(--border-default)', background: 'var(--bg-base)' }}>
+      <div className="rounded-lg p-4" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-default)' }}>
+        <h3 className="text-body-sm font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>Average TAT per Stage</h3>
+        {stageData.every(d => d.minutes === 0) ? (
+          <div className="flex items-center justify-center h-44 text-sm" style={{ color: 'var(--text-muted)' }}>No TAT data yet.</div>
+        ) : (
+          <ResponsiveContainer width="100%" height={180}>
+            <BarChart data={stageData} margin={{ top: 4, right: 12, left: 0, bottom: 4 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--surface-3)" vertical={false} />
+              <XAxis dataKey="stage" tick={{ fill: 'var(--text-secondary)', fontSize: 11 }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fill: 'var(--text-muted)', fontSize: 11 }} axisLine={false} tickLine={false} unit=" m" />
+              <Tooltip cursor={{ fill: 'rgba(0,0,0,0.04)' }} formatter={(v: number) => [fmtMin(v), 'Avg TAT']} />
+              <Bar dataKey="minutes" fill="#178A3D" radius={[6, 6, 0, 0]} maxBarSize={64} />
+            </BarChart>
+          </ResponsiveContainer>
+        )}
+      </div>
 
-        <div className="px-6 py-4 border-b" style={{ background: 'rgba(245,158,11,0.06)', borderColor: 'var(--border-default)' }}>
-          <p className="text-body-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
-            {rx.rx_number ?? rx.id.slice(0, 8).toUpperCase()} - {rx.patient_name ?? 'Unknown Patient'}
-          </p>
-          <p className="text-meta mt-0.5" style={{ color: 'var(--text-muted)' }}>
-            Prescribed by {withDoctorTitle(rx.doctor_name) || 'Unknown Doctor'}
-          </p>
-        </div>
-
-        <div className="px-6 py-5 space-y-4">
-          <div>
-            <label className="block text-label mb-1.5" style={{ color: 'var(--text-secondary)' }}>
-              Reason for Amendment <span className="text-[var(--sla-breached)]">*</span>
-            </label>
-            <textarea
-              value={reason}
-              onChange={e => setReason(e.target.value)}
-              rows={4}
-              placeholder="Explain why this prescription needs to be amended by the doctor..."
-              className="w-full px-3 py-2.5 text-body-sm border rounded-lg resize-none focus:outline-none"
-              style={{
-                borderColor: reason.trim().length >= 10 ? 'var(--border-focus)' : 'var(--border-default)',
-                background: 'var(--bg-base)',
-                borderRadius: 'var(--radius-card)',
-              }}
-            />
-            <p className="text-meta mt-1" style={{ color: reason.trim().length >= 10 ? 'var(--sla-safe)' : 'var(--text-disabled)' }}>
-              {reason.trim().length}/10 minimum characters
-            </p>
-          </div>
-        </div>
-
-        <div className="flex justify-end gap-3 px-6 py-4 border-t" style={{ borderColor: 'var(--border-default)' }}>
-          <button
-            onClick={onClose}
-            className="px-4 py-2 text-body-sm font-semibold border rounded-lg"
-            style={{ borderColor: 'var(--border-default)', color: 'var(--text-secondary)', borderRadius: 'var(--radius-button)' }}
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSubmit}
-            disabled={reason.trim().length < 10 || isSubmitting}
-            className="flex items-center gap-2 px-4 py-2 text-body-sm font-semibold text-white rounded-lg disabled:opacity-40"
-            style={{ background: '#D97706', borderRadius: 'var(--radius-button)' }}
-          >
-            {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
-            Return to Doctor
-          </button>
-        </div>
+      <div className="rounded-lg p-4" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-default)' }}>
+        <h3 className="text-body-sm font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>Open Flags by Severity</h3>
+        {severityData.length === 0 ? (
+          <div className="flex items-center justify-center h-44 text-sm" style={{ color: 'var(--text-muted)' }}>No open flags.</div>
+        ) : (
+          <ResponsiveContainer width="100%" height={180}>
+            <BarChart data={severityData} margin={{ top: 4, right: 12, left: 0, bottom: 4 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--surface-3)" vertical={false} />
+              <XAxis dataKey="label" tick={{ fill: 'var(--text-secondary)', fontSize: 11 }} axisLine={false} tickLine={false} />
+              <YAxis allowDecimals={false} tick={{ fill: 'var(--text-muted)', fontSize: 11 }} axisLine={false} tickLine={false} />
+              <Tooltip cursor={{ fill: 'rgba(0,0,0,0.04)' }} formatter={(v: number) => [v, 'Flags']} />
+              <Bar dataKey="count" radius={[6, 6, 0, 0]} maxBarSize={64}>
+                {severityData.map(d => <Cell key={d.sev} fill={SEVERITY_FILL[d.sev]} />)}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        )}
       </div>
     </div>
   );
@@ -471,16 +290,12 @@ export function AuditorDashboard() {
   const [activeTab, setActiveTab] = useState<Tab>('review');
   const [pendingRx, setPendingRx] = useState<Prescription[]>([]);
   const [rxLoading, setRxLoading] = useState(true);
-  const [actingRxId, setActingRxId] = useState<string | null>(null);
-  const [returnTarget, setReturnTarget] = useState<Prescription | null>(null);
   const [flags, setFlags] = useState<AuditRecord[]>([]);
   const [logRecords, setLogRecords] = useState<AuditRecord[]>([]);
   const [securityEvents, setSecurityEvents] = useState<AuditRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [logLoading, setLogLoading] = useState(false);
   const [secLoading, setSecLoading] = useState(false);
-  const [resolveTarget, setResolveTarget] = useState<AuditRecord | null>(null);
-  const [countersignTarget, setCountersignTarget] = useState<AuditRecord | null>(null);
   const [filterSeverity, setFilterSeverity] = useState<AuditSeverity | 'all'>('all');
 
   const loadPendingRx = useCallback(async () => {
@@ -498,19 +313,6 @@ export function AuditorDashboard() {
       setRxLoading(false);
     }
   }, []);
-
-  const handleApprove = async (id: string) => {
-    setActingRxId(id);
-    try {
-      await prescriptionsApi.approveForPharmacy(id);
-      toast.success('Prescription approved for pharmacy');
-      await loadPendingRx();
-    } catch {
-      toast.error('Failed to approve prescription');
-    } finally {
-      setActingRxId(null);
-    }
-  };
 
   const loadFlags = useCallback(async () => {
     setIsLoading(true);
@@ -640,6 +442,8 @@ export function AuditorDashboard() {
         ))}
       </div>
 
+      <AuditorCharts flags={flags} />
+
       <div
         className="flex-shrink-0 flex gap-0 border-b"
         style={{ borderColor: 'var(--border-default)', background: 'var(--bg-card)' }}
@@ -699,13 +503,7 @@ export function AuditorDashboard() {
               ) : (
                 <div className="divide-y divide-[var(--border-default)]">
                   {pendingRx.map(rx => (
-                    <RxReviewRow
-                      key={rx.id}
-                      rx={rx}
-                      onApprove={handleApprove}
-                      onReturn={rx => setReturnTarget(rx)}
-                      isActing={actingRxId === rx.id}
-                    />
+                    <RxReviewRow key={rx.id} rx={rx} />
                   ))}
                 </div>
               )}
@@ -756,12 +554,7 @@ export function AuditorDashboard() {
               ) : (
                 <div className="divide-y divide-[var(--border-default)]">
                   {visibleFlags.map(f => (
-                    <FlagRow
-                      key={f.id}
-                      flag={f}
-                      onResolve={flag => setResolveTarget(flag)}
-                      onCountersign={flag => setCountersignTarget(flag)}
-                    />
+                    <FlagRow key={f.id} flag={f} />
                   ))}
                 </div>
               )}
@@ -840,28 +633,6 @@ export function AuditorDashboard() {
           </div>
         )}
       </div>
-
-      {returnTarget && (
-        <ReturnModal
-          rx={returnTarget}
-          onSuccess={() => { setReturnTarget(null); loadPendingRx(); }}
-          onClose={() => setReturnTarget(null)}
-        />
-      )}
-      {resolveTarget && (
-        <ResolveModal
-          flag={resolveTarget}
-          onSuccess={() => { setResolveTarget(null); loadFlags(); toast.success('Flag resolved'); }}
-          onClose={() => setResolveTarget(null)}
-        />
-      )}
-      {countersignTarget && (
-        <CountersignModal
-          flag={countersignTarget}
-          onSuccess={() => { setCountersignTarget(null); loadFlags(); toast.success('Flag countersigned'); }}
-          onClose={() => setCountersignTarget(null)}
-        />
-      )}
     </div>
   );
 }

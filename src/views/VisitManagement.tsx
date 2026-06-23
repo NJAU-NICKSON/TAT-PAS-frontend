@@ -3,12 +3,13 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Plus, ChevronRight, X, Search, RefreshCw, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
 import TablePagination from '../components/TablePagination';
 import { useTableControls } from '../components/useTableControls';
-import { formatDateTimeEAT } from '../lib/utils';
+import { formatDateTimeEAT, getErrorMessage } from '../lib/utils';
 import { visitsApi, Visit, CreateVisitPayload, VisitType } from '../api/visits';
 import { useAuth } from '../context/AuthContext';
 import { departmentsApi, Department } from '../api/departments';
 import { patientsApi } from '../api/patients';
-import { Patient } from '../models/types';
+import { usersApi } from '../api/users';
+import { Patient, User } from '../models/types';
 import { toast } from 'sonner';
 
 type ListResult<T> = T[] | { items?: T[] };
@@ -197,10 +198,20 @@ function NewVisitModal({ departments, onSave, onClose }: {
   onClose: () => void;
 }) {
   const [saving, setSaving] = useState(false);
+  const [doctors, setDoctors] = useState<User[]>([]);
   const [form, setForm] = useState<Partial<CreateVisitPayload>>({
     visit_type: 'opd',
     priority: 'routine',
   });
+
+  useEffect(() => {
+    usersApi.listDoctors()
+      .then(res => {
+        const raw = res.data as ListResult<User>;
+        setDoctors(Array.isArray(raw) ? raw : raw.items ?? []);
+      })
+      .catch(() => {});
+  }, []);
 
   const selectedPatientRef = useRef<Patient | null>(null);
 
@@ -209,6 +220,7 @@ function NewVisitModal({ departments, onSave, onClose }: {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (saving) return; // guard against double-submit creating duplicate visits
     const patient = selectedPatientRef.current;
     if (!patient) {
       toast.error('Please search for and select a patient first.');
@@ -228,13 +240,7 @@ function NewVisitModal({ departments, onSave, onClose }: {
       toast.success(`Visit ${res.data.visit_number} registered`);
       onSave(res.data);
     } catch (err) {
-      const detail =
-        typeof err === 'object' &&
-        err !== null &&
-        'response' in err
-          ? (err as { response?: { data?: { detail?: string | { message?: string } } } }).response?.data?.detail
-          : undefined;
-      toast.error(typeof detail === 'string' ? detail : detail?.message ?? 'Failed to create visit');
+      toast.error(getErrorMessage(err, 'Could not register the visit.'));
     } finally {
       setSaving(false);
     }
@@ -312,6 +318,15 @@ function NewVisitModal({ departments, onSave, onClose }: {
                 rows={2}
                 placeholder="Brief description of the patient's complaint"
               />
+            </Field>
+
+            <Field label="Assign Doctor">
+              <select value={form.assigned_doctor_id ?? ''} onChange={e => set('assigned_doctor_id', e.target.value)} className={inputCls} style={inputStyle}>
+                <option value="">Assign later (optional)</option>
+                {doctors.map(d => (
+                  <option key={d.id} value={d.id}>{d.full_name ?? d.email}</option>
+                ))}
+              </select>
             </Field>
           </div>
 

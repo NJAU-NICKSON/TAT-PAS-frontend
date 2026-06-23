@@ -74,4 +74,16 @@ export const auditsApi = {
 
   reviewSecurityEvents: (eventIds: string[]) =>
     apiClient.post('/audits/security/review', { event_ids: eventIds }),
+
+  verifyIntegrity: () =>
+    apiClient.get<IntegrityResult>('/audits/verify-integrity'),
 };
+
+export interface IntegrityResult {
+  intact: boolean;
+  total_chained_records: number;
+  unchained_records: number;
+  first_break_at: string | null;
+  issues: { record_id: string; problem: string; detail: string }[];
+  checked_at: string;
+}

@@ -5,7 +5,7 @@ import { departmentsApi, Department } from '../api/departments';
 import { usersApi } from '../api/users';
 import { User } from '../models/types';
 import { useAuth } from '../context/AuthContext';
-import { withDoctorTitle } from '../lib/utils';
+import { withDoctorTitle, getErrorMessage } from '../lib/utils';
 import { toast } from 'sonner';
 
 type RoomStatus = ConsultationRoom['status'];
@@ -217,8 +217,7 @@ function AddRoomModal({ departments, onSave, onClose }: {
       toast.success(`Room "${form.room_name}" created`);
       onSave(res.data);
     } catch (err: unknown) {
-      const e = err as { response?: { data?: { detail?: string } } };
-      toast.error(e?.response?.data?.detail ?? 'Failed to create');
+      toast.error(getErrorMessage(err, 'Could not save the room.'));
     } finally {
       setSaving(false);
     }

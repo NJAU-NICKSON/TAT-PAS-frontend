@@ -398,30 +398,29 @@ export function WardNurseDashboard() {
             </div>
           </div>
 
-          <div className="overflow-x-auto">
+          <div className="px-4 sm:px-7 py-3 max-h-[280px] overflow-y-auto">
             {isLoading ? (
-              <div className="flex gap-3 px-7 py-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {[1, 2, 3].map(i => (
-                  <div key={i} className="h-16 w-56 flex-shrink-0 rounded-lg animate-shimmer" />
+                  <div key={i} className="h-16 rounded-lg animate-shimmer" />
                 ))}
               </div>
             ) : (
-              <div className="flex gap-3 px-7 py-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
                 {triageQueue.map(v => (
                   <div
                     key={v.id}
-                    className="flex-shrink-0 w-64 rounded-lg border p-3"
+                    className="rounded-lg border p-3"
                     style={{
                       background: 'var(--bg-base)',
                       borderColor: 'var(--border-default)',
-                      borderLeft: '3px solid #178A3D',
                     }}
                   >
                     <p className="text-body-sm font-semibold truncate" style={{ color: 'var(--text-primary)' }}>
                       {v.patient_name ?? 'Unknown Patient'}
                     </p>
                     <p className="text-caption truncate mb-2" style={{ color: 'var(--text-muted)' }}>
-                      {v.visit_number} · {v.department_id}
+                      {v.visit_number}
                     </p>
                     <div className="flex items-center justify-between gap-2">
                       <TATTimer startTime={v.registered_at} slaThresholdMin={10} mode="elapsed" size="sm" />
@@ -462,23 +461,22 @@ export function WardNurseDashboard() {
             </div>
           </div>
 
-          <div className="overflow-x-auto">
+          <div className="px-4 sm:px-7 py-3 max-h-[280px] overflow-y-auto">
             {isLoading ? (
-              <div className="flex gap-3 px-7 py-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {[1, 2, 3].map(i => (
-                  <div key={i} className="h-16 w-56 flex-shrink-0 rounded-lg animate-shimmer" />
+                  <div key={i} className="h-16 rounded-lg animate-shimmer" />
                 ))}
               </div>
             ) : (
-              <div className="flex gap-3 px-7 py-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {wardPatients.map(v => (
                   <div
                     key={v.id}
-                    className="flex-shrink-0 w-72 rounded-lg border p-3"
+                    className="rounded-lg border p-3"
                     style={{
                       background: 'var(--bg-base)',
                       borderColor: 'var(--border-default)',
-                      borderLeft: '3px solid #178A3D',
                     }}
                   >
                     <div className="flex items-start justify-between gap-3">
@@ -558,7 +556,6 @@ export function WardNurseDashboard() {
                   style={{
                     background: 'var(--bg-card)',
                     borderColor: 'var(--border-default)',
-                    borderLeft: '3px solid #178A3D',
                     boxShadow: '0 1px 3px rgba(15,23,42,0.06), 0 4px 12px rgba(15,23,42,0.04)',
                   }}
                 >

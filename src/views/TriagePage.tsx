@@ -7,14 +7,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { visitsApi, Visit, VitalSigns, TriagePayload } from '../api/visits';
-import { usersApi } from '../api/users';
-
-interface Doctor {
-  id: string;
-  full_name?: string;
-  username: string;
-  role?: string;
-}
+import { getErrorMessage } from '../lib/utils';
 
 const VITAL_FIELDS: {
   label: string;
@@ -133,36 +126,21 @@ export default function TriagePage() {
   const navigate = useNavigate();
 
   const [visit,   setVisit]   = useState<Visit | null>(null);
-  const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving,  setSaving]  = useState(false);
 
   const [vitals,    setVitals]    = useState<Partial<VitalSigns>>({});
-  const [doctorId,  setDoctorId]  = useState('');
   const [priority,  setPriority]  = useState<'routine' | 'urgent' | 'critical' | 'immediate'>('routine');
 
   const load = async () => {
     if (!id) return;
     setLoading(true);
     try {
-      const [vRes, dRes] = await Promise.allSettled([
-        visitsApi.getById(id),
-        usersApi.listDoctors(),
-      ]);
-
-      const v = vRes.status === 'fulfilled' ? vRes.value.data : null;
+      const vRes = await visitsApi.getById(id);
+      const v = vRes.data;
       if (v) {
         setVisit(v);
         if (v.vitals) setVitals(v.vitals);
-        if (v.assigned_doctor_id) setDoctorId(v.assigned_doctor_id);
-      }
-
-      if (dRes.status === 'fulfilled') {
-        const raw = dRes.value.data;
-        const items: Doctor[] = Array.isArray(raw)
-          ? (raw as Doctor[])
-          : ((raw as { items: Doctor[] }).items ?? []);
-        setDoctors(items.filter((u: Doctor) => u.role === 'doctor'));
       }
     } finally {
       setLoading(false);
@@ -179,15 +157,13 @@ export default function TriagePage() {
     if (!id) return;
     setSaving(true);
     try {
-      // The receptionist owns room assignment; triage only records vitals
-      // and (optionally) confirms the attending doctor.
+      // The receptionist owns doctor and room assignment; triage only records vitals.
       const payload: TriagePayload = { vitals: vitals as VitalSigns };
-      if (doctorId) payload.assigned_doctor_id = doctorId;
       await visitsApi.triage(id, payload);
       toast.success('Triage completed successfully');
       navigate(`/visits/${id}`);
     } catch (e: unknown) {
-      toast.error((e as { response?: { data?: { detail?: string } } })?.response?.data?.detail ?? 'Triage failed');
+      toast.error(getErrorMessage(e, 'Could not complete triage.'));
     } finally {
       setSaving(false);
     }
@@ -318,22 +294,17 @@ export default function TriagePage() {
               <UserCheck className="w-4 h-4" style={{ color: '#178A3D' }} />
             </div>
             <div>
-              <h2 className="text-base font-bold text-gray-900">Assign Doctor</h2>
-              <p className="text-xs text-gray-400">Optional  -  can be assigned later from the visit overview</p>
+              <h2 className="text-base font-bold text-gray-900">Assigned Doctor</h2>
+              <p className="text-xs text-gray-400">Set by reception at registration</p>
             </div>
           </div>
 
-          <select
-            value={doctorId}
-            onChange={e => setDoctorId(e.target.value)}
-            className="w-full px-4 py-3 rounded-lg text-sm font-medium text-gray-800 outline-none bg-gray-50 transition-colors hover:bg-gray-100"
-            style={{ border: '1.5px solid #E2E8F0' }}
+          <div
+            className="w-full px-4 py-3 rounded-lg text-sm font-medium bg-gray-50"
+            style={{ border: '1.5px solid #E2E8F0', color: visit?.assigned_doctor_name ? '#1F2937' : '#9CA3AF' }}
           >
-            <option value=""> -  No doctor assigned yet  - </option>
-            {doctors.map(d => (
-              <option key={d.id} value={d.id}>{d.full_name || d.username}</option>
-            ))}
-          </select>
+            {visit?.assigned_doctor_name ?? 'No doctor assigned yet'}
+          </div>
         </div>
 
 

@@ -8,9 +8,11 @@ import {
 import { prescriptionsApi } from '../api/prescriptions';
 import { auditsApi } from '../api/audits';
 import { visitsApi } from '../api/visits';
+import { patientsApi } from '../api/patients';
+import { slaApi, DoseLimitEntry, DoseBand } from '../api/sla';
 import { useAuth } from '../context/AuthContext';
 import { Prescription, AuditRecord, MedicationItem } from '../models/types';
-import { cn } from '../lib/utils';
+import { cn, getErrorMessage } from '../lib/utils';
 import { printPrescription, printDispensingReceipt, FollowUp } from '../lib/printDocs';
 import { toast } from 'sonner';
 
@@ -26,7 +28,7 @@ function displayName(value?: string | null, fallback = 'Unknown user'): string {
 }
 
 function fmt(iso?: string): string {
-  if (!iso) return ' - ';
+  if (!iso) return 'N/A';
   const hasZone = /[zZ]|[+-]\d{2}:?\d{2}$/.test(iso);
   return new Date(hasZone ? iso : `${iso}Z`).toLocaleString('en-GB', {
     timeZone: 'Africa/Nairobi',
@@ -36,7 +38,7 @@ function fmt(iso?: string): string {
 }
 
 function fmtTime(iso?: string): string {
-  if (!iso) return ' - ';
+  if (!iso) return 'N/A';
   const hasZone = /[zZ]|[+-]\d{2}:?\d{2}$/.test(iso);
   return new Date(hasZone ? iso : `${iso}Z`).toLocaleTimeString('en-GB', {
     timeZone: 'Africa/Nairobi', hour: '2-digit', minute: '2-digit', hour12: false,
@@ -48,6 +50,35 @@ function fmtDuration(min: number): string {
   const h = Math.floor(min / 60);
   const m = min % 60;
   return m > 0 ? `${h}h ${m}m` : `${h}h`;
+}
+
+const FREQ_PER_DAY: Record<string, number> = {
+  od: 1, daily: 1, qd: 1, bd: 2, bid: 2, tds: 3, tid: 3, qds: 4, qid: 4, prn: 1,
+};
+
+// Years between a date of birth and now.
+function ageYears(dob?: string): number | undefined {
+  if (!dob) return undefined;
+  const d = new Date(dob);
+  if (isNaN(d.getTime())) return undefined;
+  const diff = Date.now() - d.getTime();
+  return Math.floor(diff / (365.25 * 24 * 3600 * 1000));
+}
+
+// Milligrams in a dose string ("500mg", "1g" -> 1000).
+function parseMg(dose: string): number | undefined {
+  if (!dose) return undefined;
+  const g = dose.match(/(\d+(?:\.\d+)?)\s*g(?![a-z/])/i);
+  if (g) return parseFloat(g[1]) * 1000;
+  const mg = dose.match(/(\d+(?:\.\d+)?)\s*mg/i);
+  return mg ? parseFloat(mg[1]) : undefined;
+}
+
+// Pick the band whose age range contains the patient's age.
+function bandForAge(bands: DoseBand[], age: number): DoseBand | undefined {
+  return [...bands]
+    .sort((a, b) => a.min_age_years - b.min_age_years)
+    .find(b => age >= b.min_age_years && age < b.max_age_years);
 }
 
 const STATUS_CONFIG: Record<string, { label: string; bg: string; text: string; border: string }> = {
@@ -185,7 +216,7 @@ function buildTimeline(rx: Prescription, flags: AuditRecord[]): TimelineEntry[] 
       actorRole: 'nurse',
       time: rx.administered_at,
       note: rx.administered_dose
-        ? `${rx.administered_dose} via ${rx.administered_route ?? 'N/A'}${rx.administration_notes ? `  -  ${rx.administration_notes}` : ''}`
+        ? `${rx.administered_dose} via ${rx.administered_route ?? 'N/A'}${rx.administration_notes ? ` · ${rx.administration_notes}` : ''}`
         : undefined,
     });
   }
@@ -637,12 +668,61 @@ function AdministerModal({
   );
 }
 
+// Plain-language dosing standard for a drug, given the patient's age band and
+// weight, plus whether the edited dose currently sits within it.
+function dosingStandard(
+  med: MedicationItem,
+  doseLimits: DoseLimitEntry[],
+  age?: number,
+  weight?: number,
+): { text: string; ok?: boolean } | null {
+  const limit = doseLimits.find(d => d.drug.toLowerCase() === med.name.trim().toLowerCase());
+  if (!limit) return null;
+
+  const band = age != null ? bandForAge(limit.bands, age) : undefined;
+  if (age != null && !band) {
+    return { text: `No dosing band covers age ${age}. This drug is not approved for this age.`, ok: false };
+  }
+  const useBand = band ?? [...limit.bands].sort((a, b) => b.abs_max_mg_day - a.abs_max_mg_day)[0];
+  if (!useBand) return null;
+
+  const ageTxt = band ? `age ${useBand.min_age_years}-${useBand.max_age_years}` : 'adult';
+  const parts: string[] = [];
+  if (useBand.max_mg_per_kg_day > 0) parts.push(`${useBand.max_mg_per_kg_day} mg/kg/day`);
+  parts.push(`max ${useBand.abs_max_mg_day} mg/day`);
+
+  let weightTarget = '';
+  if (weight && useBand.max_mg_per_kg_day > 0) {
+    const cap = Math.min(useBand.max_mg_per_kg_day * weight, useBand.abs_max_mg_day);
+    weightTarget = ` · for ${weight} kg, keep total <= ${Math.round(cap)} mg/day`;
+  }
+
+  const perDose = parseMg(med.dose);
+  const freq = FREQ_PER_DAY[(med.frequency || '').trim().toLowerCase()] ?? 1;
+  let ok: boolean | undefined;
+  if (perDose != null) {
+    const dailyMg = perDose * freq;
+    const cap = weight && useBand.max_mg_per_kg_day > 0
+      ? Math.min(useBand.max_mg_per_kg_day * weight, useBand.abs_max_mg_day)
+      : useBand.abs_max_mg_day;
+    ok = dailyMg <= cap;
+  }
+
+  return { text: `Standard (${ageTxt}): ${parts.join(', ')}${weightTarget}`, ok };
+}
+
 function ResubmitModal({
   rx,
+  patientAge,
+  patientWeight,
+  doseLimits,
   onSuccess,
   onClose,
 }: {
   rx: Prescription;
+  patientAge?: number;
+  patientWeight?: number;
+  doseLimits: DoseLimitEntry[];
   onSuccess: () => void;
   onClose: () => void;
 }) {
@@ -674,44 +754,98 @@ function ResubmitModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="w-full max-w-lg mx-4 rounded-lg overflow-hidden bg-white shadow-2xl max-h-[90vh] flex flex-col">
+      <div className="w-full max-w-2xl mx-4 rounded-lg overflow-hidden bg-white shadow-2xl max-h-[90vh] flex flex-col">
         <div className="flex items-center justify-between px-6 py-4 border-b">
           <div className="flex items-center gap-2">
             <RefreshCw className="w-5 h-5 text-green-700" />
-            <h2 className="font-semibold text-gray-900">Amend &amp; Resubmit for Audit</h2>
+            <div>
+              <h2 className="font-semibold text-gray-900">Make Amendment</h2>
+              <p className="text-xs text-gray-500">{rx.rx_number ?? `RX-${rx.id.slice(0, 8).toUpperCase()}`} · {displayName(rx.patient_name, 'Patient')}</p>
+            </div>
           </div>
           <button onClick={onClose} aria-label="Close"><X className="w-5 h-5 text-gray-400" /></button>
         </div>
         <div className="px-6 py-5 space-y-4 overflow-y-auto">
           {rx.return_reason && (
-            <div className="text-sm rounded-lg px-3 py-2 bg-amber-50 border border-amber-200 text-amber-800">
-              Auditor note: {rx.return_reason}
+            <div className="text-sm rounded-lg px-3 py-2.5 bg-amber-50 border border-amber-200 text-amber-800">
+              <span className="font-semibold">Auditor requested:</span> {rx.return_reason}
             </div>
           )}
-          <p className="text-sm text-gray-600">
-            Edit the medications if needed, then resubmit. The previous version is kept in the audit trail and patient journey.
-          </p>
-          <div className="space-y-2">
-            {meds.map((m, i) => (
-              <div key={i} className="grid grid-cols-12 gap-2">
-                <input value={m.name} onChange={e => setMedField(i, 'name', e.target.value)} placeholder="Drug"
-                  className="col-span-4 px-2 py-1.5 text-sm border border-gray-300 rounded-lg" />
-                <input value={m.dose} onChange={e => setMedField(i, 'dose', e.target.value)} placeholder="Dose"
-                  className="col-span-3 px-2 py-1.5 text-sm border border-gray-300 rounded-lg" />
-                <input value={m.route} onChange={e => setMedField(i, 'route', e.target.value)} placeholder="Route"
-                  className="col-span-2 px-2 py-1.5 text-sm border border-gray-300 rounded-lg" />
-                <input value={m.frequency} onChange={e => setMedField(i, 'frequency', e.target.value)} placeholder="Freq"
-                  className="col-span-3 px-2 py-1.5 text-sm border border-gray-300 rounded-lg" />
-              </div>
-            ))}
+
+          <div className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-3">
+            <p className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">Original Prescription (kept on record)</p>
+            <div className="space-y-1">
+              {rx.medications.map((m, i) => (
+                <div key={i} className="text-sm text-gray-600">
+                  <span className="font-semibold text-gray-800">{m.name}</span>
+                  <span className="ml-2">{m.dose} · {m.route} · {m.frequency} · {m.duration_days}d</span>
+                </div>
+              ))}
+            </div>
           </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-xs font-bold uppercase tracking-wider text-gray-500">Your Amended Copy: edit and resubmit</p>
+              {(patientAge != null || patientWeight != null) && (
+                <p className="text-xs text-gray-500">
+                  Patient: {patientAge != null ? `${patientAge} yrs` : 'age N/A'}{patientWeight != null ? `, ${patientWeight} kg` : ''}
+                </p>
+              )}
+            </div>
+            <div className="space-y-3">
+              <div className="grid grid-cols-12 gap-2 px-1">
+                <span className="col-span-3 text-xs font-medium text-gray-400">Drug</span>
+                <span className="col-span-3 text-xs font-medium text-gray-400">Dose</span>
+                <span className="col-span-2 text-xs font-medium text-gray-400">Route</span>
+                <span className="col-span-2 text-xs font-medium text-gray-400">Freq</span>
+                <span className="col-span-2 text-xs font-medium text-gray-400">Days</span>
+              </div>
+              {meds.map((m, i) => {
+                const std = dosingStandard(m, doseLimits, patientAge, patientWeight);
+                return (
+                  <div key={i} className="space-y-1.5">
+                    <div className="grid grid-cols-12 gap-2">
+                      <input value={m.name} onChange={e => setMedField(i, 'name', e.target.value)} placeholder="Drug"
+                        className="col-span-3 px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500" />
+                      <input value={m.dose} onChange={e => setMedField(i, 'dose', e.target.value)} placeholder="Dose"
+                        className="col-span-3 px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500" />
+                      <input value={m.route} onChange={e => setMedField(i, 'route', e.target.value)} placeholder="Route"
+                        className="col-span-2 px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500" />
+                      <input value={m.frequency} onChange={e => setMedField(i, 'frequency', e.target.value)} placeholder="Freq"
+                        className="col-span-2 px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500" />
+                      <input type="number" min={1} value={m.duration_days} onChange={e => setMedField(i, 'duration_days', e.target.value)} placeholder="Days"
+                        className="col-span-2 px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500" />
+                    </div>
+                    {std && (
+                      <div
+                        className="flex items-start gap-1.5 text-xs px-2.5 py-1.5 rounded-md"
+                        style={{
+                          background: std.ok === false ? '#FEF2F2' : std.ok ? '#F0FDF4' : '#F8FAFC',
+                          color: std.ok === false ? '#991B1B' : std.ok ? '#166534' : '#475569',
+                        }}
+                      >
+                        {std.ok === false
+                          ? <AlertTriangle className="w-3.5 h-3.5 mt-px flex-shrink-0" />
+                          : std.ok
+                          ? <CheckCircle2 className="w-3.5 h-3.5 mt-px flex-shrink-0" />
+                          : null}
+                        <span>{std.text}{std.ok === false ? ' (current entry is over the limit)' : std.ok ? ' (within limit)' : ''}</span>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Amendment Notes (optional)</label>
             <textarea
               value={notes}
               onChange={e => setNotes(e.target.value)}
               rows={2}
-              placeholder="Describe the changes made..."
+              placeholder="Describe the changes you made..."
               className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-green-500"
             />
           </div>
@@ -726,7 +860,7 @@ function ResubmitModal({
             className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white rounded-lg bg-green-700 hover:bg-green-800 disabled:opacity-40"
           >
             {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
-            {changed ? 'Resubmit Amended Rx' : 'Resubmit'}
+            Save &amp; Resubmit
           </button>
         </div>
       </div>
@@ -765,6 +899,9 @@ export default function PrescriptionDetailPage() {
   const [flags, setFlags] = useState<AuditRecord[]>([]);
   const [followUp, setFollowUp] = useState<FollowUp | undefined>(undefined);
   const [clinical, setClinical] = useState<{ diagnosis?: string; clinical_findings?: string; chief_complaint?: string } | undefined>(undefined);
+  const [patientAge, setPatientAge] = useState<number | undefined>(undefined);
+  const [patientWeight, setPatientWeight] = useState<number | undefined>(undefined);
+  const [doseLimits, setDoseLimits] = useState<DoseLimitEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'timeline' | 'medications' | 'tat'>('timeline');
   const [modal, setModal] = useState<'return' | 'dispense' | 'administer' | 'resubmit' | null>(null);
@@ -780,6 +917,16 @@ export default function PrescriptionDetailPage() {
       if (rxRes.status === 'fulfilled') {
         const rxData = rxRes.value.data;
         setRx(rxData);
+        setPatientWeight(rxData.weight_kg);
+        if (rxData.patient_id) {
+          patientsApi.getById(rxData.patient_id)
+            .then(pRes => {
+              setPatientAge(ageYears(pRes.data.dob));
+              if (pRes.data.weight != null) setPatientWeight(pRes.data.weight);
+            })
+            .catch(() => {});
+        }
+        slaApi.getDoseLimits().then(dRes => setDoseLimits(dRes.data)).catch(() => {});
         if (rxData.visit_id) {
           try {
             const vRes = await visitsApi.getById(rxData.visit_id);
@@ -910,7 +1057,7 @@ export default function PrescriptionDetailPage() {
                   <ShieldCheck className="w-5 h-5" style={{ color: rx.status === 'flagged' ? '#EA580C' : '#475569' }} />
                   <div>
                     <p className="font-semibold text-sm" style={{ color: rx.status === 'flagged' ? '#7C2D12' : '#0F172A' }}>
-                      {rx.status === 'flagged' ? 'Flagged  -  Review & Approve' : 'Awaiting Review'}
+                      {rx.status === 'flagged' ? 'Flagged · Review & Approve' : 'Awaiting Review'}
                     </p>
                     <p className="text-xs mt-0.5" style={{ color: rx.status === 'flagged' ? '#C2410C' : '#64748B' }}>
                       {rx.status === 'flagged'
@@ -934,14 +1081,7 @@ export default function PrescriptionDetailPage() {
                         toast.success('Prescription approved for pharmacy');
                         load();
                       } catch (e) {
-                        const detail =
-                          typeof e === 'object' &&
-                          e !== null &&
-                          'response' in e
-                            ? (e as { response?: { data?: { detail?: string | { message?: string } } } }).response?.data?.detail
-                            : undefined;
-                        const msg = typeof detail === 'string' ? detail : detail?.message ?? 'Failed to approve';
-                        toast.error(msg);
+                        toast.error(getErrorMessage(e, 'Could not approve this prescription.'));
                       }
                     }}
                     className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-lg text-white transition-colors"
@@ -972,7 +1112,7 @@ export default function PrescriptionDetailPage() {
                   className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-lg bg-amber-600 text-white hover:bg-amber-700 transition-colors flex-shrink-0"
                 >
                   <RefreshCw className="w-4 h-4" />
-                  Resubmit
+                  Make Amendment
                 </button>
               </div>
             </div>
@@ -1088,8 +1228,8 @@ export default function PrescriptionDetailPage() {
                       {rx.administered_at && i === 0 && (
                         <div className="mt-3 pt-3 border-t border-gray-200 grid grid-cols-3 gap-4 text-sm">
                           {[
-                            { label: 'Actual Dose', value: rx.administered_dose ?? ' - ' },
-                            { label: 'Actual Route', value: rx.administered_route ?? ' - ' },
+                            { label: 'Actual Dose', value: rx.administered_dose ?? 'N/A' },
+                            { label: 'Actual Route', value: rx.administered_route ?? 'N/A' },
                             { label: 'Administered At', value: fmtTime(rx.administered_at) },
                           ].map(({ label, value }) => (
                             <div key={label}>
@@ -1193,10 +1333,10 @@ export default function PrescriptionDetailPage() {
             <div className="space-y-3">
               {[
                 { label: 'Status', value: <StatusPill status={rx.status} /> },
-                { label: 'Rx Number', value: <span className="font-mono text-sm font-semibold">{rx.rx_number ?? ' - '}</span> },
-                { label: 'Priority', value: rx.priority ? <span className="capitalize text-sm font-semibold">{rx.priority}</span> : ' - ' },
-                { label: 'Department', value: rx.department ?? ' - ' },
-                { label: 'Ward', value: rx.ward_location ?? ' - ' },
+                { label: 'Rx Number', value: <span className="font-mono text-sm font-semibold">{rx.rx_number ?? 'N/A'}</span> },
+                { label: 'Priority', value: rx.priority ? <span className="capitalize text-sm font-semibold">{rx.priority}</span> : 'N/A' },
+                { label: 'Department', value: rx.department ?? 'N/A' },
+                { label: 'Ward', value: rx.ward_location ?? 'N/A' },
                 { label: 'Ordered', value: fmt(rx.ordered_at ?? rx.created_at) },
               ].map(({ label, value }) => (
                 <div key={label} className="flex items-center justify-between">
@@ -1269,7 +1409,14 @@ export default function PrescriptionDetailPage() {
         <AdministerModal rx={rx} onSuccess={() => { setModal(null); load(); }} onClose={() => setModal(null)} />
       )}
       {modal === 'resubmit' && (
-        <ResubmitModal rx={rx} onSuccess={() => { setModal(null); load(); }} onClose={() => setModal(null)} />
+        <ResubmitModal
+          rx={rx}
+          patientAge={patientAge}
+          patientWeight={patientWeight}
+          doseLimits={doseLimits}
+          onSuccess={() => { setModal(null); load(); }}
+          onClose={() => setModal(null)}
+        />
       )}
     </div>
   );

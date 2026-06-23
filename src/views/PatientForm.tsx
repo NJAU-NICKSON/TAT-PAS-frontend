@@ -59,6 +59,7 @@ function isValidNationalId(v: string): boolean {
 
 export default function PatientFormPage() {
   const vm = usePatientViewModel();
+  const { hasRole } = useAuth();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
   const [formData, setFormData] = useState<PatientFormData>(emptyForm);
@@ -231,11 +232,13 @@ export default function PatientFormPage() {
 
   const tc = useTableControls<Patient>({
     data: vm.patients,
-    initialSortKey: 'name',
+    initialSortKey: 'created_at',
+    initialSortDir: 'desc',
     getSortValue: (row, key) => {
       if (key === 'name') return `${row.first_name} ${row.last_name}`;
       if (key === 'phone') return row.contact?.phone;
       if (key === 'national_id') return row.national_id ?? row.guardian_national_id;
+      if (key === 'created_at') return row.created_at;
       return (row as unknown as Record<string, unknown>)[key];
     },
   });
@@ -300,18 +303,15 @@ export default function PatientFormPage() {
           <h1 className="text-2xl font-bold text-gray-900">Patient Management</h1>
           <p className="text-gray-500 text-sm mt-1">Search, add, and manage patient records</p>
         </div>
-        {(() => {
-          const auth = useAuth();
-          return auth.hasRole('receptionist') ? (
-            <button
-              onClick={openNewPatient}
-              className="flex items-center gap-2 bg-[var(--clinical-600)] hover:opacity-90 text-white px-4 py-2.5 rounded-lg text-sm font-semibold transition-colors shadow-sm"
-            >
-              <Plus className="h-4 w-4" />
-              New Patient
-            </button>
-          ) : null;
-        })()}
+        {hasRole('receptionist') && (
+          <button
+            onClick={openNewPatient}
+            className="flex items-center gap-2 bg-[var(--clinical-600)] hover:opacity-90 text-white px-4 py-2.5 rounded-lg text-sm font-semibold transition-colors shadow-sm"
+          >
+            <Plus className="h-4 w-4" />
+            New Patient
+          </button>
+        )}
       </div>
 
       <div className="relative max-w-md">

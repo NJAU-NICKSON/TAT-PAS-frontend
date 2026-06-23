@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { DollarSign, RefreshCw, X, Receipt } from 'lucide-react';
 import { billingApi, Bill, Payment } from '../../api/billing';
+import { getErrorMessage } from '../../lib/utils';
 
 function fmtKES(amount: number | undefined): string {
   return `KES ${(amount ?? 0).toLocaleString('en-KE', { minimumFractionDigits: 0 })}`;
@@ -88,13 +89,7 @@ function PaymentModal({ bill, onClose, onSuccess }: PaymentModalProps) {
       });
       onSuccess();
     } catch (err) {
-      const detail =
-        typeof err === 'object' &&
-        err !== null &&
-        'response' in err
-          ? (err as { response?: { data?: { detail?: string } } }).response?.data?.detail
-          : undefined;
-      setError(detail ?? 'Payment failed. Please try again.');
+      setError(getErrorMessage(err, 'Payment failed. Please try again.'));
     } finally {
       setSaving(false);
     }
@@ -274,13 +269,7 @@ export function BillingClerkDashboard() {
       const data = await billingApi.getAllBills(100);
       setBills(data);
     } catch (err) {
-      const detail =
-        typeof err === 'object' &&
-        err !== null &&
-        'response' in err
-          ? (err as { response?: { data?: { detail?: string } } }).response?.data?.detail
-          : undefined;
-      setError(detail ?? 'Failed to load bills.');
+      setError(getErrorMessage(err, 'Could not load bills.'));
       setBills([]);
     } finally {
       setLoading(false);

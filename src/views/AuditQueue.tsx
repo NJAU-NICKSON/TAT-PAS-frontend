@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { X, CheckCircle, AlertTriangle, Loader2, ShieldCheck, RefreshCw, ExternalLink } from 'lucide-react';
 import Table, { Column } from '../components/Table';
 import TablePagination from '../components/TablePagination';
@@ -8,6 +8,8 @@ import { SeverityBadge, TypeBadge } from '../components/StatusBadge';
 import FormField from '../components/FormField';
 import { useAuditViewModel } from '../viewModels/useAuditViewModel';
 import { AuditRecord } from '../models/types';
+import { auditsApi, IntegrityResult } from '../api/audits';
+import { toast } from 'sonner';
 
 type TabValue = 'unresolved' | 'resolved' | 'all';
 type AuditFilters = { resolved?: boolean };
@@ -17,15 +19,46 @@ function formatDate(iso?: string): string {
   return new Date(iso).toLocaleString();
 }
 
+function shortIssue(issue: string): string {
+  if (!issue) return 'N/A';
+  const sla = issue.match(/(stat|urgent|routine|discharge|nicu|chemo)\s+prescription exceeded\s+(\d+)\s*min threshold by\s+([\d.]+)/i);
+  if (sla) {
+    const over = Math.round(parseFloat(sla[3]));
+    return `SLA breach (${sla[1].toLowerCase()}): ${over} min over ${sla[2]} min limit`;
+  }
+  const sec = issue.match(/security event:\s*(.+)/i);
+  if (sec) return `Security: ${sec[1].replace(/_/g, ' ')}`;
+  return issue;
+}
+
 export default function AuditQueue() {
   const vm = useAuditViewModel();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<TabValue>('unresolved');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const rxFilter = searchParams.get('rx')?.trim() ?? '';
+  const [activeTab, setActiveTab] = useState<TabValue>(rxFilter ? 'all' : 'unresolved');
   const [resolveModal, setResolveModal] = useState<AuditRecord | null>(null);
   const [resolutionNote, setResolutionNote] = useState('');
   const [resolutionType, setResolutionType] = useState('');
   const [noteError, setNoteError] = useState('');
   const [typeError, setTypeError] = useState('');
+  const [integrity, setIntegrity] = useState<IntegrityResult | null>(null);
+  const [checkingIntegrity, setCheckingIntegrity] = useState(false);
+
+  const runIntegrityCheck = async () => {
+    setCheckingIntegrity(true);
+    try {
+      const res = await auditsApi.verifyIntegrity();
+      setIntegrity(res.data);
+      toast[res.data.intact ? 'success' : 'error'](
+        res.data.intact ? 'Audit trail is intact' : 'Audit trail integrity issue detected'
+      );
+    } catch {
+      toast.error('Failed to run integrity check');
+    } finally {
+      setCheckingIntegrity(false);
+    }
+  };
 
   useEffect(() => {
     const filters: AuditFilters = {};
@@ -82,8 +115,14 @@ export default function AuditQueue() {
   };
 
   const SEVERITY_RANK: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 };
+  const filteredAudits = rxFilter
+    ? vm.audits.filter(a =>
+        (a.rx_number ?? '').toLowerCase() === rxFilter.toLowerCase() ||
+        a.prescription_id === rxFilter
+      )
+    : vm.audits;
   const tc = useTableControls<AuditRecord>({
-    data: vm.audits,
+    data: filteredAudits,
     initialSortKey: 'created_at',
     initialSortDir: 'desc',
     getSortValue: (row, key) => {
@@ -119,8 +158,8 @@ export default function AuditQueue() {
       label: 'Issue',
       sortable: true,
       render: (row) => (
-        <span className="text-gray-800 max-w-xs block truncate" title={row.issue}>
-          {row.issue}
+        <span className="text-gray-700 text-sm block max-w-[320px] truncate" title={row.issue}>
+          {shortIssue(row.issue)}
         </span>
       ),
     },
@@ -215,15 +254,45 @@ export default function AuditQueue() {
             Review prescription flags and take action
           </p>
         </div>
-        <button
-          onClick={handleRefresh}
-          disabled={vm.isLoading}
-          className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-300 rounded-md text-sm hover:bg-gray-50"
-        >
-          <RefreshCw className={`h-4 w-4 ${vm.isLoading ? 'animate-spin' : ''}`} />
-          Refresh
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={runIntegrityCheck}
+            disabled={checkingIntegrity}
+            className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-300 rounded-md text-sm hover:bg-gray-50 disabled:opacity-60"
+          >
+            <ShieldCheck className={`h-4 w-4 ${checkingIntegrity ? 'animate-pulse' : ''}`} />
+            {checkingIntegrity ? 'Checking…' : 'Integrity Check'}
+          </button>
+          <button
+            onClick={handleRefresh}
+            disabled={vm.isLoading}
+            className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-300 rounded-md text-sm hover:bg-gray-50"
+          >
+            <RefreshCw className={`h-4 w-4 ${vm.isLoading ? 'animate-spin' : ''}`} />
+            Refresh
+          </button>
+        </div>
       </div>
+
+      {integrity && (
+        <div
+          className={`flex items-start gap-3 px-4 py-3 rounded-lg border ${integrity.intact ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}
+        >
+          {integrity.intact
+            ? <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+            : <AlertTriangle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />}
+          <div className="text-sm">
+            <p className={`font-semibold ${integrity.intact ? 'text-green-800' : 'text-red-800'}`}>
+              {integrity.intact ? 'Audit trail is intact (tamper-evident hash chain verified)' : 'Audit trail integrity problem detected'}
+            </p>
+            <p className="text-gray-600 mt-0.5">
+              {integrity.total_chained_records} chained records checked
+              {integrity.unchained_records > 0 ? `, ${integrity.unchained_records} unchained` : ''}.
+              {!integrity.intact && integrity.first_break_at ? ` First break at record ${integrity.first_break_at}.` : ''}
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className="flex gap-1 bg-gray-100 rounded-lg p-1 w-fit">
         {tabs.map((tab) => (
@@ -240,6 +309,21 @@ export default function AuditQueue() {
           </button>
         ))}
       </div>
+
+      {rxFilter && (
+        <div className="flex items-center justify-between gap-3 px-4 py-2.5 rounded-lg bg-green-50 border border-green-200 text-sm">
+          <span className="text-green-800">
+            Showing flags for prescription <span className="font-semibold">{rxFilter}</span>
+          </span>
+          <button
+            onClick={() => { searchParams.delete('rx'); setSearchParams(searchParams); }}
+            className="flex items-center gap-1 text-green-700 hover:text-green-900 font-medium"
+          >
+            <X className="h-3.5 w-3.5" />
+            Clear filter
+          </button>
+        </div>
+      )}
 
       {vm.error && !resolveModal && (
         <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm">
@@ -314,8 +398,28 @@ export default function AuditQueue() {
 
                 <div>
                   <p className="text-xs text-gray-500 mb-1 uppercase font-semibold tracking-wide">Recommendation</p>
-                  <p className="text-gray-700 text-sm">{resolveModal.recommendation}</p>
+                  <p className="text-gray-700 text-sm">{resolveModal.recommendation || 'Review with the prescribing doctor.'}</p>
                 </div>
+
+                {(resolveModal.drug_name || resolveModal.dose || resolveModal.patient_age != null) && (
+                  <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2">
+                    <p className="text-xs text-amber-700 mb-1 uppercase font-semibold tracking-wide">Flagged Medication</p>
+                    <div className="grid grid-cols-3 gap-3 text-sm">
+                      <div>
+                        <p className="text-xs text-gray-500">Drug</p>
+                        <p className="font-semibold text-gray-800">{resolveModal.drug_name ?? '-'}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500">Prescribed dose</p>
+                        <p className="font-semibold text-gray-800">{resolveModal.dose ?? '-'}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500">Patient age</p>
+                        <p className="font-semibold text-gray-800">{resolveModal.patient_age != null ? `${resolveModal.patient_age} yrs` : '-'}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>

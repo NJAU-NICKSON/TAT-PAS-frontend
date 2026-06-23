@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useWebSocket, WSEvent } from '../../context/WebSocketContext';
+import { activityApi } from '../../api/activity';
 
 export type NotifType =
   | 'sla_breach'
@@ -59,6 +60,31 @@ export function useNotifications() {
       if (prev.some(p => p.id === n.id)) return prev;
       return [n, ...prev].slice(0, 100);
     });
+  }, []);
+
+  // On mount, fetch notifications derived from current data so events missed
+  // while offline (assignments, returns, queue items) still appear.
+  useEffect(() => {
+    activityApi.myNotifications()
+      .then(res => {
+        setNotifications(prev => {
+          const seen = new Set(prev.map(p => p.id));
+          const fetched: Notification[] = res.data
+            .filter(s => !seen.has(s.id))
+            .map(s => ({
+              id: s.id,
+              type: s.type as NotifType,
+              title: s.title,
+              subtitle: s.subtitle,
+              timestamp: new Date(s.timestamp),
+              read: false,
+            }));
+          return [...fetched, ...prev]
+            .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
+            .slice(0, 100);
+        });
+      })
+      .catch(() => {});
   }, []);
 
   const rxLine = (d: { rx_number?: string; patient_name?: string }, extra?: string) =>

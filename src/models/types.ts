@@ -110,6 +110,7 @@ export interface Prescription {
   updated_at: string;
   patient?: Patient;
   patient_name?: string;
+  weight_kg?: number;
   doctor_name?: string;
   department?: string;
   ward_location?: string;
