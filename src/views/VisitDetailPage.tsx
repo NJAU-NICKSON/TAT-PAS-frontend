@@ -594,6 +594,8 @@ function StageCard({ stage, isLast }: { stage: JourneyStageSummary; isLast: bool
             }`}>
               {stage.tat_min} min {stage.tat_min > stage.target_min ? 'over' : 'on time'}
             </span>
+          ) : done ? (
+            <span className="text-caption font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700">Done</span>
           ) : active ? (
             <span className="text-caption font-medium px-2 py-0.5 rounded-full bg-green-100 text-green-700 animate-pulse">In Progress</span>
           ) : (

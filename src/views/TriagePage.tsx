@@ -141,6 +141,10 @@ export default function TriagePage() {
       if (v) {
         setVisit(v);
         if (v.vitals) setVitals(v.vitals);
+        // Stamp the triage start time the first time the nurse opens this form.
+        if (!v.triaged_at && !v.triage_started_at) {
+          visitsApi.startTriage(id).catch(() => { /* non-blocking */ });
+        }
       }
     } finally {
       setLoading(false);

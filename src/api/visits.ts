@@ -67,6 +67,7 @@ export interface Visit {
   follow_up_date?: string;
   discharge_notes?: string;
   registered_at: string;
+  triage_started_at?: string;
   triaged_at?: string;
   consultation_started_at?: string;
   consultation_ended_at?: string;
@@ -158,6 +159,8 @@ export const visitsApi = {
   update: (id: string, data: UpdateVisitPayload) =>
     apiClient.patch<Visit>(`/visits/${id}`, data),
 
+  startTriage: (id: string) =>
+    apiClient.post<Visit>(`/visits/${id}/triage/start`),
   triage: (id: string, data: TriagePayload) =>
     apiClient.post<Visit>(`/visits/${id}/triage`, data),
 
