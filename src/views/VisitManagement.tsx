@@ -220,7 +220,7 @@ function NewVisitModal({ departments, onSave, onClose }: {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (saving) return; // guard against double-submit creating duplicate visits
+    if (saving) return;
     const patient = selectedPatientRef.current;
     if (!patient) {
       toast.error('Please search for and select a patient first.');
