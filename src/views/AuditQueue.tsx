@@ -9,6 +9,7 @@ import FormField from '../components/FormField';
 import { useAuditViewModel } from '../viewModels/useAuditViewModel';
 import { AuditRecord } from '../models/types';
 import { auditsApi, IntegrityResult } from '../api/audits';
+import { CountersignModal } from '../components/ui/CountersignModal';
 import { toast } from 'sonner';
 
 type TabValue = 'unresolved' | 'resolved' | 'all';
@@ -38,6 +39,7 @@ export default function AuditQueue() {
   const rxFilter = searchParams.get('rx')?.trim() ?? '';
   const [activeTab, setActiveTab] = useState<TabValue>(rxFilter ? 'all' : 'unresolved');
   const [resolveModal, setResolveModal] = useState<AuditRecord | null>(null);
+  const [countersignModal, setCountersignModal] = useState<AuditRecord | null>(null);
   const [resolutionNote, setResolutionNote] = useState('');
   const [resolutionType, setResolutionType] = useState('');
   const [noteError, setNoteError] = useState('');
@@ -80,8 +82,24 @@ export default function AuditQueue() {
     setTypeError('');
   };
 
+  const handleCountersignSuccess = async () => {
+    const filters: AuditFilters = {};
+    if (activeTab === 'unresolved') filters.resolved = false;
+    else if (activeTab === 'resolved') filters.resolved = true;
+    await vm.loadAudits(filters);
+    // Mark the open resolve modal as countersigned so the resolve action unlocks.
+    setResolveModal((prev) => (prev ? { ...prev, countersigned: true } : prev));
+    setCountersignModal(null);
+    vm.clearError();
+    toast.success('Flag countersigned. You may now mark it as resolved.');
+  };
+
   const handleResolve = async () => {
     if (!resolveModal) return;
+    if (resolveModal.esig_required && !resolveModal.countersigned) {
+      setCountersignModal(resolveModal);
+      return;
+    }
     let valid = true;
     if (!resolutionNote.trim()) {
       setNoteError('Resolution note is required');
@@ -466,6 +484,27 @@ export default function AuditQueue() {
                 </div>
               )}
 
+              {!resolveModal.resolved && resolveModal.esig_required && !resolveModal.countersigned && (
+                <div className="flex items-start justify-between gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3">
+                  <div className="flex items-start gap-2.5">
+                    <AlertTriangle className="h-5 w-5 flex-shrink-0 text-red-600 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-semibold text-red-700">Countersign required</p>
+                      <p className="text-xs text-red-600 mt-0.5">
+                        High severity flags must be countersigned by a different auditor before they can be resolved.
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setCountersignModal(resolveModal)}
+                    className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
+                  >
+                    <ShieldCheck className="h-4 w-4" />
+                    Countersign
+                  </button>
+                </div>
+              )}
+
               {!resolveModal.resolved && (
                 <div className="space-y-4">
                   <FormField
@@ -530,8 +569,13 @@ export default function AuditQueue() {
               {!resolveModal.resolved && (
                 <button
                   onClick={handleResolve}
-                  disabled={vm.isLoading}
-                  className="flex items-center gap-2 px-4 py-2 text-sm font-semibold bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors disabled:opacity-60"
+                  disabled={vm.isLoading || (resolveModal.esig_required && !resolveModal.countersigned)}
+                  title={
+                    resolveModal.esig_required && !resolveModal.countersigned
+                      ? 'Countersign required before this flag can be resolved'
+                      : undefined
+                  }
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-semibold bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   {vm.isLoading && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                   Mark as Resolved
@@ -541,6 +585,14 @@ export default function AuditQueue() {
             </div>
           </div>
         </div>
+      )}
+
+      {countersignModal && (
+        <CountersignModal
+          flag={countersignModal}
+          onSuccess={handleCountersignSuccess}
+          onClose={() => setCountersignModal(null)}
+        />
       )}
     </div>
   );
