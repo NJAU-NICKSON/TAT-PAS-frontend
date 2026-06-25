@@ -77,6 +77,9 @@ export const auditsApi = {
 
   verifyIntegrity: () =>
     apiClient.get<IntegrityResult>('/audits/verify-integrity'),
+
+  verifyPrescriptionIntegrity: (identifier: string) =>
+    apiClient.get<PrescriptionIntegrityResult>(`/audits/verify-integrity/${encodeURIComponent(identifier)}`),
 };
 
 export interface IntegrityResult {
@@ -85,5 +88,58 @@ export interface IntegrityResult {
   unchained_records: number;
   first_break_at: string | null;
   issues: { record_id: string; problem: string; detail: string }[];
+  checked_at: string;
+}
+
+export interface IntegrityTrailRecord {
+  id: string;
+  type?: string;
+  flag_code?: string;
+  issue?: string;
+  severity?: string;
+  recommendation?: string | null;
+  created_at?: string | null;
+  created_by?: string | null;
+  created_by_role?: string;
+  drug_name?: string | null;
+  dose?: string | null;
+  patient_age?: number | null;
+  patient_allergies_snapshot?: string[];
+  resolved?: boolean;
+  resolved_by?: string | null;
+  resolved_at?: string | null;
+  resolution_type?: string | null;
+  resolution_note?: string | null;
+  countersigned?: boolean;
+  countersigned_by?: string | null;
+  countersigned_at?: string | null;
+  countersign_note?: string | null;
+  esig_required?: boolean;
+  is_security_event?: boolean;
+  security_event_type?: string | null;
+  tat_pharmacy_min_at_flag?: number | null;
+  sla_threshold_min?: number | null;
+  ip_address?: string | null;
+  user_agent?: string | null;
+  rx_number?: string | null;
+  patient_name?: string | null;
+  prev_hash?: string | null;
+  record_hash?: string | null;
+  recomputed_hash?: string | null;
+  verified?: boolean;
+  problem?: string | null;
+}
+
+export interface PrescriptionIntegrityResult {
+  found: boolean;
+  identifier: string;
+  prescription_id?: string;
+  rx_number?: string | null;
+  patient_name?: string | null;
+  intact: boolean;
+  record_count?: number;
+  unchained_records?: number;
+  issues?: { record_id: string; problem: string; detail: string }[];
+  trail?: IntegrityTrailRecord[];
   checked_at: string;
 }

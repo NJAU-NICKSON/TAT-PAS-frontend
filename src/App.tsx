@@ -14,6 +14,7 @@ import PrescriptionList from './views/PrescriptionList';
 import PrescriptionFormPage from './views/PrescriptionForm';
 import PrescriptionDetailPage from './views/PrescriptionDetailPage';
 import AuditQueue from './views/AuditQueue';
+import IntegrityCheckPage from './views/IntegrityCheckPage';
 import AnalyticsDashboard from './views/AnalyticsDashboard';
 import UserManagement from './views/UserManagement';
 import SLAConfigPage from './views/SLAConfigPage';
@@ -180,6 +181,17 @@ function AppRoutes() {
           <ProtectedRoute roles={['auditor', 'admin']}>
             <AppShell>
               <AuditQueue />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/audits/integrity"
+        element={
+          <ProtectedRoute roles={['auditor', 'admin']}>
+            <AppShell>
+              <IntegrityCheckPage />
             </AppShell>
           </ProtectedRoute>
         }

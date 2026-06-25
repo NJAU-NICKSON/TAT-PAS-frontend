@@ -8,7 +8,6 @@ import { SeverityBadge, TypeBadge } from '../components/StatusBadge';
 import FormField from '../components/FormField';
 import { useAuditViewModel } from '../viewModels/useAuditViewModel';
 import { AuditRecord } from '../models/types';
-import { auditsApi, IntegrityResult } from '../api/audits';
 import { CountersignModal } from '../components/ui/CountersignModal';
 import { toast } from 'sonner';
 
@@ -44,24 +43,6 @@ export default function AuditQueue() {
   const [resolutionType, setResolutionType] = useState('');
   const [noteError, setNoteError] = useState('');
   const [typeError, setTypeError] = useState('');
-  const [integrity, setIntegrity] = useState<IntegrityResult | null>(null);
-  const [checkingIntegrity, setCheckingIntegrity] = useState(false);
-
-  const runIntegrityCheck = async () => {
-    setCheckingIntegrity(true);
-    try {
-      const res = await auditsApi.verifyIntegrity();
-      setIntegrity(res.data);
-      toast[res.data.intact ? 'success' : 'error'](
-        res.data.intact ? 'Audit trail is intact' : 'Audit trail integrity issue detected'
-      );
-    } catch {
-      toast.error('Failed to run integrity check');
-    } finally {
-      setCheckingIntegrity(false);
-    }
-  };
-
   useEffect(() => {
     const filters: AuditFilters = {};
     if (activeTab === 'unresolved') {
@@ -274,12 +255,11 @@ export default function AuditQueue() {
         </div>
         <div className="flex items-center gap-2">
           <button
-            onClick={runIntegrityCheck}
-            disabled={checkingIntegrity}
-            className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-300 rounded-md text-sm hover:bg-gray-50 disabled:opacity-60"
+            onClick={() => navigate('/audits/integrity')}
+            className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-300 rounded-md text-sm hover:bg-gray-50"
           >
-            <ShieldCheck className={`h-4 w-4 ${checkingIntegrity ? 'animate-pulse' : ''}`} />
-            {checkingIntegrity ? 'Checking…' : 'Integrity Check'}
+            <ShieldCheck className="h-4 w-4" />
+            Integrity Check
           </button>
           <button
             onClick={handleRefresh}
@@ -291,37 +271,6 @@ export default function AuditQueue() {
           </button>
         </div>
       </div>
-
-      {integrity && (
-        <div
-          className={`flex items-start gap-3 px-4 py-3 rounded-lg border ${integrity.intact ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}
-        >
-          {integrity.intact
-            ? <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-            : <AlertTriangle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />}
-          <div className="text-sm">
-            <p className={`font-semibold ${integrity.intact ? 'text-green-800' : 'text-red-800'}`}>
-              {integrity.intact ? 'Audit trail is intact (tamper-evident hash chain verified)' : 'Audit trail integrity problem detected'}
-            </p>
-            <p className="text-gray-600 mt-0.5">
-              {integrity.total_chained_records} chained records checked
-              {integrity.unchained_records > 0 ? `, ${integrity.unchained_records} unchained` : ''}.
-              {!integrity.intact && integrity.first_break_at ? ` First break at record ${integrity.first_break_at}.` : ''}
-            </p>
-            {!integrity.intact && integrity.issues.length > 0 && (
-              <ul className="mt-2 space-y-1.5">
-                {integrity.issues.map((iss, i) => (
-                  <li key={i} className="text-xs text-red-700 bg-red-100/60 rounded px-2 py-1.5">
-                    <span className="font-mono font-semibold">{iss.record_id}</span>
-                    {': '}{iss.problem}
-                    <span className="block text-red-600/80 mt-0.5">{iss.detail}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </div>
-      )}
 
       <div className="flex gap-1 bg-gray-100 rounded-lg p-1 w-fit">
         {tabs.map((tab) => (
