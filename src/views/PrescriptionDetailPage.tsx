@@ -399,7 +399,6 @@ function DispenseModal({
   onSuccess: () => void;
   onClose: () => void;
 }) {
-  const [receiptNumber, setReceiptNumber] = useState('');
   const [comment, setComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -408,7 +407,6 @@ function DispenseModal({
     try {
       await prescriptionsApi.updateStatus(rx.id, 'dispensed', {
         pharmacist_comment: comment.trim() || undefined,
-        receipt_number: receiptNumber.trim() || undefined,
       });
       toast.success('Prescription dispensed');
       onSuccess();
@@ -474,14 +472,11 @@ function DispenseModal({
 
         <div className="px-6 py-4 space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Receipt Number (optional)</label>
-            <input
-              type="text"
-              value={receiptNumber}
-              onChange={e => setReceiptNumber(e.target.value)}
-              placeholder="e.g. RCP-20250321-001"
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-            />
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Receipt Number</label>
+            <div className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-gray-50 text-gray-500 flex items-center gap-2">
+              <span className="font-mono">RCP-{new Date().getFullYear()}-XXXX</span>
+              <span className="text-xs text-gray-400">· generated automatically on dispense</span>
+            </div>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Pharmacist Notes (optional)</label>

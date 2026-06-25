@@ -104,6 +104,13 @@ export default function AnalyticsDashboard() {
 
   const slowest = vm.metrics?.slowest_prescriptions ?? [];
 
+  const fmtDay = (d: string) => new Date(`${d}T00:00:00`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+  const rangeLabel = vm.dateRange.from || vm.dateRange.to
+    ? (vm.dateRange.from && vm.dateRange.to && vm.dateRange.from !== vm.dateRange.to
+        ? `${fmtDay(vm.dateRange.from)} - ${fmtDay(vm.dateRange.to)}`
+        : fmtDay(vm.dateRange.from || vm.dateRange.to))
+    : 'All time';
+
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <div
@@ -228,7 +235,7 @@ export default function AnalyticsDashboard() {
                     </div>
                   </div>
                   <span className="text-caption font-semibold px-2 py-0.5" style={{ background: 'var(--surface-2)', color: 'var(--text-secondary)', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-badge)' }}>
-                    {new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                    {rangeLabel}
                   </span>
                 </div>
                 <div className="px-4 py-5">

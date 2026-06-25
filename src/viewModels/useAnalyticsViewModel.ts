@@ -7,6 +7,17 @@ interface DateRange {
   to: string;
 }
 
+// Convert the picked from/to dates into inclusive datetime bounds; an empty "to" means the single "from" day only.
+function resolveBounds(range: DateRange): { from?: string; to?: string } {
+  if (!range.from && !range.to) return {};
+  const startDay = range.from || range.to;
+  const endDay = range.to || range.from;
+  return {
+    from: startDay ? `${startDay}T00:00:00` : undefined,
+    to: endDay ? `${endDay}T23:59:59.999` : undefined,
+  };
+}
+
 interface AnalyticsViewModel {
   metrics: TATMetrics | null;
   bottlenecks: BottleneckData | null;
@@ -33,9 +44,10 @@ export function useAnalyticsViewModel(): AnalyticsViewModel {
     setIsLoading(true);
     setError(null);
     try {
+      const bounds = resolveBounds(dateRange);
       const [metricsRes, bottlenecksRes] = await Promise.allSettled([
-        analyticsApi.getTATMetrics(dateRange.from || undefined, dateRange.to || undefined),
-        analyticsApi.getBottlenecks(dateRange.from || undefined, dateRange.to || undefined),
+        analyticsApi.getTATMetrics(bounds.from, bounds.to),
+        analyticsApi.getBottlenecks(bounds.from, bounds.to),
       ]);
       if (metricsRes.status === 'fulfilled') setMetrics(metricsRes.value.data);
       else {
@@ -56,10 +68,8 @@ export function useAnalyticsViewModel(): AnalyticsViewModel {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await analyticsApi.exportCSV(
-        dateRange.from || undefined,
-        dateRange.to || undefined
-      );
+      const bounds = resolveBounds(dateRange);
+      const res = await analyticsApi.exportCSV(bounds.from, bounds.to);
       const blob = res.data as Blob;
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');

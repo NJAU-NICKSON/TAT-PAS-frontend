@@ -42,7 +42,6 @@ function DispenseModal({
   onSuccess: () => void;
   onClose: () => void;
 }) {
-  const [receiptNumber, setReceiptNumber] = useState('');
   const [comment, setComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -51,7 +50,6 @@ function DispenseModal({
     try {
       await prescriptionsApi.updateStatus(rx.id, 'dispensed', {
         pharmacist_comment: comment.trim() || undefined,
-        receipt_number: receiptNumber.trim() || undefined,
       });
       toast.success('Prescription dispensed');
       onSuccess();
@@ -119,15 +117,13 @@ function DispenseModal({
 
         <div className="px-6 py-4 space-y-4">
           <div>
-            <label className="block text-label mb-1.5" style={{ color: 'var(--text-secondary)' }}>Receipt Number (optional)</label>
-            <input
-              type="text"
-              value={receiptNumber}
-              onChange={e => setReceiptNumber(e.target.value)}
-              placeholder="e.g. RCP-20250321-001"
-              className="w-full px-3 py-2 text-body-sm border rounded-lg focus:outline-none"
-              style={{ borderColor: 'var(--border-default)', background: 'var(--bg-base)', borderRadius: 'var(--radius-button)' }}
-            />
+            <label className="block text-label mb-1.5" style={{ color: 'var(--text-secondary)' }}>Receipt Number</label>
+            <div
+              className="w-full px-3 py-2 text-body-sm border rounded-lg font-mono"
+              style={{ borderColor: 'var(--border-default)', background: 'var(--surface-1)', color: 'var(--text-muted)', borderRadius: 'var(--radius-button)' }}
+            >
+              RCP-{new Date().getFullYear()}-XXXX <span className="font-sans text-xs">· auto-generated on dispense</span>
+            </div>
           </div>
           <div>
             <label className="block text-label mb-1.5" style={{ color: 'var(--text-secondary)' }}>Pharmacist Notes (optional)</label>

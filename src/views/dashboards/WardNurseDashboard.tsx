@@ -282,7 +282,8 @@ export function WardNurseDashboard() {
       const inWardData = inWardRes.data as ListResult<Visit>;
       const rxItems = Array.isArray(rxData) ? rxData : rxData.items ?? [];
       const bedItems = Array.isArray(bedsData) ? bedsData : bedsData.items ?? [];
-      const triageItems = Array.isArray(triageData) ? triageData : triageData.items ?? [];
+      const triageItems = (Array.isArray(triageData) ? triageData : triageData.items ?? [])
+        .filter(v => !v.triaged_at);
       const admittedItems = Array.isArray(admittedData) ? admittedData : admittedData.items ?? [];
       const inWardItems = Array.isArray(inWardData) ? inWardData : inWardData.items ?? [];
       const wardItems = [...admittedItems, ...inWardItems].filter(
@@ -423,7 +424,7 @@ export function WardNurseDashboard() {
                       {v.visit_number}
                     </p>
                     <div className="flex items-center justify-between gap-2">
-                      <TATTimer startTime={v.registered_at} slaThresholdMin={10} mode="elapsed" size="sm" />
+                      <TATTimer startTime={v.registered_at} slaThresholdMin={10} mode="countdown" size="sm" />
                       <button
                         onClick={() => navigate(`/visits/${v.id}/triage`)}
                         className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-caption font-bold text-white flex-shrink-0"

@@ -18,6 +18,7 @@ export interface UpdatePatientPayload {
   last_name?: string;
   dob?: string;
   gender?: string;
+  blood_group?: string;
   national_id?: string;
   guardian_national_id?: string;
   guardian_name?: string;

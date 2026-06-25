@@ -58,6 +58,9 @@ export const prescriptionsApi = {
   queue: (params: { skip?: number; limit?: number } = {}) =>
     apiClient.get<Prescription[]>('/prescriptions/queue', { params }),
 
+  dispensedByMe: (params: { skip?: number; limit?: number } = {}) =>
+    apiClient.get<Prescription[]>('/prescriptions/dispensed-by-me', { params }),
+
   getById: (id: string) =>
     apiClient.get<Prescription>(`/prescriptions/${id}`),
 

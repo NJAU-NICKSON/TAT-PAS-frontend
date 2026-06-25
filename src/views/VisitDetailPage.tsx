@@ -804,7 +804,7 @@ export default function VisitDetailPage() {
   const canAdmit     = ['nurse', 'admin', 'doctor'].includes(user?.role ?? '');
   const canDischarge = ['receptionist', 'nurse', 'admin'].includes(user?.role ?? '');
   const canBill      = ['billing', 'admin', 'receptionist'].includes(user?.role ?? '');
-  const canTriage    = ['nurse', 'admin'].includes(user?.role ?? '');
+  const canTriage    = ['nurse', 'admin'].includes(user?.role ?? '') && !visit.triaged_at;
   const isAdmitted   = ['admitted', 'in_ward'].includes(visit.status);
   const isDischarged = visit.status === 'discharged';
   const billingPaid  = Boolean(
@@ -980,6 +980,12 @@ export default function VisitDetailPage() {
                     </p>
                   </div>
                 ))}
+                <div>
+                  <p className="text-caption font-semibold mb-1" style={{ color: 'var(--text-secondary)' }}>Blood Group</p>
+                  <p className="text-body-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+                    {visit.patient_blood_group && visit.patient_blood_group !== 'unknown' ? visit.patient_blood_group : ' - '}
+                  </p>
+                </div>
                 {visit.vitals?.triage_notes && (
                   <div className="col-span-2">
                     <p className="text-caption font-semibold mb-1" style={{ color: 'var(--text-secondary)' }}>Triage Notes</p>
@@ -1067,6 +1073,7 @@ export default function VisitDetailPage() {
                       visit.vitals.oxygen_saturation        && { label: 'SpO,,', value: `${visit.vitals.oxygen_saturation}%` },
                       visit.vitals.weight_kg                && { label: 'Weight', value: `${visit.vitals.weight_kg} kg` },
                       visit.vitals.respiratory_rate         && { label: 'RR', value: `${visit.vitals.respiratory_rate}/min` },
+                      { label: 'Blood Group', value: visit.patient_blood_group && visit.patient_blood_group !== 'unknown' ? visit.patient_blood_group : ' - ' },
                     ].filter(Boolean).map((item, i) => {
                       const { label, value } = item as { label: string; value: string };
                       return (
@@ -1154,7 +1161,7 @@ export default function VisitDetailPage() {
                 <CardHeader
                   icon={<div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background: 'rgba(5,150,105,0.1)' }}><MapPin className="w-3.5 h-3.5" style={{ color: '#178A3D' }} /></div>}
                   title="Consultation Room"
-                  sub="Assigned during triage"
+                  sub="From the attending doctor"
                 />
                 <div className="px-5 py-4 flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(5,150,105,0.1)' }}>
@@ -1162,7 +1169,7 @@ export default function VisitDetailPage() {
                   </div>
                   <div>
                     <p className="text-h3" style={{ color: 'var(--text-primary)' }}>{visit.consultation_room}</p>
-                    <p className="text-caption" style={{ color: 'var(--text-muted)' }}>Update via the Triage tab</p>
+                    <p className="text-caption" style={{ color: 'var(--text-muted)' }}>Set when the doctor is assigned</p>
                   </div>
                 </div>
               </Card>

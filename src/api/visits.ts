@@ -55,6 +55,7 @@ export interface Visit {
   prescription_ids: string[];
   vitals?: VitalSigns;
   patient_name?: string;
+  patient_blood_group?: string;
   registered_by_id?: string;
   registered_by_name?: string;
   consultation_room?: string;

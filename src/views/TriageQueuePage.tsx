@@ -113,6 +113,17 @@ function PatientCard({ visit, onClick }: { visit: Visit; onClick: () => void }) 
               <span className="text-[11px] text-gray-400">Registered by {visit.registered_by_name}</span>
             </div>
           )}
+          <div className="mt-1">
+            {visit.patient_blood_group && visit.patient_blood_group !== 'unknown' ? (
+              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full" style={{ background: '#FEE2E2', color: '#B91C1C' }}>
+                Blood: {visit.patient_blood_group}
+              </span>
+            ) : (
+              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full" style={{ background: '#FEF3C7', color: '#92400E' }}>
+                Blood group not recorded
+              </span>
+            )}
+          </div>
         </div>
 
         <div className="flex flex-col items-end gap-2 flex-shrink-0">
@@ -130,11 +141,13 @@ function PatientCard({ visit, onClick }: { visit: Visit; onClick: () => void }) 
   );
 }
 
-function CompletedCard({ visit }: { visit: Visit }) {
+function CompletedCard({ visit, onClick }: { visit: Visit; onClick: () => void }) {
+  const missingBlood = !visit.patient_blood_group || visit.patient_blood_group === 'unknown';
   return (
-    <div
-      className="w-full text-left rounded-lg p-4"
-      style={{ background: '#F8FAFC', border: '1.5px solid #E2E8F0', opacity: 0.75 }}
+    <button
+      onClick={onClick}
+      className="w-full text-left rounded-lg p-4 transition-all hover:shadow-md hover:opacity-100"
+      style={{ background: '#F8FAFC', border: `1.5px solid ${missingBlood ? '#FCD34D' : '#E2E8F0'}`, opacity: 0.9 }}
     >
       <div className="flex items-start gap-4">
         <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: '#F0FDF4' }}>
@@ -153,10 +166,14 @@ function CompletedCard({ visit }: { visit: Visit }) {
             {visit.triaged_at && (
               <><span>·</span><span>{formatTimeEAT(visit.triaged_at)}</span></>
             )}
+            {visit.patient_blood_group && visit.patient_blood_group !== 'unknown'
+              ? <><span>·</span><span className="font-semibold" style={{ color: '#B91C1C' }}>Blood {visit.patient_blood_group}</span></>
+              : <><span>·</span><span className="font-semibold" style={{ color: '#92400E' }}>Tap to add blood group</span></>}
           </div>
         </div>
+        <ChevronRight className="w-4 h-4 flex-shrink-0 self-center" style={{ color: '#94A3B8' }} />
       </div>
-    </div>
+    </button>
   );
 }
 
@@ -177,11 +194,12 @@ export default function TriageQueuePage() {
         visitsApi.list({ status: 'waiting_for_doctor', limit: 50  }),
       ]);
 
-      const pendingList: Visit[] = pendingRes.status === 'fulfilled'
+      const pendingList: Visit[] = (pendingRes.status === 'fulfilled'
         ? (Array.isArray(pendingRes.value.data)
             ? pendingRes.value.data
             : (pendingRes.value.data as { items: Visit[] }).items ?? [])
-        : [];
+        : []
+      ).filter(v => !v.triaged_at);
 
       const recentList: Visit[] = recentRes.status === 'fulfilled'
         ? (Array.isArray(recentRes.value.data)
@@ -350,7 +368,7 @@ export default function TriageQueuePage() {
             </h2>
             <div className="space-y-2">
               {completed.map(v => (
-                <CompletedCard key={v.id} visit={v} />
+                <CompletedCard key={v.id} visit={v} onClick={() => navigate(`/visits/${v.id}/triage`)} />
               ))}
             </div>
           </div>

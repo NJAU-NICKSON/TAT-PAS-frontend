@@ -4,10 +4,11 @@ import {
   Loader2, ChevronLeft, UserCheck, Stethoscope,
   BedDouble, Receipt, LogOut, Clock, AlertTriangle,
   User, FileText, Activity, CheckCircle2,
-  Pill, Heart, Thermometer, Wind, RefreshCw,
+  Pill, Heart, Thermometer, Wind, RefreshCw, Printer,
   Shield, TrendingUp, Zap, ArrowRight,
 } from 'lucide-react';
 import { visitsApi, Visit, JourneySummary } from '../api/visits';
+import { printPatientTAT } from '../lib/printDocs';
 import { prescriptionsApi } from '../api/prescriptions';
 import { billingApi } from '../api/billing';
 import { Prescription, Bill } from '../models/types';
@@ -794,6 +795,14 @@ export default function PatientJourneyPage() {
                   </p>
                 </div>
               )}
+              <button
+                onClick={() => { if (journey && visit) printPatientTAT(journey, visit); }}
+                disabled={!journey || !visit}
+                className="flex items-center gap-1.5 px-3 py-2 text-sm font-semibold transition-colors disabled:opacity-40"
+                style={{ background: 'var(--surface-2)', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-button)', color: 'var(--text-secondary)' }}
+              >
+                <Printer className="w-4 h-4" /> Print TAT
+              </button>
               <button
                 onClick={load}
                 className="p-2 transition-colors"

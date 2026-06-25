@@ -308,6 +308,17 @@ export default function AuditQueue() {
               {integrity.unchained_records > 0 ? `, ${integrity.unchained_records} unchained` : ''}.
               {!integrity.intact && integrity.first_break_at ? ` First break at record ${integrity.first_break_at}.` : ''}
             </p>
+            {!integrity.intact && integrity.issues.length > 0 && (
+              <ul className="mt-2 space-y-1.5">
+                {integrity.issues.map((iss, i) => (
+                  <li key={i} className="text-xs text-red-700 bg-red-100/60 rounded px-2 py-1.5">
+                    <span className="font-mono font-semibold">{iss.record_id}</span>
+                    {': '}{iss.problem}
+                    <span className="block text-red-600/80 mt-0.5">{iss.detail}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </div>
       )}

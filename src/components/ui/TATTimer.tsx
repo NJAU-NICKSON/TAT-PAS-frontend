@@ -24,6 +24,7 @@ function formatDuration(totalMinutes: number): string {
 export function TATTimer({
   startTime,
   slaThresholdMin,
+  mode = 'elapsed',
   size = 'md',
   showProgressBar = false,
   className,
@@ -63,19 +64,19 @@ export function TATTimer({
   );
 
   let statusClasses = 'border-status-info bg-status-info text-status-info-text';
-  let prefix = '';
-  let suffix = '';
+  let displayText: string;
 
   if (isBreached || percentage > 100) {
     statusClasses = 'border-status-critical bg-status-critical text-status-critical-text animate-pulse shadow-sm shadow-status-critical/25';
-    prefix = 'BREACHED ';
-    suffix = ` +${formatDuration(elapsedMinutes - slaThresholdMin)}`;
+    displayText = `BREACHED +${formatDuration(elapsedMinutes - slaThresholdMin)}`;
   } else if (percentage > 75) {
     statusClasses = 'border-status-warning bg-status-warning text-status-warning-text';
-    suffix = ` ${formatDuration(remainingMin)} left`;
+    displayText = `${formatDuration(remainingMin)} left`;
+  } else {
+    displayText = mode === 'countdown'
+      ? `${formatDuration(remainingMin)} left`
+      : formatDuration(elapsedMinutes);
   }
-
-  const displayText = prefix + formatDuration(elapsedMinutes) + suffix;
 
   return (
     <div className={cn(baseClasses, statusClasses)}>

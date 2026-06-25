@@ -7,7 +7,10 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { visitsApi, Visit, VitalSigns, TriagePayload } from '../api/visits';
+import { patientsApi } from '../api/patients';
 import { getErrorMessage } from '../lib/utils';
+
+const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'unknown'];
 
 const VITAL_FIELDS: {
   label: string;
@@ -131,6 +134,7 @@ export default function TriagePage() {
 
   const [vitals,    setVitals]    = useState<Partial<VitalSigns>>({});
   const [priority,  setPriority]  = useState<'routine' | 'urgent' | 'critical' | 'immediate'>('routine');
+  const [bloodGroup, setBloodGroup] = useState('');
 
   const load = async () => {
     if (!id) return;
@@ -141,6 +145,10 @@ export default function TriagePage() {
       if (v) {
         setVisit(v);
         if (v.vitals) setVitals(v.vitals);
+        // Pre-fill the patient's recorded blood group so the nurse can confirm or update it.
+        patientsApi.getById(v.patient_id)
+          .then(p => setBloodGroup(p.data?.blood_group ?? ''))
+          .catch(() => { /* non-blocking */ });
         // Stamp the triage start time the first time the nurse opens this form.
         if (!v.triaged_at && !v.triage_started_at) {
           visitsApi.startTriage(id).catch(() => { /* non-blocking */ });
@@ -164,6 +172,10 @@ export default function TriagePage() {
       // The receptionist owns doctor and room assignment; triage only records vitals.
       const payload: TriagePayload = { vitals: vitals as VitalSigns };
       await visitsApi.triage(id, payload);
+      // Blood group lives on the patient record, so the nurse's entry is saved there.
+      if (visit && bloodGroup) {
+        await patientsApi.update(visit.patient_id, { blood_group: bloodGroup });
+      }
       toast.success('Triage completed successfully');
       navigate(`/visits/${id}`);
     } catch (e: unknown) {
@@ -289,6 +301,22 @@ export default function TriagePage() {
               className="w-full text-sm text-gray-800 resize-none outline-none bg-transparent leading-relaxed"
               style={{ minHeight: '72px' }}
             />
+          </div>
+
+          <div className="mt-3 rounded-lg p-4 bg-white" style={{ border: '1.5px solid #E2E8F0' }}>
+            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-2">
+              Blood Group
+            </label>
+            <select
+              value={bloodGroup}
+              onChange={e => setBloodGroup(e.target.value)}
+              className="w-full text-sm text-gray-800 outline-none bg-transparent"
+            >
+              <option value="">Not recorded</option>
+              {BLOOD_GROUPS.map(bg => (
+                <option key={bg} value={bg}>{bg === 'unknown' ? 'Unknown' : bg}</option>
+              ))}
+            </select>
           </div>
         </div>
 

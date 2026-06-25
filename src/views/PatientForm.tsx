@@ -40,6 +40,7 @@ interface FormErrors {
   last_name?: string;
   national_id?: string;
   guardian_national_id?: string;
+  dob?: string;
 }
 
 function ageFromDob(dob: string): number | null {
@@ -137,6 +138,12 @@ export default function PatientFormPage() {
     const errors: FormErrors = {};
     if (!formData.first_name.trim()) errors.first_name = 'First name is required';
     if (!formData.last_name.trim()) errors.last_name = 'Last name is required';
+
+    if (formData.dob) {
+      const d = new Date(formData.dob);
+      const today = new Date(); today.setHours(23, 59, 59, 999);
+      if (d > today) errors.dob = 'Date of birth cannot be in the future';
+    }
 
     const age = ageFromDob(formData.dob);
     const isMinor = age !== null && age < 18;
@@ -408,6 +415,8 @@ export default function PatientFormPage() {
                   type="date"
                   value={formData.dob}
                   onChange={handleChange}
+                  error={formErrors.dob}
+                  max={new Date().toISOString().slice(0, 10)}
                 />
                 <FormField
                   label="Gender"

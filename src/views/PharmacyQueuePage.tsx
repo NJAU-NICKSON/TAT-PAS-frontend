@@ -121,28 +121,20 @@ function SevBadge({ sev }: { sev: string }) {
 function DispensePanel({ rx, onSuccess, onCancel }: {
   rx: Prescription; onSuccess: () => void; onCancel: () => void;
 }) {
-  const [receipt, setReceipt] = useState('');
   const [comment, setComment] = useState('');
   const [busy, setBusy] = useState(false);
-
-  // Auto-generate a receipt number if the pharmacist leaves it blank.
-  const autoReceipt = () => {
-    const d = new Date();
-    const ymd = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
-    const tail = (rx.rx_number ?? rx.id.slice(-4)).replace(/[^0-9A-Za-z]/g, '').slice(-4).toUpperCase();
-    return `RCP-${ymd}-${tail}`;
-  };
 
   const go = async () => {
     setBusy(true);
     try {
       const extra: UpdateStatusExtra = {};
-      extra.receipt_number = receipt.trim() || autoReceipt();
+      // The backend generates the receipt number automatically on dispense.
       if (comment.trim()) extra.pharmacist_comment = comment.trim();
       const updated = await prescriptionsApi.updateStatus(rx.id, 'dispensed', extra);
-      toast.success(`Dispensed · Receipt ${extra.receipt_number}`);
+      const dispensed = (updated.data as typeof rx) ?? rx;
+      toast.success(`Dispensed · Receipt ${dispensed.receipt_number ?? ''}`);
       // Print the dispensing receipt so the patient gets a copy.
-      printReceiptWithFollowUp((updated.data as typeof rx) ?? { ...rx, receipt_number: extra.receipt_number });
+      printReceiptWithFollowUp(dispensed);
       onSuccess();
     } catch { toast.error('Failed to dispense'); }
     finally { setBusy(false); }
@@ -195,10 +187,10 @@ function DispensePanel({ rx, onSuccess, onCancel }: {
 
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="block text-xs font-medium text-gray-600 mb-1">Receipt No. (optional)</label>
-          <input value={receipt} onChange={e => setReceipt(e.target.value)}
-            placeholder="RCP-20250321-001"
-            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500" />
+          <label className="block text-xs font-medium text-gray-600 mb-1">Receipt No.</label>
+          <div className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-gray-50 text-gray-500 font-mono">
+            RCP-{new Date().getFullYear()}-XXXX
+          </div>
         </div>
         <div>
           <label className="block text-xs font-medium text-gray-600 mb-1">Pharmacist Notes (optional)</label>
@@ -592,26 +584,30 @@ function RxRow({ rx, accentBorder, onRefresh }: {
 function DispensedRow({ rx }: { rx: Prescription }) {
   const navigate = useNavigate();
   return (
-    <button onClick={() => navigate(`/prescriptions/${rx.id}`)}
-      className="w-full text-left rounded-lg p-4 flex items-center gap-3 opacity-60 hover:opacity-80 transition-all hover:shadow-sm"
+    <div
+      className="w-full rounded-lg p-4 flex items-center gap-3 opacity-80 hover:opacity-100 transition-all hover:shadow-sm"
       style={{ background: '#F8FAFC', border: '1.5px solid #E2E8F0' }}>
       <CheckCircle2 className="w-4 h-4 text-green-700 flex-shrink-0" />
-      <div className="flex-1 min-w-0">
+      <button onClick={() => navigate(`/prescriptions/${rx.id}`)} className="flex-1 min-w-0 text-left">
         <p className="text-sm font-semibold text-gray-700 font-mono truncate">
           {rx.rx_number ?? `RX-${rx.id.slice(0, 8).toUpperCase()}`}
         </p>
         <p className="text-xs text-gray-500 truncate">
           {rx.patient_name ?? rx.patient_id} · {rx.medications.map(m => m.name).join(', ')}
         </p>
-      </div>
-      <div className="text-right flex-shrink-0">
-        <p className="text-xs font-semibold text-green-800">Dispensed</p>
-        {rx.dispensed_at && (
-          <p className="text-micro text-gray-400">{fmtTime(rx.dispensed_at)}</p>
-        )}
-      </div>
-      <ChevronRight className="w-4 h-4 text-gray-400" />
-    </button>
+        <p className="text-micro text-gray-400 mt-0.5">
+          {rx.receipt_number ? <span className="font-mono">{rx.receipt_number}</span> : 'No receipt no.'}
+          {rx.dispensed_at ? ` · ${fmtTime(rx.dispensed_at)}` : ''}
+          {rx.status === 'administered' ? ' · administered' : ''}
+        </p>
+      </button>
+      <button
+        onClick={() => printDispensingReceipt(rx)}
+        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-green-700 border border-green-200 rounded-lg hover:bg-green-50 flex-shrink-0"
+        title="Reprint dispensing receipt">
+        <Printer className="w-3.5 h-3.5" /> Reprint
+      </button>
+    </div>
   );
 }
 
@@ -676,7 +672,7 @@ export default function PharmacyQueuePage() {
         prescriptionsApi.list({ status: 'verified',  limit: 100 }),
         prescriptionsApi.list({ status: 'flagged',   limit: 100 }),
         prescriptionsApi.list({ status: 'submitted', limit: 100 }),
-        prescriptionsApi.list({ status: 'dispensed', limit: 50  }),
+        prescriptionsApi.dispensedByMe({ limit: 50 }),
       ]);
       if (vR.status === 'fulfilled') setVerified(sort(vR.value.data));
       if (fR.status === 'fulfilled') setFlagged(sort(fR.value.data));
@@ -799,10 +795,10 @@ export default function PharmacyQueuePage() {
           )}
 
           {dispensed.length > 0 && (
-            <Section icon={<CheckCircle2 className="w-4 h-4" />} title="Recently Dispensed"
+            <Section icon={<CheckCircle2 className="w-4 h-4" />} title="Dispensed by Me"
               count={dispensed.length} iconColor="#94A3B8" badgeBg="#F1F5F9" badgeColor="#64748B"
-              emptyText="No recently dispensed prescriptions.">
-              {dispensed.slice(0, 10).map(rx => (
+              emptyText="You have not dispensed any prescriptions yet.">
+              {fil(dispensed).slice(0, 20).map(rx => (
                 <DispensedRow key={rx.id} rx={rx} />
               ))}
             </Section>
